@@ -16,7 +16,7 @@
     
     <!-- Link to your JavaScript file. 'defer' ensures it runs after the HTML is loaded. -->
     <!-- Version query busts CDN/browser cache when app.js contract changes. Bump on breaking changes. -->
-    <script src="app.js?v=2" defer></script>
+    <script src="app.js?v=3" defer></script>
 </head>
 <body>
 
@@ -59,8 +59,8 @@
         <div class="form-group">
             <label for="ai-provider" data-i18n="providerLabel">AI mudel:</label>
             <select id="ai-provider">
-                <option value="claude" data-i18n="providerClaude">Claude Sonnet 4.6 (parem kvaliteet)</option>
-                <option value="gemini" data-i18n="providerGemini">Gemini 2.5 Flash (kiire, odav)</option>
+                <option value="gemini" data-i18n="providerGemini" selected>Gemini (kiire, odav)</option>
+                <option value="claude" data-i18n="providerClaude">Claude (parem kvaliteet)</option>
             </select>
         </div>
         <button id="generate-story-button">
