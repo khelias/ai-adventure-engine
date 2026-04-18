@@ -15,7 +15,8 @@
     <link rel="stylesheet" href="style.css">
     
     <!-- Link to your JavaScript file. 'defer' ensures it runs after the HTML is loaded. -->
-    <script src="app.js" defer></script>
+    <!-- Version query busts CDN/browser cache when app.js contract changes. Bump on breaking changes. -->
+    <script src="app.js?v=2" defer></script>
 </head>
 <body>
 
