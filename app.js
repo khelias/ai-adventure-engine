@@ -115,8 +115,8 @@ const errorDisplays = {
     game: document.getElementById('game-error')
 };
 
-// ----- AI Integration (Serverless Function) -----
-const API_URL = `/.netlify/functions/call-gemini`;
+// ----- AI Integration (Homelab-hosted Gemini proxy) -----
+const API_URL = `/adventure/api/gemini`;
 
 async function callGeminiAPI(prompt, jsonSchema) {
     const payload = {
@@ -129,6 +129,7 @@ async function callGeminiAPI(prompt, jsonSchema) {
     };
     const response = await fetch(API_URL, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
     if (!response.ok) {

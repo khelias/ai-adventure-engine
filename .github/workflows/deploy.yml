@@ -1,0 +1,27 @@
+name: Deploy to Homelab
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, homelab]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy static files
+        run: |
+          for f in index.html app.js style.css; do
+            if [ ! -f "$f" ]; then
+              echo "ERROR: $f missing — checkout failed or file was renamed" >&2
+              exit 1
+            fi
+          done
+          mkdir -p /srv/data/games/adventure/app
+          rm -rf /srv/data/games/adventure/app/*
+          cp index.html app.js style.css /srv/data/games/adventure/app/
+          echo "Deployed at $(date)"
