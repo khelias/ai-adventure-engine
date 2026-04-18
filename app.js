@@ -1,5 +1,5 @@
 // Global game state
-const DEFAULT_PROVIDER = 'claude';
+const DEFAULT_PROVIDER = 'gemini';
 let gameState = {
     settings: {
         language: 'et', // Default language
@@ -24,8 +24,8 @@ const translations = {
         durationMedium: "Keskmine (~9-15 käiku)",
         durationLong: "Pikk (16+ käiku)",
         providerLabel: "AI mudel:",
-        providerClaude: "Claude Sonnet 4.6 (parem kvaliteet)",
-        providerGemini: "Gemini 2.5 Flash (kiire, odav)",
+        providerClaude: "Claude (parem kvaliteet)",
+        providerGemini: "Gemini (kiire, odav)",
         generateStoryBtn: "Genereeri Lugu",
         storyChoiceTitle: "Vali seikluse algus",
         customStoryTitle: "...või kirjuta omaenda stsenaarium:",
@@ -68,8 +68,8 @@ const translations = {
         durationMedium: "Medium (~9-15 turns)",
         durationLong: "Long (16+ turns)",
         providerLabel: "AI model:",
-        providerClaude: "Claude Sonnet 4.6 (better quality)",
-        providerGemini: "Gemini 2.5 Flash (fast, cheap)",
+        providerClaude: "Claude (better quality)",
+        providerGemini: "Gemini (fast, cheap)",
         generateStoryBtn: "Generate Story",
         storyChoiceTitle: "Choose your adventure's start",
         customStoryTitle: "...or write your own scenario:",
