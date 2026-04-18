@@ -65,7 +65,10 @@ mida teised ei tea. See on V2 tõeline diferentseerija.
 
 - Turn loop baasstruktuur
 - Sequel-mehaanika (lugude jätkumine)
-- Parameeter-süsteem (aga muudetud, vt allpool)
+- **Parameeter-süsteem** — jääb kui **mängu mehaaniline süda**. Ilma selleta
+  pole mehaanilist pinget. Ressursid, ohud, parameetrid = *avalik kaotuse-hirm*
+  mida kõik näevad. V2-s täienevad (vt järgmine sektsioon), ei kao.
+- Erivõimed — ühekordne kasutus säilib
 - Pass-the-phone muster
 - ET + EN i18n
 - Provider-agnostic proxy (lisan ainult Claude caching + tool use)
@@ -84,8 +87,23 @@ kogemus olla. **Eesti on primaarne fookus**, inglise "lisaboonus".
   valikud jäävad aga pole rõhutatud
 - ~~Inline onclick="selectStory(${index})"~~ — React komponendid
 - ~~Monoliitne app.js~~ — moodulid, tüübid, testid kus mõtekas
-- ~~Parameter = abstraktne number~~ — parameetrid jäävad aga **draama on nüüd
-  karakter-põhine** (saladused, liitlased, moraalikonflikt), mitte "moraal -1"
+- ~~Abstraktsed parameetrid~~ — parameetrid jäävad, aga muutuvad **spetsiifilisemateks
+  ja põhjendatuks**. V1: "Moraal -1" ilma põhjuseta. V2: tool use kaudu AI kutsub
+  `update_parameter("bensiin paagis", -1, reason="linna läbimine võttis palju")` —
+  põhjus on logitud, lugeja saab dramatiseerida, parameetri nimed on story-spetsiifilised
+
+## V2 draama kolm kihti
+
+V1 pinge oli ühedimensiooniline (ainult grupi parameetrid). V2-s kolm kihti
+üksteise peal:
+
+1. **Grupi ressursid** (parameetrid) — avalik, jagatud risk, mehaaniline
+   kaotuse-surve
+2. **Karakterite saladused / suhted** — privaatne info, info-asümmeetria,
+   draama-mootor
+3. **Erivõimed** — ühekordne, dramaatiline, seltskonna-arutelu tekitav
+
+Iga kiht töötab iseseisvalt, koos loovad mitmedimensioonilise pinge.
 
 ---
 
@@ -94,6 +112,10 @@ kogemus olla. **Eesti on primaarne fookus**, inglise "lisaboonus".
 - **Frontend**: React + Vite + TypeScript
 - **Stiil**: Tailwind CSS + shadcn/ui baas, custom typography peal — *peab
   lugema nagu raamat*, mitte "äppi"
+- **Animatsioonid**: Framer Motion (stseenide üleminekud, parameetri-muutused,
+  saladuste dramaatiline ilmumine)
+- **Typography**: Fraunces või Spectral narratiivi jaoks (serif, raamatulik),
+  Inter UI chrome'i jaoks (sans-serif). Google Fonts self-hosted.
 - **State**: Zustand (kerge, tüübid, ei ole Redux overhead)
 - **Proxy**: olemasolev provider-agnostic proxy (`khe-homelab/services/apps/games/adventure-proxy/`)
   laiendatud Claude prompt caching'i + tool use'iga
@@ -102,6 +124,85 @@ kogemus olla. **Eesti on primaarne fookus**, inglise "lisaboonus".
 - **Deploy**: sama GitHub Actions runner → `/srv/data/games/adventure/app/`
 - **URL strateegia**: vana app elab `/adventure/` all kuni V2 valmis. Uus arendus
   `/adventure-v2/` staging'us. Lülitus kui on stabiilne.
+
+---
+
+## Disain — kuidas see PÄRISELT ilus välja näeb
+
+V1 on inetu sest seal polnud ühtegi disaini-mõtet. V2-s peab iga ekraan
+tundama nagu **raamatuleheküljel**, mitte veebivormil.
+
+### Põhiprintsiibid
+
+1. **Typography-first** — see on LUGEMIS-mäng. Tekst *on* kogemus.
+   - Narrative: serif font (Fraunces), 18-22px, line-height 1.7, mõõde 65-75 char rea kohta
+   - UI chrome: sans-serif (Inter), väiksem, diskreetne
+   - Drop cap stseeni alguses? Peatüki-stiilis üleminekud.
+
+2. **Žanripõhine atmosfäär** — iga žanr on *oma raamat* oma värvipaleti,
+   tekstuuri, tüpograafilise häälestusega. Žanr = teema:
+   - **Zombie/maailmalõpp**: summuda hall, roostepunane aktsent, distressed textuur (CSS noise), tume, saastunud tunne
+   - **Fantaasia**: süvavärvid (veini-punane, metsa-roheline), kuld-aktsent, ornaamentilised piirid
+   - **Sci-fi**: puhas must/valge, tsüaan-magenta aktsent, monospaced font status-UI-s
+   - **Põnevik**: noir must-valge, neoon-aktsent, dramaatilised varjud
+   - CSS muutujate kaudu, lülitub setup'is
+
+3. **Lugeja-optimeeritud reading view** — üks stseen korraga, ei midagi muud.
+   - Suur tekst, palju ruumi. Lugeja saab vaikselt dramatiseerida.
+   - Stseenil võib olla "peatüki pealkiri" ("III peatükk: Garaaž") — visuaalne progress.
+   - Valikud ERALDI tekstist, kaardi-stiilis, ei ole inline.
+
+4. **Parameetrid kui armatuurlaud, mitte tekst** — mitte "Moraal: Hea", vaid:
+   - Visuaalne gauge / riba, värvikoodiga (roheline → kollane → oranž → punane)
+   - Spetsiifilise ikooniga (bensiin = pumbaikoon, tervis = süda)
+   - **Animatsioon muutusel**: "moraal -1" = riba tõmbub dramaatiliselt kokku, värv käib läbi punase-sähvatuse. Lugeja *näeb* et midagi olulist juhtus, saab dramatiseerida.
+
+5. **Kinematograafilised hetked** — mitte lihtsalt teksti vahetus:
+   - Stseenide üleminekud: fade + subtle slide (Framer Motion)
+   - Saladus-ilmumine: envelope-ikoon alustab kõikumist, "anna telefon Markole" täisekraan-ülekate
+   - Game over: parameetrite viimane klikk dramaatiliselt punaseks, "Lõpp" raamatulik tiitel
+
+6. **Karakteri-kaardid isikupäraga** — iga roll on *kaart*:
+   - Nimi (mängija poolt muudetav), lühike kirjeldus
+   - Erivõime selgelt näha (kasutatud = kaart muutub halliks, grafisti-märgistusega)
+   - Staatus: kas sellel mängijal on saladus (📬 ikoon), kas ta on haavatud
+   - Placeholder-portree (V3-s AI-genereeritud, V2-s geomeetriline abstraktsioon žanri-teemas)
+
+7. **Mobile-first** — see on pass-the-phone mäng:
+   - Kõrge aspekt, peapöial-friendly, suured tap-sihikud
+   - Ei mingit landscape-assumpt'i
+   - Dark-mode vaikimisi (alkohol-õhtud vähese valgusega)
+
+8. **Progress-visuaal** — mitte "Käik 7/15" tekstiga, vaid:
+   - Rada / joon mis täitub loo edenedes
+   - Näitab kus oleme loo kaares (keskpaik, klimaks, lõpp lähedal)
+   - Dramaatiline "viimased käigud" visuaal (raamat läheb paksuks)
+
+### Inspiratsioon (need on *vibe*, mitte copy)
+
+- **Reigns** (mobile) — minimalistlik kaardi-disain, atmosfääri üks ekraan
+- **80 Days / Sorcery!** (Inkle) — literaarne UI, päris raamatu-tunne
+- **Her Story** — täisekraaniline kinematograafiline tekst
+- **Sunless Sea / Sunless Skies** (Failbetter) — tume atmosfäärne UI, tekst on *kunst*
+
+### Konkreetne komponendi-pesa
+
+Faas 0-s ehitame baasi:
+- `SceneView` — narratiivi täisekraan-vaade, serif typography
+- `ChoiceCards` — valikud kaartidena stseeni all
+- `ParameterDashboard` — horisontaalne riba ülaosas, animeeritavad gauge'id
+- `CharacterCard` — rollide vaade, saab välja-libistada sidepaneelist
+- `WhisperOverlay` — saladuse täisekraan-ülekate "anna telefon Markole"
+- `GenreTheme` — CSS-muutujate provider, lülitab värvid/tekstuurid
+
+Kõik shadcn-primitive'ide peal, mitte nullist. Tailwind + CSS-muutujad per-žanr.
+
+### Mida disain **ei** tee V2-s
+
+- Pole 3D-efekte, parallaxe, liigseid animatsioone — see on rahulik lugemine, mitte mäng-ärritus
+- Pole AI-genereeritud pilte (V3)
+- Pole videot / muusikat default'is (V2.5 optional)
+- Pole "splash screen" / laadiekraani — kohe kasutusel
 
 ---
 
