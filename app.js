@@ -1,7 +1,9 @@
 // Global game state
+const DEFAULT_PROVIDER = 'claude';
 let gameState = {
     settings: {
-        language: 'et' // Default language
+        language: 'et', // Default language
+        provider: localStorage.getItem('adventureProvider') || DEFAULT_PROVIDER,
     }
 };
 
@@ -21,6 +23,9 @@ const translations = {
         durationShort: "Lühike (~5-8 käiku)",
         durationMedium: "Keskmine (~9-15 käiku)",
         durationLong: "Pikk (16+ käiku)",
+        providerLabel: "AI mudel:",
+        providerClaude: "Claude Sonnet 4.6 (parem kvaliteet)",
+        providerGemini: "Gemini 2.5 Flash (kiire, odav)",
         generateStoryBtn: "Genereeri Lugu",
         storyChoiceTitle: "Vali seikluse algus",
         customStoryTitle: "...või kirjuta omaenda stsenaarium:",
@@ -62,6 +67,9 @@ const translations = {
         durationShort: "Short (~5-8 turns)",
         durationMedium: "Medium (~9-15 turns)",
         durationLong: "Long (16+ turns)",
+        providerLabel: "AI model:",
+        providerClaude: "Claude Sonnet 4.6 (better quality)",
+        providerGemini: "Gemini 2.5 Flash (fast, cheap)",
         generateStoryBtn: "Generate Story",
         storyChoiceTitle: "Choose your adventure's start",
         customStoryTitle: "...or write your own scenario:",
@@ -115,36 +123,25 @@ const errorDisplays = {
     game: document.getElementById('game-error')
 };
 
-// ----- AI Integration (Homelab-hosted Gemini proxy) -----
-const API_URL = `/adventure/api/gemini`;
+// ----- AI Integration (provider-agnostic proxy) -----
+const API_URL = `/adventure/api/generate`;
 
-async function callGeminiAPI(prompt, jsonSchema) {
-    const payload = {
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema: jsonSchema,
-            temperature: 0.8,
-        }
-    };
+async function callAI(prompt, jsonSchema) {
+    const provider = gameState.settings.provider || DEFAULT_PROVIDER;
     const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ prompt, schema: jsonSchema, provider })
     });
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Invalid JSON response from server' }));
         throw new Error(errorData.error || `Request failed with status ${response.status}`);
     }
     const result = await response.json();
-    if (!result.candidates?.[0]?.content?.parts?.[0]?.text) {
-        throw new Error("API returned an invalid or empty response structure.");
+    if (!result || typeof result.data !== 'object' || result.data === null) {
+        throw new Error("Proxy returned an invalid or empty response structure.");
     }
-    try {
-        return JSON.parse(result.candidates[0].content.parts[0].text);
-    } catch (e) {
-        throw new Error(`API did not return valid JSON. Parser error: ${e.message}`);
-    }
+    return result.data;
 }
 
 // ----- UI Helper Functions -----
@@ -223,7 +220,7 @@ async function handleStoryGeneration() {
     const prompt = `Generate 3 adventure stories for ${gameState.settings.players} players in the ${gameState.settings.genre} genre. Each story should be suitable for a ${gameState.settings.duration} duration game. For each story, provide a title, a summary, exactly ${gameState.settings.players} unique roles with a name, description, and a single powerful, one-time-use special ability. Also provide THREE unique, story-specific parameters. Each parameter must have a name and exactly 4 states, from best to worst. Output language must be ${gameState.settings.language === 'et' ? 'Estonian' : 'English'}.`;
 
     try {
-        const aiResponse = await callGeminiAPI(prompt, schema);
+        const aiResponse = await callAI(prompt, schema);
         gameState.availableStories = aiResponse.stories;
         const container = document.getElementById('story-options-container');
         container.innerHTML = '';
@@ -252,7 +249,7 @@ async function generateNewGameFromText(storyText, buttonToLoad) {
     const schema = { type: "OBJECT", properties: { roles: { type: "ARRAY", items: { type: "OBJECT", properties: { name: { type: "STRING" }, description: { type: "STRING" }, ability: { type: "STRING" } }, required: ["name", "description", "ability"] } }, parameters: { type: "ARRAY", items: { type: "OBJECT", properties: { name: { type: "STRING" }, states: { type: "ARRAY", items: { type: "STRING" } } }, required: ["name", "states"] } } }, required: ["roles", "parameters"] };
     const prompt = `Based on this custom story idea: "${storyText}", generate ${gameState.settings.players} thematically appropriate roles and 3 unique parameters for a ${gameState.settings.genre} game. Each role needs a name, description, and a one-time-use ability. Each parameter needs a name and 4 states from best to worst. Output language must be ${gameState.settings.language === 'et' ? 'Estonian' : 'English'}.`;
     try {
-        const aiResponse = await callGeminiAPI(prompt, schema);
+        const aiResponse = await callAI(prompt, schema);
         const story = { title: translations[gameState.settings.language].customStoryTitle.replace('...', ''), summary: storyText, ...aiResponse };
         setupInitialGameState(story);
     } catch (error) {
@@ -275,7 +272,7 @@ async function handleSequel() {
     const schema = { type: "OBJECT", properties: { newAbilities: { type: "ARRAY", items: { type: "STRING" } }, newParameters: { type: "ARRAY", items: { type: "OBJECT", properties: { name: { type: "STRING" }, states: { type: "ARRAY", items: { type: "STRING" } } }, required: ["name", "states"] } } }, required: ["newAbilities", "newParameters"] };
     const prompt = `This is a sequel to a previous adventure. The story continues from this summary: "${sequelText}". The returning characters are: ${JSON.stringify(oldRoles)}. Please generate: 1. A new, unique, one-time-use special ability for EACH of the returning characters. The list of abilities must be in the same order as the characters. 2. Three completely new, unique parameters suitable for this sequel story. Each parameter needs a name and 4 states from best to worst. Output language must be ${gameState.settings.language === 'et' ? 'Estonian' : 'English'}.`;
     try {
-        const aiResponse = await callGeminiAPI(prompt, schema);
+        const aiResponse = await callAI(prompt, schema);
         const updatedRoles = gameState.roles.map((role, index) => ({ ...role, ability: aiResponse.newAbilities[index] || "New Ability", used: false }));
         const story = { title: "Järjelugu", summary: sequelText, roles: updatedRoles, parameters: aiResponse.newParameters };
         setupInitialGameState(story);
@@ -344,7 +341,7 @@ async function handlePlayerChoice(choiceText, isFirstTurn = false) {
     const prompt = `This is turn ${gameState.currentTurn} of a ${gameState.settings.duration} length ${gameState.settings.genre} game. The current parameter states are: ${parameterStates}. The following special abilities are available: ${availableAbilities || 'None'}. The players chose: "${choiceText}". Continue the story. Strictly follow these rules: 1. The new scene MUST reflect the current parameter states and the player's choice. 2. You MUST change the parameters based on the choice. For each parameter, provide its name and an integer change (-1 for worse, 0 for no change, 1 for better). 3. Provide 2-3 new team-based choices. 4. RARELY, you may offer a choice to use a special ability. If you do, set isAbility to true and provide the roleIndex (0-based) of the role whose ability is being offered. Do NOT offer abilities for roles that are not in the 'availableAbilities' list. 5. Pace the story towards a conclusion. If the turn count (${gameState.currentTurn}) is nearing the limit for the game length (${gameState.maxTurns}), you MUST start concluding the story. If this is the final turn, set gameOver to true and write a concluding gameOverText. The gameOverText should describe the final outcome and also reflect on the critical choice "${choiceText}" that led the players to this fate. 6. The output language for all player-facing text (scene, choices, gameOverText) MUST be ${gameState.settings.language === 'et' ? 'Estonian' : 'English'}.`;
 
     try {
-        const aiResponse = await callGeminiAPI(prompt, schema);
+        const aiResponse = await callAI(prompt, schema);
         if (aiResponse.gameOver) {
             endGame(translations[gameState.settings.language].endNarrative, aiResponse.gameOverText || translations[gameState.settings.language].endGenericText);
             return;
@@ -438,6 +435,15 @@ function initializeApp() {
         updateUIText('en');
     });
     
+    const providerSelect = document.getElementById('ai-provider');
+    if (providerSelect) {
+        providerSelect.value = gameState.settings.provider;
+        providerSelect.addEventListener('change', () => {
+            gameState.settings.provider = providerSelect.value;
+            localStorage.setItem('adventureProvider', providerSelect.value);
+        });
+    }
+
     updateUIText(gameState.settings.language); // Set initial text
     showScreen('setup');
 }
