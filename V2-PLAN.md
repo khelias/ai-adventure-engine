@@ -1,129 +1,194 @@
-# AI Adventure Engine — V2 Planning
+# AI Adventure Engine — V2 Plan
 
-V1 on live (`games.khe.ee/adventure/`) ja töötab.
-See dokument on **input järgmisele sessioonile** — mitte lõplik plaan, vaid otsustuskoht ja koduülesanded.
+V1 on live (`games.khe.ee/adventure/`) ja töötab tehniliselt, aga mängides tundus
+**igav, korduv, vähe kaasahaarav** — lugu ei resoneeri grupiga, erivõimed ei tee
+midagi erilist, iga mäng tundub sama.
+
+V2 lahendab selle **ühel lihtsal viisil**: mäng hakkab peegeldama *seda gruppi,
+selles kohas, praegu* — ja sellega tuleb kaasa päriselt pinge, draama, saladused.
 
 ---
 
-## V1 tehnika hetkel
+## Fookus (ühelauseline)
 
-- `index.html` + `app.js` (~500 rida) + `style.css` — puhas vanilla, ei mingit build step'i
-- Proxy (`khe-homelab/services/apps/games/adventure-proxy/`): provider-agnostic, Claude + Gemini adapteriga, schema enforcement tool use / responseSchema kaudu
-- GitHub Actions self-hosted runner deploys staatika `/srv/data/games/adventure/app/`
-- Mäng voolab: setup → loo valik → rollid → käigud → lõpp (koos "sequel" tekstiga)
-- Parameetrid (toiduvaru, moraal jne) kriitilise oleku jälgimiseks
+**Seltskonnamäng 3-6 täiskasvanule, 20-30 min sessioon, autoreis / õhtu / kodu,
+üks loeb ette ja teised arutavad.**
+
+Kõik disaini-otsused järgnevad sellest. Solo-mäng, laste-variant, mobiil-single-player —
+*eraldi projektid hiljem*, mitte V2.
+
+---
+
+## Kolm põhimuutust V2-s
+
+### 1. Kontekst-teadlik jutustaja
+Praegune mäng genereerib "Zombid-Lugu-27" mis võiks olla ükskõik kelle oma. V2
+setup küsib *optional* lisasisendit enne mängu algust:
+- **Kus te füüsiliselt olete?** (buss, köök, kontor, ranna-maja...)
+- **Kes on ruumis?** (nimed, suhted, vanused, rollid)
+- **Vibe?** (kerge & totter / pingeline / tume)
+- **Midagi täna juhtus?** (inside joke, päeva-sündmus)
+
+AI koob need stsenaariumisse. Buss → juht kaob rooli tagant. Kontor → kohv lõppeb,
+sein variseb. Pere juures → uksele tuleb keegi keda pole näinud 20 aastat.
+
+**Fast-path kohustuslik**: 1-click start jätab kontekst-küsimused vahele, AI
+kasutab targalt defaulte (zombi-žanr, 4 mängijat, "seltskond arutab"). Setup
+kestab ~60 sek kui inimesed tahavad mängida *praegu*.
+
+### 2. AI kvaliteet
+Praegu on Gemini Flash default — teeb JSON-i õigesti, aga *toon, huumor, üllatus
+on lame*. Seltskonnamängus peab kirjutamine *lööma*.
+
+- **Default mudel**: Claude Sonnet 4.6 (Anthropic võti lisatud VM-i)
+- **Prompt caching**: system prompt + lugu stabiilne (cache hit), turn variable
+  osa on ainus mis iga käik saadab. Tõmbab hinna alla, kiiremad vastused.
+- **Tool use**: AI ei "loe" state'i promptist, vaid *kutsub* tool'e:
+  `damage_character`, `introduce_npc`, `raise_stakes`, `whisper_to(player)`.
+  Struktuurne, kontrollitud, järjepidev.
+- **Gemini jääb fallback'iks** (kiire/odav) + hiljem **local Ollama** GPU-ga.
+
+### 3. Saladused / privaatne info
+Praegune mäng = 100% avalik info, kõik näevad sama ekraani. V2-s AI saab
+**whisper**-tool'i kasutades anda ühele mängijale privaatset infot mida teised
+ei näe. Telefon liigub salaja tema kätte, ta loeb vaikselt, paneb tagasi.
+
+> *"Marko, koridori lõpus on su ex-naine. Teised ei näinud veel. Mis sa teed?"*
+
+See on **draama mootor**: info-asümmeetria ongi Werewolf'i / Mafia / mõrva-
+müsteeriumite magnet. Iga laua-arutelu muutub huvitavaks kui keegi *teab midagi*
+mida teised ei tea. See on V2 tõeline diferentseerija.
+
+---
+
+## Mis V1-st säilib
+
+- Turn loop baasstruktuur
+- Sequel-mehaanika (lugude jätkumine)
+- Parameeter-süsteem (aga muudetud, vt allpool)
+- Pass-the-phone muster
 - ET + EN i18n
-- Täielikult kliendipoolne state — refresh = mäng kadunud
+- Provider-agnostic proxy (lisan ainult Claude caching + tool use)
+
+### Keelte kvaliteet
+
+Nii Claude kui Gemini on inglise-natiivsed — koolitatud hiiglaslikel
+ingliskeelsetel korpustel. Eesti keel töötab hästi (grammatika, sisu, järjepidevus),
+aga *huumor, sõnamäng, loomulik toon* on inglise keeles **märgatavalt teravamad**.
+Kui mängitakse segakeelse või välismaa grupiga, inglise režiim võib isegi parem
+kogemus olla. **Eesti on primaarne fookus**, inglise "lisaboonus".
+
+## Mis muutub / kaob
+
+- ~~"Lemmik-žanr" localStorage toggle~~ — zombi/maailmalõpp on vaikimisi, teised
+  valikud jäävad aga pole rõhutatud
+- ~~Inline onclick="selectStory(${index})"~~ — React komponendid
+- ~~Monoliitne app.js~~ — moodulid, tüübid, testid kus mõtekas
+- ~~Parameter = abstraktne number~~ — parameetrid jäävad aga **draama on nüüd
+  karakter-põhine** (saladused, liitlased, moraalikonflikt), mitte "moraal -1"
 
 ---
 
-## Mis töötab hästi (säilitada V2-s)
+## Tehniline stack
 
-- **Turn loop** on tihe ja arusaadav
-- **Sequel-mehaanika** — loo jätkamine kahe mängu vahel läbi "sequel text"
-- **Parameetrid** annavad mängule panustatavat riski
-- **Pass-the-phone muster** — üks seade, mitu mängijat, lihtne setup
-- **i18n** — kergelt laiendatav uutele keeltele
-- **Provider abstraktsioon** — juba tehtud, ei puutu
-
-## Mis on nõrk (V2 peaks lahendama)
-
-### Kood ise
-- Monoliitne app.js segab kõik kontsernid kokku
-- Raske lisada feature'eid (iga muudatus riskib regressiooniga)
-- Ei ole teste → ei julge refactorida
-- Pole tüüpe (TypeScript) → API muudatused lähevad märkamatult
-
-### UX
-- **Ei ole persistense'i** — brauseri refresh = mäng otsast algama. Perele kaotusvalu.
-- Ei saa mängu sõbrale saata / jätkata hiljem
-- Ei ole käikude ajalugu (tagasi vaatamine)
-- Üks seade piirab mängijate arvu loomulikult 3-5 peale
-- Mobiilisõbraliku UI pole (ekraani suurus kitsas)
-
-### AI arhitektuur
-- Iga käik = eraldi prompt ilma mäluta (mudel "loeb" mängu oleku promptist)
-- Ei kasuta **prompt caching**'ut — iga turn saadab kogu ajaloo täishinnaga (Claude'il see suur kaotus)
-- Ei kasuta **tool use'i** struktureeritud state halduseks — loo järjepidevus kannatab
-- NPC-del pole "mälu" — iga käik uus
+- **Frontend**: React + Vite + TypeScript
+- **Stiil**: Tailwind CSS + shadcn/ui baas, custom typography peal — *peab
+  lugema nagu raamat*, mitte "äppi"
+- **State**: Zustand (kerge, tüübid, ei ole Redux overhead)
+- **Proxy**: olemasolev provider-agnostic proxy (`khe-homelab/services/apps/games/adventure-proxy/`)
+  laiendatud Claude prompt caching'i + tool use'iga
+- **Persistens**: V2-s mitte. V2.5-s Postgres (Docker volume), võimaldab "jaga
+  linki sõbrale" ja "jätka hiljem"
+- **Deploy**: sama GitHub Actions runner → `/srv/data/games/adventure/app/`
+- **URL strateegia**: vana app elab `/adventure/` all kuni V2 valmis. Uus arendus
+  `/adventure-v2/` staging'us. Lülitus kui on stabiilne.
 
 ---
 
-## V2 otsustusruum
+## Faasid
 
-Järgmises sessioonis otsustame:
+Iga faas = eraldi PR, eraldi deploy, mängitav. Pärast iga faasi testid sõpradega,
+õpid, järgmine faas. *Ei mingit 3-kuu closed beta'd.*
 
-### Stack
-| Valik | Poolt | Vastu |
-|---|---|---|
-| **React + Vite + TS** | Sama muster mis study-game, teada tehnoloogia, tüübid | Overhead kui mäng jääb lihtsaks |
-| **Svelte + Vite + TS** | Kergem bundle, reaktiivsem olek | Uus tehnoloogia sinu jaoks siin |
-| **Vanilla + moodulid** | Null dependency, kerge käituda | Palju käsitsitööd state haldusega |
+### Faas 0 — Skeleton (~1 sessioon)
+- React + Vite + TS scaffold
+- Tailwind + shadcn/ui setup
+- Basic routing, state management (Zustand)
+- Proxy sama, vana V1 turn-loop kopeeritud üle et miski oleks juba mängitav
+- Deploy `/adventure-v2/` staging'usse
 
-### Backend
-- **Proxy muutused**: kas sama (Gemini/Claude), või lisa kolmas rada (stateful agent)?
-- **Postgres mängude salvestamiseks** (shared Docker volume)? Võimaldab: sõbrale saatmine, jätkata hiljem, käikude ajalugu
-- **WebSocket reaalajas multiplayer'i jaoks**? Või REST + polling?
+### Faas 1 — Kontekst-teadlik setup (~1 sessioon)
+- Setup ekraan: žanr (zombi default), mängijate arv, kestvus — *see on FAST-PATH*
+- "Advanced" paneel (optional): kus oleme, kes ruumis, vibe, inside joke
+- Proxy prompt laieneb: kontekst-väljad sisestatakse system prompt'i
+- Test: mäng resoneerib praeguse kohaga / grupiga
 
-### AI evolutsioon
-- **Tool use** struktureeritud state'i jaoks (V2 sees): `update_inventory`, `damage_player`, `add_location` tööriistad — mudel kutsub, frontend salvestab
-- **Prompt caching** (Claude) — system prompt + lugu cache'itakse, iga turn odav
-- **NPC agendid** (V2.5) — iga oluline tegelane = mini-agent oma mäluga
-- **Per-stseen pildid** (V3) — nano-banana / Flux, ~$0.003/pilt
-- **TTS narratsioon** (V3) — ElevenLabs eesti hääl
+### Faas 2 — AI upgrade (~1 sessioon)
+- Proxy: Anthropic SDK integration (Sonnet 4.6 default)
+- Prompt caching: süsteem-prompt + lugu cache'itud, turn variable osa odav
+- Tool use: `update_parameter`, `damage_character`, `introduce_npc`,
+  `raise_stakes` — state muutused lähevad tool call'idena, mitte JSON-response'is
+- Fallback Gemini'le kui Claude võti puudub / ei tööta
 
-### Fookus-skaala ("mis mäng päriselt on?")
-See on V2 põhiline disainiküsimus:
+### Faas 3 — Saladused / whispers (~1-2 sessiooni)
+- Tool: `whisper_to_player(playerIndex, message)`
+- UI: "anna telefon Markole" ekraan, Marko näeb privaatset teksti, peidab enne tagasi
+- AI saab saladusi kaaluda järgmistes käikudes (cache'itud, ta mäletab)
+- Test: kas seltskonnas *tõesti* tekib draama / arutelu / kahtlus
 
-1. **Pere-mäng** (lihtne, hubane, laste jaoks ohutu, lühike) →
-   persistents + pildid, tool use tähtsam kui multiplayer, lühikesed mängud
-2. **Seltskonna-mäng** (pikk, süvamõtlemine, täiskasvanud) →
-   multiplayer + sessioonide vahel jätkamine, NPC agendid, pikk campaign
-3. **Tehniline demo** (näidata AI võimalusi) →
-   eksperimenteerida uue AI feature'iga (tool use, agent loop, images)
+### Faas 4 — Design polish (~1-2 sessiooni)
+- Tüpograafia viimistlus (lugeja-optimeeritud, suur font, pikad read)
+- Pacing: stseeni pikkus varieerub (mõned lühikesed-põrutavad, mõned pikemad-dramaatilised)
+- Parameetri muutuste animatsioon (kui "moraal" kukub, lugeja näitab dramaatiliselt)
+- Optional TTS: ElevenLabs eesti hääl (lugeja saab kuulata / puhata)
 
-Kõike ei saa ja iga suund tähendab erinevaid tehnoloogilisi valikuid.
+### Faas 5 — Persistens (~1 sessioon, hilisem)
+- Postgres (Docker volume, ai-adventure-engine stack)
+- Mängu salvestus + resume hiljem
+- Jaga-link: "vaata mida me eile mängisime" URL
+- Mängu ajalugu: tagasi vaatamine
 
----
-
-## Sisukas järgmise sessiooni alguses
-
-### Kaido koduülesanded (enne)
-
-- [ ] **Mängi vähemalt üks täielik mäng** läbi `games.khe.ee/adventure/` peal — Gemini-poolelt
-- [ ] Pane kirja 3-5 asja mis tundub valesti / nõrgalt / ei toimi loogiliselt
-- [ ] Mõtle **fookust**: kas see on pere-mäng, seltskonna-mäng või demo? (võib olla hübriid, aga prioriteetide tõttu on kasu selguest)
-- [ ] (Optional) Lisa Anthropic võti — Claude annab parema eesti keele, V2 eeldab et see on kättesaadav (või vähemalt valik olemas)
-- [ ] (Optional) Skim olemasolev `app.js` — saad tagasi mälus mis seal on
-
-### Mu esimesed sammud (sessiooni alguses)
-
-1. **Koodi audit** (30-45 min): loen kogu olemasoleva `app.js`-i läbi, märgin ära
-   - Mis promptid on kasutusel (copy-paste'i kõik prompt string'id välja)
-   - Kus on state'i haldus (mis globaalses `gameState`-is, mis DOM-is peidetud)
-   - Kus on seoste/vigade riskialad
-2. **Esita sulle kokkuvõte**: "V1 nagu on, siin on tõeline seis, siin on 3 suunda V2 jaoks"
-3. **Otsustame koos**: stack, fookus, esimene etapp
-4. **Töö**: etapp-etapi kaupa, iga sessioon mõõdetavalt edasi
+### Faas 6 — Local GPU Ollama (~hiljem, GPU tulekul)
+- Ollama adapter proxy'sse (qwen2.5:14b või gemma3:12b — 16GB GPU-le mahub)
+- UI: provider selector laieneb "tasuta kohalik" valikuga
+- Test: eesti keele kvaliteet kohalikul mudelil — vs. Claude
 
 ---
 
-## Praegune status (olulised failid)
+## Hinnang kuludele
 
-- Frontend: `/Users/KaidoHenrik.Elias/Projects/ai-adventure-engine/` (see repo)
-- Proxy: `../khe-homelab/services/apps/games/adventure-proxy/`
-- Live: https://games.khe.ee/adventure/
-- Git history: clean, pole tehnilist võlga
+Üks ~20-käiguline mäng Sonnet 4.6-ga, **prompt caching'iga**:
+- Ilma caching'uta: ~$0.12 / mäng
+- Caching'uga (90% cache hit turn-loop'is): ~$0.03-0.05 / mäng
+
+50 mängu kuus caching'uga: ~$2-3. Kuni GPU tuleb, see on OK. GPU-ga: tasuta.
 
 ---
 
-## Lõplik otsus
+## Mis V2 *ei tee*
 
-**V2 alustamine ootab järgmist sessiooni.** Täna (2026-04-18) oleme juba teinud:
-- Games hub migratsioon (Faas 1)
-- Adventure self-host (Faas 2)
-- Provider-agnostic proxy (V1.5)
-- Launcher redisain
-- Cache-busting / CF quirks debug
+- ❌ Solo-mäng / single-player flow (eraldi kasutuskoge, teine disain)
+- ❌ Mobiil-single-device-app (praegu webapp jääb)
+- ❌ Live multiplayer (mitu seadet korraga) — pass-the-phone jääb
+- ❌ Pildid / TTS vaikimisi (need on polish / V3 territooriumis)
+- ❌ Kompleksne kampaania-süsteem (pikad, mitu-sessioonilised mängud)
 
-Järgmisel korral: värske pilk, õige plaan, tõsi rewrite.
+**Laste-režiim**: V2 ei lisa spetsiaalseid filtreid / kohandatud žanre laste
+jaoks, aga *midagi ei takista* mängida kergemat zombi-lugu perega. Kui tuleb
+eraldi laste-fookusega vajadus — see on V2.5+ laiendus, mitte keelatud.
+
+---
+
+## Edasised mõtted (V2.5 / V3, mitte nüüd)
+
+- **Pildid**: nano-banana / Flux per-stseen, ~$0.003/pilt
+- **TTS**: ElevenLabs eesti hääl, lugeja saab puhata
+- **NPC agendid**: iga oluline tegelane = mini-agent oma mäluga (tool use + state)
+- **Kampaania**: mitu seostatud sessiooni, mäng kestab mitu õhtut
+- **Laste variant**: tumedad teemad filtreeritud, žanrid kohandatud
+
+---
+
+## Järgmine samm
+
+**Faas 0 — skeleton**. Alustame kui Kaido annab OK.
