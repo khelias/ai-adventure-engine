@@ -43,12 +43,22 @@ export interface Story {
   parameters: Omit<Parameter, 'currentStateIndex'>[]
 }
 
+export type Vibe = '' | 'light' | 'tense' | 'dark'
+
+export interface ContextInput {
+  location: string
+  playersDesc: string
+  vibe: Vibe
+  insideJoke: string
+}
+
 export interface Settings {
   language: Language
   provider: Provider
   players: number
   genre: Genre
   duration: Duration
+  context: ContextInput
 }
 
 export type GameOverKind = 'narrative' | 'parametric' | null

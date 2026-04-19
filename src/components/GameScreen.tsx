@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { handlePlayerChoice } from '../game/actions'
@@ -16,6 +17,9 @@ export function GameScreen() {
   const error = useGameStore((s) => s.error)
   const strings = translations[language]
 
+  const [showCustomInput, setShowCustomInput] = useState(false)
+  const [customText, setCustomText] = useState('')
+
   const durationLabel =
     duration === 'Short'
       ? strings.durationShort
@@ -24,6 +28,8 @@ export function GameScreen() {
         : strings.durationLong
 
   const onChoice = (choice: Choice) => {
+    setShowCustomInput(false)
+    setCustomText('')
     if (choice.isAbility && choice.roleIndex !== undefined) {
       const role = roles[choice.roleIndex]
       if (!role || role.used) return
@@ -35,6 +41,14 @@ export function GameScreen() {
     } else {
       void handlePlayerChoice(choice.text)
     }
+  }
+
+  const onCustomSubmit = () => {
+    const text = customText.trim()
+    if (!text) return
+    setShowCustomInput(false)
+    setCustomText('')
+    void handlePlayerChoice(text, { isFreeText: true })
   }
 
   return (
@@ -101,6 +115,48 @@ export function GameScreen() {
               )
             })}
           </div>
+
+          {!showCustomInput ? (
+            <button
+              type="button"
+              onClick={() => setShowCustomInput(true)}
+              className="text-sm text-neutral-500 hover:text-neutral-300 underline underline-offset-2 transition-colors"
+            >
+              {strings.customChoiceLink} →
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <textarea
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value)}
+                placeholder={strings.customChoicePlaceholder}
+                rows={2}
+                className="w-full input-base resize-none"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    onCustomSubmit()
+                  }
+                }}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={onCustomSubmit}
+                  disabled={!customText.trim()}
+                  className="btn-primary text-sm py-1.5"
+                >
+                  {strings.customChoiceSubmit}
+                </button>
+                <button
+                  onClick={() => { setShowCustomInput(false); setCustomText('') }}
+                  className="btn-secondary text-sm py-1.5"
+                >
+                  {strings.customChoiceCancel}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : null}
 

@@ -1,7 +1,8 @@
+import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { generateStories } from '../game/actions'
-import type { Duration, Genre } from '../game/types'
+import type { Duration, Genre, Vibe } from '../game/types'
 
 const GENRES: { value: Genre; labelKey: keyof typeof translations.et }[] = [
   { value: 'Zombies', labelKey: 'genreZombies' },
@@ -24,6 +25,12 @@ export function SetupScreen() {
   const isLoading = useGameStore((s) => s.isLoading)
   const error = useGameStore((s) => s.error)
   const strings = translations[settings.language]
+
+  const [showAdvanced, setShowAdvanced] = useState(false)
+
+  const ctx = settings.context
+  const setCtx = (patch: Partial<typeof ctx>) =>
+    setSetting('context', { ...ctx, ...patch })
 
   return (
     <section className="space-y-5 max-w-md mx-auto">
@@ -80,6 +87,64 @@ export function SetupScreen() {
           <option value="claude">{strings.providerClaude}</option>
         </select>
       </Field>
+
+      <div className="border border-neutral-800 rounded">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((v) => !v)}
+          className="w-full flex items-center justify-between px-4 py-3 text-sm text-neutral-400 hover:text-neutral-200 transition-colors"
+        >
+          <span>{strings.advancedToggle}</span>
+          <span className="text-xs">{showAdvanced ? '▲' : '▼'}</span>
+        </button>
+
+        {showAdvanced && (
+          <div className="px-4 pb-4 space-y-4 border-t border-neutral-800 pt-4">
+            <Field label={strings.locationLabel}>
+              <input
+                type="text"
+                value={ctx.location}
+                placeholder={strings.locationPlaceholder}
+                onChange={(e) => setCtx({ location: e.target.value })}
+                className="w-full input-base"
+              />
+            </Field>
+
+            <Field label={strings.playersDescLabel}>
+              <input
+                type="text"
+                value={ctx.playersDesc}
+                placeholder={strings.playersDescPlaceholder}
+                onChange={(e) => setCtx({ playersDesc: e.target.value })}
+                className="w-full input-base"
+              />
+            </Field>
+
+            <Field label={strings.vibeLabel}>
+              <select
+                value={ctx.vibe}
+                onChange={(e) => setCtx({ vibe: e.target.value as Vibe })}
+                className="w-full input-base"
+              >
+                <option value="">{strings.vibeAny}</option>
+                <option value="light">{strings.vibeLight}</option>
+                <option value="tense">{strings.vibeTense}</option>
+                <option value="dark">{strings.vibeDark}</option>
+              </select>
+            </Field>
+
+            <Field label={strings.insideJokeLabel}>
+              <input
+                type="text"
+                value={ctx.insideJoke}
+                placeholder={strings.insideJokePlaceholder}
+                onChange={(e) => setCtx({ insideJoke: e.target.value })}
+                className="w-full input-base"
+              />
+            </Field>
+          </div>
+        )}
+      </div>
 
       <button
         onClick={generateStories}

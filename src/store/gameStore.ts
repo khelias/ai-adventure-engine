@@ -7,6 +7,7 @@ import type {
   Screen,
   Settings,
   Story,
+  Vibe,
 } from '../game/types'
 import { durationToMaxTurns } from '../game/engine'
 
@@ -24,6 +25,12 @@ const initialSettings: Settings = {
   players: 4,
   genre: 'Zombies',
   duration: 'Medium',
+  context: {
+    location: '',
+    playersDesc: '',
+    vibe: '' as Vibe,
+    insideJoke: '',
+  },
 }
 
 interface GameState {

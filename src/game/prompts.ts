@@ -1,7 +1,22 @@
-import type { Choice, Language, Parameter, Role } from './types'
+import type { Choice, ContextInput, Language, Parameter, Role } from './types'
 import type { JsonSchema } from '../api/adventure'
 
 const langLabel = (lang: Language) => (lang === 'et' ? 'Estonian' : 'English')
+
+function buildContextBlock(ctx: ContextInput): string {
+  const parts: string[] = []
+  if (ctx.location) parts.push(`Physical setting: "${ctx.location}"`)
+  if (ctx.playersDesc) parts.push(`People in the group: "${ctx.playersDesc}"`)
+  const vibeMap: Record<string, string> = {
+    light: 'light & humorous',
+    tense: 'tense & serious',
+    dark: 'dark & atmospheric',
+  }
+  if (ctx.vibe) parts.push(`Desired tone: ${vibeMap[ctx.vibe]}`)
+  if (ctx.insideJoke) parts.push(`Something that happened today (weave in naturally): "${ctx.insideJoke}"`)
+  if (!parts.length) return ''
+  return `\nGroup context (weave subtly and naturally into the story — the setting, the people, the mood):\n${parts.map((p) => `- ${p}`).join('\n')}`
+}
 
 // ----- Story generation (setup → 3 story options) -----
 
@@ -51,9 +66,11 @@ export function storyGenerationPrompt(args: {
   genre: string
   duration: string
   language: Language
+  context: ContextInput
 }): string {
-  const { players, genre, duration, language } = args
-  return `Generate 3 adventure stories for ${players} players in the ${genre} genre. Each story should be suitable for a ${duration} duration game. For each story, provide a title, a summary, exactly ${players} unique roles with a name, description, and a single powerful, one-time-use special ability. Also provide THREE unique, story-specific parameters. Each parameter must have a name and exactly 4 states, from best to worst. Output language must be ${langLabel(language)}.`
+  const { players, genre, duration, language, context } = args
+  const contextBlock = buildContextBlock(context)
+  return `Generate 3 adventure stories for ${players} players in the ${genre} genre. Each story should be suitable for a ${duration} duration game. For each story, provide a title, a summary, exactly ${players} unique roles with a name, description, and a single powerful, one-time-use special ability. Also provide THREE unique, story-specific parameters. Each parameter must have a name and exactly 4 states, from best to worst.${contextBlock} Output language must be ${langLabel(language)}.`
 }
 
 // ----- Custom story from user text -----
@@ -180,8 +197,10 @@ export function turnPrompt(args: {
   roles: Role[]
   choiceText: string
   language: Language
+  context: ContextInput
+  isFreeText?: boolean
 }): string {
-  const { currentTurn, maxTurns, duration, genre, parameters, roles, choiceText, language } = args
+  const { currentTurn, maxTurns, duration, genre, parameters, roles, choiceText, language, context, isFreeText } = args
   const availableAbilities = roles
     .filter((r) => !r.used)
     .map((r) => `Role '${r.name}' (index ${r.id}) has ability '${r.ability}' available.`)
@@ -189,6 +208,10 @@ export function turnPrompt(args: {
   const parameterStates = parameters
     .map((p) => `'${p.name}' is '${p.states[p.currentStateIndex]}'`)
     .join(', ')
+  const contextBlock = buildContextBlock(context)
+  const freeTextRule = isFreeText
+    ? ` 7. The players typed a custom action (not one of the preset choices). Interpret it within the current story phase context. If the action would abruptly end the story (e.g., "let's go home" during the climax), offer dramatic in-story consequences instead of literally ending the adventure.`
+    : ''
 
-  return `This is turn ${currentTurn} of a ${duration} length ${genre} game. The current parameter states are: ${parameterStates}. The following special abilities are available: ${availableAbilities || 'None'}. The players chose: "${choiceText}". Continue the story. Strictly follow these rules: 1. The new scene MUST reflect the current parameter states and the player's choice. 2. You MUST change the parameters based on the choice. For each parameter, provide its name and an integer change (-1 for worse, 0 for no change, 1 for better). 3. Provide 2-3 new team-based choices. 4. RARELY, you may offer a choice to use a special ability. If you do, set isAbility to true and provide the roleIndex (0-based) of the role whose ability is being offered. Do NOT offer abilities for roles that are not in the 'availableAbilities' list. 5. Pace the story towards a conclusion. If the turn count (${currentTurn}) is nearing the limit for the game length (${maxTurns}), you MUST start concluding the story. If this is the final turn, set gameOver to true and write a concluding gameOverText. The gameOverText should describe the final outcome and also reflect on the critical choice "${choiceText}" that led the players to this fate. 6. The output language for all player-facing text (scene, choices, gameOverText) MUST be ${langLabel(language)}.`
+  return `This is turn ${currentTurn} of a ${duration} length ${genre} game.${contextBlock} The current parameter states are: ${parameterStates}. The following special abilities are available: ${availableAbilities || 'None'}. The players chose: "${choiceText}". Continue the story. Strictly follow these rules: 1. The new scene MUST reflect the current parameter states and the player's choice. 2. You MUST change the parameters based on the choice. For each parameter, provide its name and an integer change (-1 for worse, 0 for no change, 1 for better). 3. Provide 2-3 new team-based choices. 4. RARELY, you may offer a choice to use a special ability. If you do, set isAbility to true and provide the roleIndex (0-based) of the role whose ability is being offered. Do NOT offer abilities for roles that are not in the 'availableAbilities' list. 5. Pace the story towards a conclusion. If the turn count (${currentTurn}) is nearing the limit for the game length (${maxTurns}), you MUST start concluding the story. If this is the final turn, set gameOver to true and write a concluding gameOverText. The gameOverText should describe the final outcome and also reflect on the critical choice "${choiceText}" that led the players to this fate. 6. The output language for all player-facing text (scene, choices, gameOverText) MUST be ${langLabel(language)}.${freeTextRule}`
 }

@@ -40,6 +40,7 @@ export async function generateStories(): Promise<void> {
         genre: settings.genre,
         duration: settings.duration,
         language: settings.language,
+        context: settings.context,
       }),
       storyGenerationSchema,
       settings.provider,
@@ -128,7 +129,7 @@ export async function startGameAndFirstTurn(): Promise<void> {
 
 export async function handlePlayerChoice(
   choiceText: string,
-  opts: { isFirstTurn?: boolean } = {},
+  opts: { isFirstTurn?: boolean; isFreeText?: boolean } = {},
 ): Promise<void> {
   const store = useGameStore.getState()
   store.setError(null)
@@ -145,6 +146,8 @@ export async function handlePlayerChoice(
         roles: store.roles,
         choiceText,
         language: store.settings.language,
+        context: store.settings.context,
+        isFreeText: opts.isFreeText,
       }),
       turnSchema,
       store.settings.provider,

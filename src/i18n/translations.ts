@@ -3,6 +3,22 @@ import type { Language } from '../game/types'
 interface StringTable {
   appTitle: string
   playerCountLabel: string
+  advancedToggle: string
+  locationLabel: string
+  locationPlaceholder: string
+  playersDescLabel: string
+  playersDescPlaceholder: string
+  vibeLabel: string
+  vibeAny: string
+  vibeLight: string
+  vibeTense: string
+  vibeDark: string
+  insideJokeLabel: string
+  insideJokePlaceholder: string
+  customChoiceLink: string
+  customChoicePlaceholder: string
+  customChoiceSubmit: string
+  customChoiceCancel: string
   genreLabel: string
   genreZombies: string
   genreFantasy: string
@@ -53,6 +69,22 @@ export const translations: Record<Language, StringTable> = {
   et: {
     appTitle: 'AI Seiklusmootor',
     playerCountLabel: 'Mängijate arv:',
+    advancedToggle: 'Kontekst (valikuline)',
+    locationLabel: 'Kus te praegu olete?',
+    locationPlaceholder: 'nt buss, köök, rannakuur, kontor...',
+    playersDescLabel: 'Kes on ruumis?',
+    playersDescPlaceholder: 'nt Mart, Mari ja Jaan — vanad koolikaaslased',
+    vibeLabel: 'Mängu meeleolu',
+    vibeAny: 'Mis tuleb, see tuleb',
+    vibeLight: 'Kerge & naljakas',
+    vibeTense: 'Pingeline & tõsine',
+    vibeDark: 'Tume & atmosfäärne',
+    insideJokeLabel: 'Midagi täna juhtus? (inside joke)',
+    insideJokePlaceholder: 'nt Mari kukkus täna jalgrattalt, Mart unustas sünnipäeva...',
+    customChoiceLink: 'Kirjuta oma valik',
+    customChoicePlaceholder: 'Mida grupp teeb?',
+    customChoiceSubmit: 'Kinnita',
+    customChoiceCancel: 'Tühista',
     genreLabel: 'Žanr:',
     genreZombies: 'Zombid',
     genreFantasy: 'Fantaasia',
@@ -103,6 +135,22 @@ export const translations: Record<Language, StringTable> = {
   en: {
     appTitle: 'AI Adventure Engine',
     playerCountLabel: 'Number of players:',
+    advancedToggle: 'Context (optional)',
+    locationLabel: 'Where are you right now?',
+    locationPlaceholder: 'e.g. bus, kitchen, beach house, office...',
+    playersDescLabel: 'Who is in the room?',
+    playersDescPlaceholder: 'e.g. Alex, Sarah, and John — old school friends',
+    vibeLabel: 'Game mood',
+    vibeAny: 'Whatever happens, happens',
+    vibeLight: 'Light & humorous',
+    vibeTense: 'Tense & serious',
+    vibeDark: 'Dark & atmospheric',
+    insideJokeLabel: "Anything that happened today? (inside joke)",
+    insideJokePlaceholder: "e.g. Alex's car broke down, Sarah forgot someone's birthday...",
+    customChoiceLink: 'Write your own choice',
+    customChoicePlaceholder: 'What does the group do?',
+    customChoiceSubmit: 'Confirm',
+    customChoiceCancel: 'Cancel',
     genreLabel: 'Genre:',
     genreZombies: 'Zombies',
     genreFantasy: 'Fantasy',
