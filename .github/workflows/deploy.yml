@@ -6,16 +6,16 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-v1:
     runs-on: [self-hosted, linux, homelab]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy static files
+      - name: Deploy V1 static files
         run: |
-          for f in index.html app.js style.css; do
+          for f in legacy/v1/index.html legacy/v1/app.js legacy/v1/style.css; do
             if [ ! -f "$f" ]; then
               echo "ERROR: $f missing — checkout failed or file was renamed" >&2
               exit 1
@@ -23,5 +23,5 @@ jobs:
           done
           mkdir -p /srv/data/games/adventure/app
           rm -rf /srv/data/games/adventure/app/*
-          cp index.html app.js style.css /srv/data/games/adventure/app/
-          echo "Deployed at $(date)"
+          cp legacy/v1/index.html legacy/v1/app.js legacy/v1/style.css /srv/data/games/adventure/app/
+          echo "V1 deployed at $(date)"

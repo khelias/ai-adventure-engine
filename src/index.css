@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-neutral-950 text-neutral-100 antialiased;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@layer components {
+  .input-base {
+    @apply bg-neutral-900 border border-neutral-700 rounded px-3 py-2 text-neutral-100 focus:outline-none focus:border-neutral-500;
+  }
+
+  .btn-primary {
+    @apply bg-neutral-100 text-neutral-900 font-medium px-4 py-2 rounded hover:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-neutral-900 border border-neutral-700 text-neutral-100 px-4 py-2 rounded hover:border-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+  }
+
+  .card {
+    @apply bg-neutral-900 border border-neutral-800 rounded p-4;
+  }
+}

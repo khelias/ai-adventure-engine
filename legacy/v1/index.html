@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title will be set by JavaScript -->
+    <title>AI Seiklusmootor</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Link to your JavaScript file. 'defer' ensures it runs after the HTML is loaded. -->
+    <!-- Version query busts CDN/browser cache when app.js contract changes. Bump on breaking changes. -->
+    <script src="app.js?v=3" defer></script>
+</head>
+<body>
+
+<div class="container">
+    <!-- Samm 1: Mängu Seadistamine -->
+    <div id="setup-screen" class="screen active">
+        <div class="language-switcher">
+            <button id="lang-et">🇪🇪 Eesti</button>
+            <button id="lang-en">🇬🇧 English</button>
+        </div>
+        <h1 data-i18n="appTitle">AI Seiklusmootor</h1>
+        <div class="form-group">
+            <label for="player-count" data-i18n="playerCountLabel">Mängijate arv:</label>
+            <select id="player-count">
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="genre" data-i18n="genreLabel">Žanr:</label>
+            <select id="genre">
+                <option value="Zombies" data-i18n="genreZombies" selected>Zombid</option>
+                <option value="Fantasy" data-i18n="genreFantasy">Fantaasia</option>
+                <option value="Sci-Fi" data-i18n="genreSciFi">Ulme</option>
+                <option value="Thriller" data-i18n="genreThriller">Põnevik</option>
+                <option value="Cyberpunk" data-i18n="genreCyberpunk">Küberpunk</option>
+                <option value="Post-Apocalyptic" data-i18n="genrePostApocalyptic">Postapokalüptiline</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="game-duration" data-i18n="durationLabel">Mängu kestvus:</label>
+            <select id="game-duration">
+                <option value="Short" data-i18n="durationShort">Lühike (~5-8 käiku)</option>
+                <option value="Medium" data-i18n="durationMedium" selected>Keskmine (~9-15 käiku)</option>
+                <option value="Long" data-i18n="durationLong">Pikk (16+ käiku)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="ai-provider" data-i18n="providerLabel">AI mudel:</label>
+            <select id="ai-provider">
+                <option value="gemini" data-i18n="providerGemini" selected>Gemini (kiire, odav)</option>
+                <option value="claude" data-i18n="providerClaude">Claude (parem kvaliteet)</option>
+            </select>
+        </div>
+        <button id="generate-story-button">
+            <span data-i18n="generateStoryBtn">Genereeri Lugu</span>
+        </button>
+        <div id="setup-error" class="error-message" style="display: none;"></div>
+    </div>
+
+    <!-- Samm 2: Loo Valik -->
+    <div id="story-choice-screen" class="screen">
+        <h2 data-i18n="storyChoiceTitle">Vali seikluse algus</h2>
+        <div id="story-options-container"></div>
+        <hr style="border-color: var(--tertiary-bg); width: 100%;">
+        <h3 data-i18n="customStoryTitle">...või kirjuta omaenda stsenaarium:</h3>
+        <div class="form-group">
+            <textarea id="custom-story-input" rows="4" data-i18n-placeholder="customStoryPlaceholder"></textarea>
+            <button id="choose-custom-story-button">
+                <span data-i18n="useCustomStoryBtn">Kasuta oma lugu</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Samm 3: Rollide Määramine -->
+    <div id="role-assignment-screen" class="screen">
+        <h2 id="chosen-story-title"></h2>
+        <div class="scene-box">
+            <p id="chosen-story-summary"></p>
+        </div>
+        <h3 data-i18n="roleAssignTitle">Määra rollid ja nimed</h3>
+        <div id="roles-container" style="display: grid; gap: 1rem;"></div>
+        <button id="start-game-button">
+            <span data-i18n="startGameBtn">Alusta Mängu!</span>
+        </button>
+    </div>
+
+    <!-- Samm 4: Mängu Tsükkel -->
+    <div id="game-screen" class="screen">
+        <div id="game-screen-loader" style="display: none;">
+            <div class="loader"></div>
+        </div>
+        <div id="game-info">
+            <span id="turn-counter"></span>
+            <span id="game-length-display"></span>
+        </div>
+        <h2 data-i18n="parametersTitle">Parameetrid</h2>
+        <div id="parameters-container"></div>
+        <h2 data-i18n="sceneTitle">Praegune olukord</h2>
+        <div id="scene-description" class="scene-box"></div>
+        <h3 data-i18n="choiceTitle">Mida te teete?</h3>
+        <div id="choices-container"></div>
+        <div id="game-error" class="error-message" style="display: none;"></div>
+    </div>
+    
+    <!-- Samm 5: Mängu Lõpp -->
+    <div id="game-over-screen" class="screen">
+        <h2 id="game-over-title"></h2>
+        <div class="game-over-box">
+            <h3 data-i18n="summaryTitle">Kokkuvõte:</h3>
+            <p id="game-over-text"></p>
+        </div>
+        <div class="form-group">
+            <label for="sequel-text" data-i18n="sequelLabel">Järjeloo tekst (kopeeri see uue mängu alustamiseks):</label>
+            <textarea id="sequel-text" rows="5" readonly></textarea>
+        </div>
+        <div style="display: flex; gap: 1rem; width: 100%;">
+            <button id="restart-button" style="flex-grow: 1;">
+                <span data-i18n="restartBtn">Alusta uuesti</span>
+            </button>
+            <button id="continue-sequel-button" style="display: none; flex-grow: 1;">
+                <span data-i18n="continueSequelBtn">Jätka järjelooga</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
