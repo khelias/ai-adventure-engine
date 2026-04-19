@@ -274,10 +274,10 @@ ${parametersBlock}
 
 WRITING STYLE (follow this closely):
 ${language === 'et'
-  ? `Stseen: "Koridori lõpus pilgub valgus. Juri hiilides lähemale — äkki praak, põrandalaud. Vaikus. Siis askeldamine keldriluugi taga. «Seal on keegi,» sosistab ta, «ja ta on meid kuulnud.»"
-Valikud: "Põgeme tagasi" / "Vaatan kes seal on"`
-  : `Scene: "A light flickers at the corridor's end. Juri creeps closer — then crack, a floorboard. Silence. Then shuffling behind the cellar hatch. «Someone's there,» he whispers, «and they heard us.»"
-Choices: "Fall back" / "Check who's there"`}
+  ? `Stseen: "Koridor lõpeb raudukse ees. Kuskil seina taga kriibib miski aeglaselt metalli vastu — nagu küüned, kes otsivad pragu. Teie taskulambi valguskiir väriseb, sest käsi, mis seda hoiab, ei suuda enam paigal püsida. Õhk haiseb rooste ja millegi magusalt mädaneva järele."
+Valikud: "Avame ukse vaikselt ja vaatame, mis teisel pool on." / "Kustutame lambi ja ootame, kuni heli kaugeneb."`
+  : `Scene: "The corridor ends at an iron door. Behind the wall, something scrapes slowly against metal — like fingernails searching for a crack. Your torchlight trembles, because the hand holding it can no longer stay still. The air smells of rust and something sweetly rotting."
+Choices: "Open the door quietly and see what's on the other side." / "Kill the light and wait for the sound to fade."`}
 
 CORE RULES:
 1. The scene must vividly reflect the current parameter states — they are the living pulse of the story.
