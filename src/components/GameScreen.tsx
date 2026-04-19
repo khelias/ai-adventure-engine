@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { handlePlayerChoice } from '../game/actions'
-import type { Choice } from '../game/types'
+import type { Choice, Parameter } from '../game/types'
 
 export function GameScreen() {
   const language = useGameStore((s) => s.settings.language)
@@ -63,29 +63,24 @@ export function GameScreen() {
       </header>
 
       <div className="card">
-        <h3 className="text-sm text-neutral-400 mb-3">{strings.parametersTitle}</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <h3 className="text-xs text-neutral-500 uppercase tracking-wider mb-3">{strings.parametersTitle}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {parameters.map((p) => (
-            <div key={p.name} className="bg-neutral-950 border border-neutral-800 rounded p-3">
-              <div className="text-sm text-neutral-400">{p.name}</div>
-              <div className="font-semibold mt-1">
-                {p.states[p.currentStateIndex]}
-              </div>
-            </div>
+            <ParameterBar key={p.name} param={p} />
           ))}
         </div>
       </div>
 
-      <div className="card space-y-2">
-        <h3 className="text-sm text-neutral-400">{strings.sceneTitle}</h3>
+      <div className="rounded border border-neutral-800 bg-neutral-900/60 px-6 py-6 space-y-4">
+        <h3 className="text-xs text-neutral-500 uppercase tracking-wider">{strings.sceneTitle}</h3>
         {isLoading && !sceneText ? (
-          <p className="text-neutral-500">{strings.loading}</p>
+          <p className="text-neutral-500 scene-text">{strings.loading}</p>
         ) : (
           sceneText
             .split('\n')
             .filter(Boolean)
             .map((paragraph, i) => (
-              <p key={i} className="leading-relaxed">
+              <p key={i} className="scene-text">
                 {paragraph}
               </p>
             ))
@@ -166,5 +161,36 @@ export function GameScreen() {
 
       {error ? <p className="text-red-400 text-sm">{error}</p> : null}
     </section>
+  )
+}
+
+function ParameterBar({ param }: { param: Parameter }) {
+  const maxIdx = param.states.length - 1
+  const fill = maxIdx > 0 ? (maxIdx - param.currentStateIndex) / maxIdx : 1
+  const isCritical = param.currentStateIndex >= maxIdx
+
+  const barColor = isCritical
+    ? 'bg-red-600'
+    : fill > 0.66
+      ? 'bg-emerald-500'
+      : fill > 0.33
+        ? 'bg-amber-500'
+        : 'bg-orange-500'
+
+  return (
+    <div className={isCritical ? 'animate-pulse' : ''}>
+      <div className="flex justify-between items-baseline mb-1.5">
+        <span className="text-xs text-neutral-400 truncate pr-2">{param.name}</span>
+        <span className={`text-xs font-medium shrink-0 ${isCritical ? 'text-red-400' : 'text-neutral-300'}`}>
+          {param.states[param.currentStateIndex]}
+        </span>
+      </div>
+      <div className="h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ease-out ${barColor}`}
+          style={{ width: `${Math.max(fill * 100, isCritical ? 0 : 4)}%` }}
+        />
+      </div>
+    </div>
   )
 }
