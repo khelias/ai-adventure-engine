@@ -46,7 +46,9 @@ on lame*. Seltskonnamängus peab kirjutamine *lööma*.
 - **Tool use**: AI ei "loe" state'i promptist, vaid *kutsub* tool'e:
   `damage_character`, `introduce_npc`, `raise_stakes`, `whisper_to(player)`.
   Struktuurne, kontrollitud, järjepidev.
-- **Gemini jääb fallback'iks** (kiire/odav) + hiljem **local Ollama** GPU-ga.
+- **Gemini jääb fallback'iks** (kiire/odav). Kohalik mudel (Ollama) pole V2-s —
+  tool-use töökindlus kohalikel mudelitel pole veel piisav, latents liiga kõrge.
+  Vt "V3 suunad" allpool.
 
 ### 3. Saladused / privaatne info
 Praegune mäng = 100% avalik info, kõik näevad sama ekraani. V2-s AI saab
@@ -104,6 +106,32 @@ V1 pinge oli ühedimensiooniline (ainult grupi parameetrid). V2-s kolm kihti
 3. **Erivõimed** — ühekordne, dramaatiline, seltskonna-arutelu tekitav
 
 Iga kiht töötab iseseisvalt, koos loovad mitmedimensioonilise pinge.
+
+---
+
+## V2 disaini invariandid
+
+Need on **mittekaubanduslikud reeglid** kogu V2-le. Iga faas peab neid
+järgima — kui disaini-otsus rikub invarianti, otsus muutub, mitte invariant.
+
+1. **Keegi ei istu pealt.** Kui karakter "sureb" narratiivselt, mängija jätkab
+   uues rollis: **haavatud** (vähendatud agentsus, erivõime kadunud),
+   **vaim/nõuandja** (eksklusiivsed whisperid — "sa näed rohkem kui elusad"),
+   või **zombi/muundunud** (genre-spetsiifiline, vahetab poolt, saab
+   vastaspoole whispereid). Surm muudab **osaluse-modelli**, mitte ei eemalda
+   mängijat laualt. 20-30min mäng kus keegi 5. käigul kaotab kohti = seltskond
+   ei taha enam mängida.
+
+2. **Fast-path on pühak.** Setup ei tohi kesta üle 60 sekundi kui kasutaja
+   tahab mängida *nüüd*. Kõik advanced-väljad (kontekst, vibe, inside joke)
+   on optional. 1-click start peab tegema mängitava mängu targade defaultidega.
+
+3. **Lugeja juhib tempot.** UI ei võta lugejalt dramaatilist pausi. Ei
+   auto-advance, ei timer. "Valmis?" nupp lugeja käes.
+
+4. **Pass-the-phone ritual.** Saladused jõuavad õige mängijani turvaliselt:
+   **hold-to-reveal** UI fundament, mitte gimmick. Vabastamine = tekst kaob
+   kohe. Kõrvaltvaatajal pole akna.
 
 ---
 
@@ -165,7 +193,12 @@ tundama nagu **raamatuleheküljel**, mitte veebivormil.
 6. **Karakteri-kaardid isikupäraga** — iga roll on *kaart*:
    - Nimi (mängija poolt muudetav), lühike kirjeldus
    - Erivõime selgelt näha (kasutatud = kaart muutub halliks, grafisti-märgistusega)
-   - Staatus: kas sellel mängijal on saladus (📬 ikoon), kas ta on haavatud
+   - Staatus-animatsioonid: **alive → wounded → ghost → zombie** (mitte-
+     elimineerimise invariant). Iga staatus on visuaalselt eristuv:
+     - *wounded* — kaart saab kriimu / sidemete tekstuuri, nimi kaldkirjas
+     - *ghost* — kaart muutub läbipaistvaks, väike halo ikoon, "vaim" silt
+     - *zombie* — kaart roostepunaseks, silmad nihkunud, silt "muundunud"
+   - Kas sellel mängijal on saladus (📬 ikoon)
    - Placeholder-portree (V3-s AI-genereeritud, V2-s geomeetriline abstraktsioon žanri-teemas)
 
 7. **Mobile-first** — see on pass-the-phone mäng:
@@ -187,12 +220,24 @@ tundama nagu **raamatuleheküljel**, mitte veebivormil.
 
 ### Konkreetne komponendi-pesa
 
-Faas 0-s ehitame baasi:
+Faas 0-s ehitame baasi, hilisemates faasides täiendame:
 - `SceneView` — narratiivi täisekraan-vaade, serif typography
-- `ChoiceCards` — valikud kaartidena stseeni all
+- `ChoiceCards` — valikud kaartidena stseeni all: **2-3 AI-genereeritud nuppu
+  primary + väike link "Või kirjutage oma valik →"**, mis avab tekstivälja.
+  Hübriid-mudel: kiirus default, loovus 1-tap kaugusel (mitte 3 samaväärset valikut)
 - `ParameterDashboard` — horisontaalne riba ülaosas, animeeritavad gauge'id
-- `CharacterCard` — rollide vaade, saab välja-libistada sidepaneelist
-- `WhisperOverlay` — saladuse täisekraan-ülekate "anna telefon Markole"
+- `CharacterCard` — rollide vaade, saab välja-libistada sidepaneelist,
+  staatus-animatsioonid (alive/wounded/ghost/zombie)
+- `WhisperOverlay` (Faas 3) — saladuse täisekraan-ülekate, **hold-to-reveal**
+  mehaanikaga: blur'itud tekst keskel, "[Marko], vajuta ja hoia et lugeda",
+  tekst ilmub hoides, vabastades kaob kohe. Lühikesed whispered (max 3-4 rida),
+  pika teksti korral jaotatakse tükkideks ("1/3 — hoia edasi")
+- `GhostView` (Faas 3) — surnud/vaim-mängija vaade. Visuaalselt eristuv
+  (hämar ümbris, läbipaistev stiil). Näeb eksklusiivseid whispereid mida
+  elusad ei saa. Valikud piiratud: "sosista elusatele" tüüpi tegevused.
+- `PhaseIndicator` (Faas 2) — diskreetne progress-visuaal ülaosas mis
+  väljendab loo kaare faasi (setup / tõus / midpoint / climax / resolutsioon),
+  mitte "Käik 7/15" numbri-tekst. Lugeja näeb *kus loos oleme*.
 - `GenreTheme` — CSS-muutujate provider, lülitab värvid/tekstuurid
 
 Kõik shadcn-primitive'ide peal, mitte nullist. Tailwind + CSS-muutujad per-žanr.
@@ -218,29 +263,54 @@ Iga faas = eraldi PR, eraldi deploy, mängitav. Pärast iga faasi testid sõprad
 - Proxy sama, vana V1 turn-loop kopeeritud üle et miski oleks juba mängitav
 - Deploy `/adventure-v2/` staging'usse
 
-### Faas 1 — Kontekst-teadlik setup (~1 sessioon)
+### Faas 1 — Kontekst-teadlik setup + hübriid-valikud (~1 sessioon)
 - Setup ekraan: žanr (zombi default), mängijate arv, kestvus — *see on FAST-PATH*
 - "Advanced" paneel (optional): kus oleme, kes ruumis, vibe, inside joke
 - Proxy prompt laieneb: kontekst-väljad sisestatakse system prompt'i
+- **Hübriid-valikute UI**: `ChoiceCards` renderdab 2-3 AI-nuppu primary +
+  sekundaarne link "Või kirjutage oma valik →" mis avab tekstivälja. Vabateksti
+  submit saadab `choiceText`-i AI-le samamoodi kui nupuvajutus (backend ei
+  vaja muudatust). Mobiilisõbralik: reader ei tippi kui seltskond ei nõua
 - Test: mäng resoneerib praeguse kohaga / grupiga
 
-### Faas 2 — AI upgrade (~1 sessioon)
+### Faas 2 — AI upgrade + pacing (~1 sessioon)
 - Proxy: Anthropic SDK integration (Sonnet 4.6 default)
 - Prompt caching: süsteem-prompt + lugu cache'itud, turn variable osa odav
 - Tool use: `update_parameter`, `damage_character`, `introduce_npc`,
   `raise_stakes` — state muutused lähevad tool call'idena, mitte JSON-response'is
+- **Phase-aware pacing**: `getStoryPhase(turn, maxTurns)` → tagastab faasi:
+  *setup / inciting-incident / rising-stakes / midpoint-reversal / climax /
+  resolution*. Iga käigu prompt saab faasipõhise süsteemi-instruktsiooni:
+  "sa oled midpoint-reversal faasis, mängijate uskumus on valesti, pööra
+  laud". Deterministlik funktsioon turn/maxTurns'ist → cache'ihits säilib.
+  *Näide medium (12 käiku): 1-3 setup, 4 inciting, 5-8 rising, 9 midpoint,
+  10-11 climax, 12 resolution.* Lahendab V1 "keskel jääb igavaks" probleemi.
 - Fallback Gemini'le kui Claude võti puudub / ei tööta
 
-### Faas 3 — Saladused / whispers (~1-2 sessiooni)
-- Tool: `whisper_to_player(playerIndex, message)`
-- UI: "anna telefon Markole" ekraan, Marko näeb privaatset teksti, peidab enne tagasi
-- AI saab saladusi kaaluda järgmistes käikudes (cache'itud, ta mäletab)
-- Test: kas seltskonnas *tõesti* tekib draama / arutelu / kahtlus
+### Faas 3 — Saladused + mitte-elimineerimine (~2 sessiooni)
+- Tool: `whisper_to_player(playerIndex, message)` — privaatne info ühele
+- Tool: `transition_player_state(playerIndex, "wounded"|"ghost"|"zombie")` —
+  kui karakter "sureb" narratiivselt, muutub staatus (mitte eemaldamine)
+- **Hold-to-reveal UX** (`WhisperOverlay`): blur'itud tekst + "Marko, vajuta
+  ja hoia et lugeda". Vabastades kaob kohe. Pikk tekst tükkideks jaotatud.
+- **GhostView**: surnud mängija saab uue vaate — eksklusiivseid whispereid
+  ("sa näed mida grupp ei näe"), piiratud valikud ("sosista elusatele").
+  AI teab keda on surnud ja mis info neile anda — kontekst-state tool use
+  kaudu.
+- *Wounded*: erivõime kadunud, mängija jääb avalikule vaatele, aga AI ei
+  paku talle aktiivseid valikuid (võib ikkagi arutelus osa võtta)
+- *Zombie* (zombi-genre): vahetab poolt, AI saadab vastaspoole whispere
+  ("sa tead kus grupp varjub, mida sa teed?"). Plot twist.
+- Test: kas seltskonnas *tõesti* tekib draama / arutelu / kahtlus. Kas surm
+  ei muuda kedagi passiivseks vaatlejaks?
 
 ### Faas 4 — Design polish (~1-2 sessiooni)
 - Tüpograafia viimistlus (lugeja-optimeeritud, suur font, pikad read)
 - Pacing: stseeni pikkus varieerub (mõned lühikesed-põrutavad, mõned pikemad-dramaatilised)
 - Parameetri muutuste animatsioon (kui "moraal" kukub, lugeja näitab dramaatiliselt)
+- `PhaseIndicator` komponent — progress-visuaal loo kaarele (mitte turn-number)
+- Žanripõhine teemastamine (`GenreTheme` lülitub värvid/tekstuurid/fondid)
+- Staatuse-animatsioonid karakteri-kaartidel (wounded/ghost/zombie üleminekud)
 - Optional TTS: ElevenLabs eesti hääl (lugeja saab kuulata / puhata)
 
 ### Faas 5 — Persistens (~1 sessioon, hilisem)
@@ -248,11 +318,6 @@ Iga faas = eraldi PR, eraldi deploy, mängitav. Pärast iga faasi testid sõprad
 - Mängu salvestus + resume hiljem
 - Jaga-link: "vaata mida me eile mängisime" URL
 - Mängu ajalugu: tagasi vaatamine
-
-### Faas 6 — Local GPU Ollama (~hiljem, GPU tulekul)
-- Ollama adapter proxy'sse (qwen2.5:14b või gemma3:12b — 16GB GPU-le mahub)
-- UI: provider selector laieneb "tasuta kohalik" valikuga
-- Test: eesti keele kvaliteet kohalikul mudelil — vs. Claude
 
 ---
 
@@ -280,13 +345,28 @@ eraldi laste-fookusega vajadus — see on V2.5+ laiendus, mitte keelatud.
 
 ---
 
-## Edasised mõtted (V2.5 / V3, mitte nüüd)
+## V3 suunad (mitte V2)
 
-- **Pildid**: nano-banana / Flux per-stseen, ~$0.003/pilt
-- **TTS**: ElevenLabs eesti hääl, lugeja saab puhata
-- **NPC agendid**: iga oluline tegelane = mini-agent oma mäluga (tool use + state)
-- **Kampaania**: mitu seostatud sessiooni, mäng kestab mitu õhtut
-- **Laste variant**: tumedad teemad filtreeritud, žanrid kohandatud
+Need on **kaalutud aga V2-st välja jäetud** — põhjustega.
+
+- **Lokaalne mudel (Ollama)**: 16GB GPU-ga qwen2.5:14b või gemma3:12b mahub.
+  V2-st välja sest (a) tool-use töökindlus kohalikel mudelitel on praegu 5-10%
+  malformatsioon → iga Faas 2/3 tööriist muutub ebausaldusväärseks, (b) latents
+  10-15 sek/turn vs Claude Sonnet 2-3 sek cache'itud — rütm kukub, (c) eesti
+  keele loominguline kvaliteet jääb märgatavalt alla. **Adapter-arhitektuur
+  proxies juba olemas** — GPU tulekul ja tingimuste paranedes 2-3 päeva töö
+  plugida sisse. Ei ole planeeritud faas, vaid opportunistlik lisa.
+- **Pildid**: nano-banana / Flux per-stseen, ~$0.003/pilt. Atmosfääri hüpe,
+  aga paneb rütmi lõksu (genereerimine 5-10 sek). Optional V3.
+- **TTS laiemalt**: ElevenLabs eesti hääl kõigile mängijatele mitte ainult
+  lugejale. Kallis ($3/mäng), latents lõhub tempot. Ainult kui inimlik
+  lugeja ei saa.
+- **NPC agendid**: iga oluline tegelane = mini-agent oma mäluga (tool use +
+  persistence state). Vajab Faas 5 persistents kihti eelduseks.
+- **Kampaania**: mitu seostatud sessiooni, mäng kestab mitu õhtut. Vajab
+  persistens + jaga-linki + tegelaste-läbivust. Suurim nishi laiendus.
+- **Laste variant**: eraldi projekt, filtreeritud teemad, lühemad kestused,
+  kohandatud žanrid.
 
 ---
 
