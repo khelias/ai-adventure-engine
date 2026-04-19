@@ -302,9 +302,13 @@ CORE RULES:
     ? '\nNOTE: Players typed a custom action. Interpret it within the current phase. If the action would abruptly end the story, offer dramatic in-story consequences instead.'
     : ''
 
+  const langReminder = language === 'et'
+    ? 'LANGUAGE REMINDER: Scene and all choices MUST be written in Estonian (eesti keel). Natural, vivid, colloquial — not translated from English.\n\n'
+    : ''
+
   const user = `TURN ${currentTurn} / ${maxTurns}
 
-${phaseInstruction(phase)}
+${langReminder}${phaseInstruction(phase)}
 
 CURRENT PARAMETER STATES:
 ${currentStates}
