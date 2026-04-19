@@ -3,6 +3,13 @@ import type { JsonSchema } from '../api/adventure'
 
 const langLabel = (lang: Language) => (lang === 'et' ? 'Estonian' : 'English')
 
+function langInstruction(lang: Language): string {
+  if (lang === 'et') {
+    return 'LANGUAGE: Write all player-facing text in natural Estonian (eesti keel). This is a party game for Estonian adults — use vivid, engaging, colloquial language with its own rhythm and idioms. Do NOT translate from English patterns. Avoid anglicisms. The writing should feel like a native Estonian author, not a translation.'
+  }
+  return 'LANGUAGE: Write all player-facing text in English.'
+}
+
 function buildContextBlock(ctx: ContextInput): string {
   const parts: string[] = []
   if (ctx.location) parts.push(`Physical setting: "${ctx.location}"`)
@@ -70,7 +77,7 @@ export function storyGenerationPrompt(args: {
 }): string {
   const { players, genre, duration, language, context } = args
   const contextBlock = buildContextBlock(context)
-  return `Generate 3 adventure stories for ${players} players in the ${genre} genre. Each story should be suitable for a ${duration} duration game. For each story, provide a title, a summary, exactly ${players} unique roles with a name, description, and a single powerful, one-time-use special ability. Also provide THREE unique, story-specific parameters. Each parameter must have a name and exactly 4 states, from best to worst.${contextBlock} Output language must be ${langLabel(language)}.`
+  return `${langInstruction(language)}\n\nGenerate 3 adventure stories for ${players} players in the ${genre} genre. Each story should be suitable for a ${duration} duration game. For each story, provide a title, a summary, exactly ${players} unique roles with a name, description, and a single powerful, one-time-use special ability. Also provide THREE unique, story-specific parameters. Each parameter must have a name and exactly 4 states, from best to worst.${contextBlock}`
 }
 
 // ----- Custom story from user text -----
@@ -213,5 +220,5 @@ export function turnPrompt(args: {
     ? ` 7. The players typed a custom action (not one of the preset choices). Interpret it within the current story phase context. If the action would abruptly end the story (e.g., "let's go home" during the climax), offer dramatic in-story consequences instead of literally ending the adventure.`
     : ''
 
-  return `This is turn ${currentTurn} of a ${duration} length ${genre} game.${contextBlock} The current parameter states are: ${parameterStates}. The following special abilities are available: ${availableAbilities || 'None'}. The players chose: "${choiceText}". Continue the story. Strictly follow these rules: 1. The new scene MUST reflect the current parameter states and the player's choice. 2. You MUST change the parameters based on the choice. For each parameter, provide its name and an integer change (-1 for worse, 0 for no change, 1 for better). 3. Provide 2-3 new team-based choices. 4. RARELY, you may offer a choice to use a special ability. If you do, set isAbility to true and provide the roleIndex (0-based) of the role whose ability is being offered. Do NOT offer abilities for roles that are not in the 'availableAbilities' list. 5. Pace the story towards a conclusion. If the turn count (${currentTurn}) is nearing the limit for the game length (${maxTurns}), you MUST start concluding the story. If this is the final turn, set gameOver to true and write a concluding gameOverText. The gameOverText should describe the final outcome and also reflect on the critical choice "${choiceText}" that led the players to this fate. 6. The output language for all player-facing text (scene, choices, gameOverText) MUST be ${langLabel(language)}.${freeTextRule}`
+  return `${langInstruction(language)}\n\nThis is turn ${currentTurn} of a ${duration} length ${genre} game.${contextBlock} The current parameter states are: ${parameterStates}. The following special abilities are available: ${availableAbilities || 'None'}. The players chose: "${choiceText}". Continue the story. Strictly follow these rules: 1. The new scene MUST reflect the current parameter states and the player's choice. 2. You MUST change the parameters based on the choice. For each parameter, provide its name and an integer change (-1 for worse, 0 for no change, 1 for better). 3. Provide 2-3 new team-based choices. 4. RARELY, you may offer a choice to use a special ability. If you do, set isAbility to true and provide the roleIndex (0-based) of the role whose ability is being offered. Do NOT offer abilities for roles that are not in the 'availableAbilities' list. 5. Pace the story towards a conclusion. If the turn count (${currentTurn}) is nearing the limit for the game length (${maxTurns}), you MUST start concluding the story. If this is the final turn, set gameOver to true and write a concluding gameOverText. The gameOverText should describe the final outcome and also reflect on the critical choice "${choiceText}" that led the players to this fate.${freeTextRule}`
 }
