@@ -144,6 +144,7 @@ export async function handlePlayerChoice(
       summary: store.summary,
       parameters: store.parameters,
       roles: store.roles,
+      recentScenes: store.recentScenes,
       choiceText,
       language: store.settings.language,
       context: store.settings.context,

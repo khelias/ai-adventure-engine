@@ -49,6 +49,7 @@ interface GameState {
   maxTurns: number
   sceneText: string
   choices: Choice[]
+  recentScenes: string[]
 
   // End state
   gameOverKind: GameOverKind
@@ -91,6 +92,7 @@ const initialGameSlice = {
   maxTurns: 0,
   sceneText: '',
   choices: [] as Choice[],
+  recentScenes: [] as string[],
   gameOverKind: null as GameOverKind,
   gameOverTitle: '',
   gameOverText: '',
@@ -146,7 +148,14 @@ export const useGameStore = create<GameState & GameActions>()((set) => ({
     })),
 
   setTurnResult: ({ sceneText, choices, parameters, roles, currentTurn }) =>
-    set({ sceneText, choices, parameters, roles, currentTurn }),
+    set((state) => ({
+      sceneText,
+      choices,
+      parameters,
+      roles,
+      currentTurn,
+      recentScenes: [...state.recentScenes, sceneText].slice(-2),
+    })),
 
   setGameOver: (kind, title, text) =>
     set({

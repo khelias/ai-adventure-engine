@@ -157,9 +157,9 @@ export function sequelPrompt(args: {
 export type StoryPhase = 'setup' | 'inciting' | 'rising' | 'climax' | 'resolution'
 
 export function getStoryPhase(turn: number, maxTurns: number): StoryPhase {
-  if (turn <= 1) return 'setup'
+  if (turn <= Math.max(1, Math.round(maxTurns * 0.12))) return 'setup'
   if (turn >= maxTurns) return 'resolution'
-  const incitingEnd = Math.max(2, Math.round(maxTurns * 0.25))
+  const incitingEnd = Math.max(2, Math.round(maxTurns * 0.30))
   const risingEnd = Math.round(maxTurns * 0.67)
   const climaxEnd = Math.round(maxTurns * 0.87)
   if (turn <= incitingEnd) return 'inciting'
@@ -239,12 +239,13 @@ export function turnPrompt(args: {
   summary: string
   parameters: Parameter[]
   roles: Role[]
+  recentScenes: string[]
   choiceText: string
   language: Language
   context: ContextInput
   isFreeText?: boolean
 }): TurnPromptResult {
-  const { currentTurn, maxTurns, genre, title, summary, parameters, roles, choiceText, language, context, isFreeText } = args
+  const { currentTurn, maxTurns, genre, title, summary, parameters, roles, recentScenes, choiceText, language, context, isFreeText } = args
 
   const phase = getStoryPhase(currentTurn, maxTurns)
   const contextBlock = buildContextBlock(context)
@@ -271,6 +272,13 @@ ${rolesBlock}
 PARAMETERS (each has 4 states, best → worst):
 ${parametersBlock}
 
+WRITING STYLE (follow this closely):
+${language === 'et'
+  ? `Stseen: "Koridori lõpus pilgub valgus. Juri hiilides lähemale — äkki praak, põrandalaud. Vaikus. Siis askeldamine keldriluugi taga. «Seal on keegi,» sosistab ta, «ja ta on meid kuulnud.»"
+Valikud: "Põgeme tagasi" / "Vaatan kes seal on"`
+  : `Scene: "A light flickers at the corridor's end. Juri creeps closer — then crack, a floorboard. Silence. Then shuffling behind the cellar hatch. «Someone's there,» he whispers, «and they heard us.»"
+Choices: "Fall back" / "Check who's there"`}
+
 CORE RULES:
 1. The scene must vividly reflect the current parameter states — they are the living pulse of the story.
 2. At least one parameter MUST change by ≥1 step every turn. Consequential choices may warrant 2-step changes. All-zero turns are not allowed.
@@ -278,7 +286,8 @@ CORE RULES:
 4. parameter.change: +1 improves (index moves toward best), -1 worsens (index moves toward worst).
 5. Abilities: offer only during rising or climax phases, when dramatically earned. Set isAbility: true and roleIndex (0-based). During setup, inciting, and resolution, do NOT offer abilities.
 6. If any parameter reaches its worst state, do NOT set gameOver — the engine handles this. Write the scene normally.
-7. On the final turn, set gameOver: true with a gameOverText that reflects the full journey.`
+7. On the final turn, set gameOver: true with a gameOverText that reflects the full journey.
+8. Vary scene length to control pacing: short punchy scenes (2-3 sentences) for action and shock; longer atmospheric scenes (5-7 sentences) for tension build-up. Never uniform length.`
 
   const currentStates = parameters
     .map((p) => {
@@ -306,11 +315,15 @@ CORE RULES:
     ? 'LANGUAGE REMINDER: Scene and all choices MUST be written in Estonian (eesti keel). Natural, vivid, colloquial — not translated from English.\n\n'
     : ''
 
+  const recentScenesBlock = recentScenes.length > 0
+    ? `STORY SO FAR (recent scenes — maintain continuity, reference past events):\n${recentScenes.map((s, i) => `[Scene ${currentTurn - recentScenes.length + i}] ${s}`).join('\n\n')}\n\n`
+    : ''
+
   const user = `TURN ${currentTurn} / ${maxTurns}
 
 ${langReminder}${phaseInstruction(phase)}
 
-CURRENT PARAMETER STATES:
+${recentScenesBlock}CURRENT PARAMETER STATES:
 ${currentStates}
 
 ${abilitiesLine}
