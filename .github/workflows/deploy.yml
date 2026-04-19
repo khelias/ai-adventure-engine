@@ -25,3 +25,24 @@ jobs:
           rm -rf /srv/data/games/adventure/app/*
           cp legacy/v1/index.html legacy/v1/app.js legacy/v1/style.css /srv/data/games/adventure/app/
           echo "V1 deployed at $(date)"
+
+  deploy-v2:
+    runs-on: [self-hosted, linux, homelab]
+    needs: deploy-v1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build V2
+        run: npm run build
+
+      - name: Deploy V2 build
+        run: |
+          mkdir -p /srv/data/games/adventure-v2/app
+          rm -rf /srv/data/games/adventure-v2/app/*
+          cp -r dist/* /srv/data/games/adventure-v2/app/
+          echo "V2 deployed at $(date)"
