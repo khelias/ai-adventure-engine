@@ -115,12 +115,11 @@ Need on **mittekaubanduslikud reeglid** kogu V2-le. Iga faas peab neid
 järgima — kui disaini-otsus rikub invarianti, otsus muutub, mitte invariant.
 
 1. **Keegi ei istu pealt.** Kui karakter "sureb" narratiivselt, mängija jätkab
-   uues rollis: **haavatud** (vähendatud agentsus, erivõime kadunud),
-   **vaim/nõuandja** (eksklusiivsed whisperid — "sa näed rohkem kui elusad"),
-   või **zombi/muundunud** (genre-spetsiifiline, vahetab poolt, saab
-   vastaspoole whispereid). Surm muudab **osaluse-modelli**, mitte ei eemalda
-   mängijat laualt. 20-30min mäng kus keegi 5. käigul kaotab kohti = seltskond
-   ei taha enam mängida.
+   uues rollis: **haavatud** (vähendatud agentsus, erivõime kadunud) või
+   **vaim/nõuandja** (eksklusiivsed whisperid — "sa näed rohkem kui elusad").
+   Surm muudab **osaluse-modelli**, mitte ei eemalda mängijat laualt. 20-30min
+   mäng kus keegi 5. käigul kaotab kohti = seltskond ei taha enam mängida.
+   *(Zombi/poole-vahetuse staatus kaalutud — nihutatud V3-sse, vt "V3 suunad".)*
 
 2. **Fast-path on pühak.** Setup ei tohi kesta üle 60 sekundi kui kasutaja
    tahab mängida *nüüd*. Kõik advanced-väljad (kontekst, vibe, inside joke)
@@ -193,11 +192,11 @@ tundama nagu **raamatuleheküljel**, mitte veebivormil.
 6. **Karakteri-kaardid isikupäraga** — iga roll on *kaart*:
    - Nimi (mängija poolt muudetav), lühike kirjeldus
    - Erivõime selgelt näha (kasutatud = kaart muutub halliks, grafisti-märgistusega)
-   - Staatus-animatsioonid: **alive → wounded → ghost → zombie** (mitte-
-     elimineerimise invariant). Iga staatus on visuaalselt eristuv:
+   - Staatus-animatsioonid: **alive → wounded → ghost** (V2 mitte-elimineerimise
+     invariant; zombie-staatus on V3, kuni UX on läbi disainitud). Iga staatus
+     visuaalselt eristuv:
      - *wounded* — kaart saab kriimu / sidemete tekstuuri, nimi kaldkirjas
      - *ghost* — kaart muutub läbipaistvaks, väike halo ikoon, "vaim" silt
-     - *zombie* — kaart roostepunaseks, silmad nihkunud, silt "muundunud"
    - Kas sellel mängijal on saladus (📬 ikoon)
    - Placeholder-portree (V3-s AI-genereeritud, V2-s geomeetriline abstraktsioon žanri-teemas)
 
@@ -227,7 +226,7 @@ Faas 0-s ehitame baasi, hilisemates faasides täiendame:
   Hübriid-mudel: kiirus default, loovus 1-tap kaugusel (mitte 3 samaväärset valikut)
 - `ParameterDashboard` — horisontaalne riba ülaosas, animeeritavad gauge'id
 - `CharacterCard` — rollide vaade, saab välja-libistada sidepaneelist,
-  staatus-animatsioonid (alive/wounded/ghost/zombie)
+  staatus-animatsioonid (alive/wounded/ghost — zombie V3)
 - `WhisperOverlay` (Faas 3) — saladuse täisekraan-ülekate, **hold-to-reveal**
   mehaanikaga: blur'itud tekst keskel, "[Marko], vajuta ja hoia et lugeda",
   tekst ilmub hoides, vabastades kaob kohe. Lühikesed whispered (max 3-4 rida),
@@ -253,81 +252,118 @@ Kõik shadcn-primitive'ide peal, mitte nullist. Tailwind + CSS-muutujad per-žan
 
 ## Faasid
 
-Iga faas = eraldi PR, eraldi deploy, mängitav. Pärast iga faasi testid sõpradega,
-õpid, järgmine faas. *Ei mingit 3-kuu closed beta'd.*
+Iga faas = eraldi PR, eraldi deploy, mängitav. Pärast iga faasi **edukriteeriumi
+test** sõpradega, õpid, järgmine faas või iteratsioon. *Ei mingit 3-kuu closed
+beta'd.*
 
-### Faas 0 — Skeleton (~1 sessioon)
-- React + Vite + TS scaffold
-- Tailwind + shadcn/ui setup
-- Basic routing, state management (Zustand)
-- Proxy sama, vana V1 turn-loop kopeeritud üle et miski oleks juba mängitav
+**Ajalised hinnangud on sessiooni-tunnid, mitte kalendripäevad.** 1 sessioon =
+~2-3h tööd. Realistlik mitme-faasi kokkulugemine: V2 valmis F0-F4 on 12-17
+sessiooni, ~1-2 kuud kõrvalprojektina.
+
+### Faas 0 — Skeleton (~2-3 sessiooni)
+- React + Vite + TypeScript scaffold
+- Tailwind + shadcn/ui setup, baaskomponendid
+- Routing (React Router), state management (Zustand store struktuur)
+- **i18n setup** (react-i18next, et/en namespaces, V1 stringid üle migreeritud)
+- **Testimise scope**: Zustand store'i unit-testid (Vitest). Komponendid ei
+  testitud visuaalselt V2-s.
+- Proxy sama, V1 turn-loop kopeeritud üle et kohe mängitav
 - Deploy `/adventure-v2/` staging'usse
+- **Edukriteerium**: V1 mäng töötab V2 React-versioonis, visuaal toores aga funktsionaalne
 
-### Faas 1 — Kontekst-teadlik setup + hübriid-valikud (~1 sessioon)
+### Faas 1 — Kontekst-teadlik setup + hübriid-valikud (~1-2 sessiooni)
 - Setup ekraan: žanr (zombi default), mängijate arv, kestvus — *see on FAST-PATH*
-- "Advanced" paneel (optional): kus oleme, kes ruumis, vibe, inside joke
+- "Advanced" paneel (optional, collapsed default): kus oleme, kes ruumis, vibe, inside joke
 - Proxy prompt laieneb: kontekst-väljad sisestatakse system prompt'i
 - **Hübriid-valikute UI**: `ChoiceCards` renderdab 2-3 AI-nuppu primary +
-  sekundaarne link "Või kirjutage oma valik →" mis avab tekstivälja. Vabateksti
-  submit saadab `choiceText`-i AI-le samamoodi kui nupuvajutus (backend ei
-  vaja muudatust). Mobiilisõbralik: reader ei tippi kui seltskond ei nõua
-- Test: mäng resoneerib praeguse kohaga / grupiga
+  sekundaarne link "Või kirjutage oma valik →" mis avab tekstivälja
+- **Vaba-teksti guardrail** süsteem-prompt'is: "vabatekst interpreteeri praeguse
+  loo-faasi kontekstis, ära lase grupile minna loost välja ('lähme koju' keset
+  climax'it = AI pakub keskelt drama'lahendusi, mitte loo lõppu)"
+- **Edukriteerium**: seltskond mainib arutelus *kontekstist tulnud asju* ("see
+  nagu meie buss!", "nagu Marko lugu eile"). Kui ei maini → F1 iteratsioon,
+  ära liigu F2-le.
 
-### Faas 2 — AI upgrade + pacing (~1 sessioon)
+### Faas 2 — AI upgrade + pacing (~3-4 sessiooni)
 - Proxy: Anthropic SDK integration (Sonnet 4.6 default)
-- Prompt caching: süsteem-prompt + lugu cache'itud, turn variable osa odav
-- Tool use: `update_parameter`, `damage_character`, `introduce_npc`,
-  `raise_stakes` — state muutused lähevad tool call'idena, mitte JSON-response'is
-- **Phase-aware pacing**: `getStoryPhase(turn, maxTurns)` → tagastab faasi:
-  *setup / inciting-incident / rising-stakes / midpoint-reversal / climax /
-  resolution*. Iga käigu prompt saab faasipõhise süsteemi-instruktsiooni:
-  "sa oled midpoint-reversal faasis, mängijate uskumus on valesti, pööra
-  laud". Deterministlik funktsioon turn/maxTurns'ist → cache'ihits säilib.
+- Prompt caching struktuur: static system-prompt + lugu cache-boundary'iga,
+  turn-variable osa hiljem (vt Hinnang kuludele — realistlik cache hit 50-70%)
+- Tool use: `update_parameter(name, change, reason)`, `damage_character`,
+  `introduce_npc`, `raise_stakes` — state muutused tool call'idena
+- **Phase-aware pacing**: `getStoryPhase(turn, maxTurns)` → *setup /
+  inciting-incident / rising-stakes / midpoint-reversal / climax / resolution*.
+  Faasi-instruktsioon lisatakse süsteem-prompt'i.
   *Näide medium (12 käiku): 1-3 setup, 4 inciting, 5-8 rising, 9 midpoint,
-  10-11 climax, 12 resolution.* Lahendab V1 "keskel jääb igavaks" probleemi.
-- Fallback Gemini'le kui Claude võti puudub / ei tööta
+  10-11 climax, 12 resolution.*
+- **GameOver override**: kui parameeter kukub kriitiliseks varakult (parametric
+  loss), phase-logic skipib `resolution`-i → AI saab otse "lõpeta dramaatiliselt"
+  instruktsiooni
+- **Gemini fallback parity**: baastool'id (`update_parameter`, `raise_stakes`,
+  `gameOver`) töötavad mõlemal provideril. *Täiustatud tool'id* (whisperid,
+  staatuse-transitionid — Faas 3) ainult Claude'il. UI näitab hoiatust kui
+  Gemini-režiimis ja kasutab degraded-flow'd (ei whispereid, kui karakter sureb
+  jääb mängija pealtvaataja — V1-käitumine).
+- **Edukriteerium**: sama stsenaarium käivitatud F1-s vs F2-s → seltskond
+  tunneb et F2 kirjutab paremini. Keskmised käigud ei jää enam tühjaks.
 
-### Faas 3 — Saladused + mitte-elimineerimine (~2 sessiooni)
+### Faas 3 — Saladused + mitte-elimineerimine: wounded + ghost (~3-5 sessiooni)
 - Tool: `whisper_to_player(playerIndex, message)` — privaatne info ühele
-- Tool: `transition_player_state(playerIndex, "wounded"|"ghost"|"zombie")` —
-  kui karakter "sureb" narratiivselt, muutub staatus (mitte eemaldamine)
+- Tool: `transition_player_state(playerIndex, "wounded"|"ghost")` — kui
+  karakter "sureb" narratiivselt, muutub staatus (mitte eemaldamine).
+  **Zombi/poole-vahetus nihutatud V3-sse** — kaks-poole draama ühe seadme peal
+  ei ole veel lahendatud disaini-probleem, ei taha F3 rikkuda sellega
 - **Hold-to-reveal UX** (`WhisperOverlay`): blur'itud tekst + "Marko, vajuta
-  ja hoia et lugeda". Vabastades kaob kohe. Pikk tekst tükkideks jaotatud.
+  ja hoia et lugeda". Vabastades kaob kohe. Whisper max 3-4 rida, pikk tekst
+  tükkideks jaotatud ("1/3 — hoia edasi")
 - **GhostView**: surnud mängija saab uue vaate — eksklusiivseid whispereid
   ("sa näed mida grupp ei näe"), piiratud valikud ("sosista elusatele").
-  AI teab keda on surnud ja mis info neile anda — kontekst-state tool use
-  kaudu.
-- *Wounded*: erivõime kadunud, mängija jääb avalikule vaatele, aga AI ei
-  paku talle aktiivseid valikuid (võib ikkagi arutelus osa võtta)
-- *Zombie* (zombi-genre): vahetab poolt, AI saadab vastaspoole whispere
-  ("sa tead kus grupp varjub, mida sa teed?"). Plot twist.
-- Test: kas seltskonnas *tõesti* tekib draama / arutelu / kahtlus. Kas surm
-  ei muuda kedagi passiivseks vaatlejaks?
+  Phone pass-the-phone rütm: ghost saab oma hetke siis kui AI kutsub
+  `whisper_to_player(ghost)`. Muul ajal tavaline grupi-vaade.
+- *Wounded*: erivõime kadunud, jääb avalikule vaatele, AI ei paku aktiivseid
+  valikuid (arutelus osalemine säilib)
+- **Edukriteerium**: test 2 mänguga → (a) whisper-saladused tekitavad arutelu
+  ("miks sa nii tegid?"), (b) surma korral mängija ei istu pealt, jääb
+  osaleks. Kui ei tööta → F3 iteratsioon.
 
-### Faas 4 — Design polish (~1-2 sessiooni)
-- Tüpograafia viimistlus (lugeja-optimeeritud, suur font, pikad read)
-- Pacing: stseeni pikkus varieerub (mõned lühikesed-põrutavad, mõned pikemad-dramaatilised)
-- Parameetri muutuste animatsioon (kui "moraal" kukub, lugeja näitab dramaatiliselt)
+### Faas 4 — Design polish (~2-3 sessiooni)
+- Tüpograafia viimistlus (serif Fraunces narratiivi, loetavus mobiilil)
+- Stseeni pikkuse varieerimine prompt'is (lühikesed-põrutavad, pikemad-dramaatilised)
+- Parameetri muutuste animatsioon (Framer Motion — dramaatiline "moraal kukub")
 - `PhaseIndicator` komponent — progress-visuaal loo kaarele (mitte turn-number)
-- Žanripõhine teemastamine (`GenreTheme` lülitub värvid/tekstuurid/fondid)
-- Staatuse-animatsioonid karakteri-kaartidel (wounded/ghost/zombie üleminekud)
+- Žanripõhine teemastamine (`GenreTheme` — värvid/tekstuurid/fondid)
+- Staatuse-animatsioonid karakteri-kaartidel (wounded/ghost üleminekud)
 - Optional TTS: ElevenLabs eesti hääl (lugeja saab kuulata / puhata)
+- **Edukriteerium**: võrdle V1 screenshotiga. V2 "tunneb nagu raamat", V1
+  "tunneb nagu veebivorm".
+- **Cutover**: /adventure (V1) jääb **arhiivi** /adventure-v1/ alla, /adventure
+  suunab /adventure-v2-le. V1 kättesaadav URL-iga kui V2-s bug.
 
-### Faas 5 — Persistens (~1 sessioon, hilisem)
+### Faas 5 — Persistens (~2-3 sessiooni, hilisem)
 - Postgres (Docker volume, ai-adventure-engine stack)
 - Mängu salvestus + resume hiljem
 - Jaga-link: "vaata mida me eile mängisime" URL
 - Mängu ajalugu: tagasi vaatamine
+- **Edukriteerium**: testi 1 mäng → sulge brauser → ava URL → mäng on samas
+  kohas, jätkab.
 
 ---
 
 ## Hinnang kuludele
 
-Üks ~20-käiguline mäng Sonnet 4.6-ga, **prompt caching'iga**:
-- Ilma caching'uta: ~$0.12 / mäng
-- Caching'uga (90% cache hit turn-loop'is): ~$0.03-0.05 / mäng
+Üks ~20-käiguline mäng Sonnet 4.6-ga:
 
-50 mängu kuus caching'uga: ~$2-3. Kuni GPU tuleb, see on OK. GPU-ga: tasuta.
+**Cache-hit realistlik 50-70%**, mitte 90%. Põhjused:
+- Phase-aware pacing vahetab süsteem-prompti 5-6 korda mängus (faasipiirid) → cache break
+- Turn-history kasvab iga käigul, cache boundary nihkub
+- Parameetrite state muutub tool call'ide tulemusena
+
+Hinnaarvutus:
+- **Ilma caching'uta**: ~$0.12 / mäng
+- **Caching'uga (50-70% hit)**: ~$0.06-0.09 / mäng
+
+50 mängu kuus = **$3-5/kuu**. Kuni GPU tuleb, see on OK. Tulevikus võib proovida
+agressivamat caching-strategy'it (phase-info turn-variable osasse, süsteem-prompt
+täiesti stabiilne) aga see on optimiseering, mitte V2 baas.
 
 ---
 
@@ -349,6 +385,12 @@ eraldi laste-fookusega vajadus — see on V2.5+ laiendus, mitte keelatud.
 
 Need on **kaalutud aga V2-st välja jäetud** — põhjustega.
 
+- **Zombi/poole-vahetus mehaanika**: kaalutud V2 Faas 3-s, nihutatud V3-sse
+  sest ühe seadmega draama — "sa salaja kutsud horde aga lauas kõrvuti istuvad
+  teised näevad su ekraani" — ei ole lahendatud disaini-probleem. Võib-olla
+  nõuab periodilist pass-the-phone rütmi zombile või lausa teist seadet.
+  Enne proovimist on vaja UX-prototüüp. V2 hoiab *wounded + ghost* — need
+  töötavad ühe seadmega puhtalt.
 - **Lokaalne mudel (Ollama)**: 16GB GPU-ga qwen2.5:14b või gemma3:12b mahub.
   V2-st välja sest (a) tool-use töökindlus kohalikel mudelitel on praegu 5-10%
   malformatsioon → iga Faas 2/3 tööriist muutub ebausaldusväärseks, (b) latents
