@@ -152,6 +152,37 @@ export function sequelPrompt(args: {
   return `This is a sequel to a previous adventure. The story continues from this summary: "${sequelText}". The returning characters are: ${JSON.stringify(oldRoles)}. Please generate: 1. A new, unique, one-time-use special ability for EACH of the returning characters. The list of abilities must be in the same order as the characters. 2. Three completely new, unique parameters suitable for this sequel story. Each parameter needs a name and 4 states from best to worst. Output language must be ${langLabel(language)}.`
 }
 
+// ----- Story phase pacing -----
+
+export type StoryPhase = 'setup' | 'inciting' | 'rising' | 'climax' | 'resolution'
+
+export function getStoryPhase(turn: number, maxTurns: number): StoryPhase {
+  if (turn <= 1) return 'setup'
+  if (turn >= maxTurns) return 'resolution'
+  const incitingEnd = Math.max(2, Math.round(maxTurns * 0.25))
+  const risingEnd = Math.round(maxTurns * 0.67)
+  const climaxEnd = Math.round(maxTurns * 0.87)
+  if (turn <= incitingEnd) return 'inciting'
+  if (turn <= risingEnd) return 'rising'
+  if (turn <= climaxEnd) return 'climax'
+  return 'resolution'
+}
+
+function phaseInstruction(phase: StoryPhase): string {
+  switch (phase) {
+    case 'setup':
+      return 'PHASE — Setup: Open on a vivid, sensory scene. Introduce each character naturally through the action. End with an ominous hook hinting at conflict ahead. Parameters are stable. Do NOT offer special abilities. Provide exploratory choices.'
+    case 'inciting':
+      return 'PHASE — Inciting Incident: The central threat enters. Make the stakes concrete — what will be lost if the group fails? At least one parameter begins to shift. Choices feel urgent but not yet desperate. Do NOT offer special abilities yet.'
+    case 'rising':
+      return 'PHASE — Rising Action: Complications mount. Parameters MUST shift meaningfully (at least one by 1 step). The situation grows harder. Layer in how each character\'s nature shapes the crisis. If abilities are available, a character may rise to their defining moment (isAbility: true) when dramatically earned.'
+    case 'climax':
+      return 'PHASE — Climax: The crisis peaks — this is the hinge-point. At least one parameter shifts dramatically. If any special ability is still unused, that character MUST step forward NOW — offer it (isAbility: true). Choices feel heavy and irreversible.'
+    case 'resolution':
+      return 'PHASE — Resolution: The story\'s fate is sealing. Weave threads toward an ending — do not introduce new threats. If this is the final turn, set gameOver: true. Write a conclusion that honors the journey: the specific choices made, who each character became, what happened to this world.'
+  }
+}
+
 // ----- Turn (scene + parameter changes + choices + optional gameOver) -----
 
 export interface TurnResponse {
@@ -160,6 +191,11 @@ export interface TurnResponse {
   choices: Choice[]
   gameOver: boolean
   gameOverText?: string
+}
+
+export interface TurnPromptResult {
+  system: string
+  user: string
 }
 
 export const turnSchema: JsonSchema = {
@@ -198,27 +234,84 @@ export const turnSchema: JsonSchema = {
 export function turnPrompt(args: {
   currentTurn: number
   maxTurns: number
-  duration: string
   genre: string
+  title: string
+  summary: string
   parameters: Parameter[]
   roles: Role[]
   choiceText: string
   language: Language
   context: ContextInput
   isFreeText?: boolean
-}): string {
-  const { currentTurn, maxTurns, duration, genre, parameters, roles, choiceText, language, context, isFreeText } = args
-  const availableAbilities = roles
-    .filter((r) => !r.used)
-    .map((r) => `Role '${r.name}' (index ${r.id}) has ability '${r.ability}' available.`)
-    .join(' ')
-  const parameterStates = parameters
-    .map((p) => `'${p.name}' is '${p.states[p.currentStateIndex]}'`)
-    .join(', ')
+}): TurnPromptResult {
+  const { currentTurn, maxTurns, genre, title, summary, parameters, roles, choiceText, language, context, isFreeText } = args
+
+  const phase = getStoryPhase(currentTurn, maxTurns)
   const contextBlock = buildContextBlock(context)
-  const freeTextRule = isFreeText
-    ? ` 7. The players typed a custom action (not one of the preset choices). Interpret it within the current story phase context. If the action would abruptly end the story (e.g., "let's go home" during the climax), offer dramatic in-story consequences instead of literally ending the adventure.`
+
+  const rolesBlock = roles
+    .map((r) => `- ${r.name}: ${r.description}. Special ability (one-time): ${r.ability}${r.used ? ' [USED]' : ''}`)
+    .join('\n')
+
+  const parametersBlock = parameters
+    .map((p) => `- ${p.name}: ${p.states.join(' → ')}`)
+    .join('\n')
+
+  const system = `${langInstruction(language)}
+
+You are the narrator for an interactive group storytelling adventure. Players collectively make choices; you narrate the consequences. Your goal: create a genuinely thrilling, immersive story where every choice matters and every turn feels different from the last.
+
+STORY: "${title}"
+GENRE: ${genre}
+PREMISE: ${summary}${contextBlock}
+
+CHARACTERS:
+${rolesBlock}
+
+PARAMETERS (each has 4 states, best → worst):
+${parametersBlock}
+
+CORE RULES:
+1. The scene must vividly reflect the current parameter states — they are the living pulse of the story.
+2. At least one parameter MUST change by ≥1 step every turn. Consequential choices may warrant 2-step changes. All-zero turns are not allowed.
+3. Provide 2-3 team choices that feel narratively weighty and distinct.
+4. parameter.change: +1 improves (index moves toward best), -1 worsens (index moves toward worst).
+5. Abilities: offer only during rising or climax phases, when dramatically earned. Set isAbility: true and roleIndex (0-based). During setup, inciting, and resolution, do NOT offer abilities.
+6. If any parameter reaches its worst state, do NOT set gameOver — the engine handles this. Write the scene normally.
+7. On the final turn, set gameOver: true with a gameOverText that reflects the full journey.`
+
+  const currentStates = parameters
+    .map((p) => {
+      const stateName = p.states[p.currentStateIndex]
+      const step = `${p.currentStateIndex + 1}/4`
+      const warning = p.currentStateIndex >= p.states.length - 1 ? ' ⚠ CRITICAL' : ''
+      return `- ${p.name}: "${stateName}" (step ${step})${warning}`
+    })
+    .join('\n')
+
+  const availableAbilities = roles.filter((r) => !r.used)
+  const abilitiesLine = availableAbilities.length > 0
+    ? `AVAILABLE ABILITIES:\n${availableAbilities.map((r) => `- ${r.name} (roleIndex: ${r.id}): ${r.ability}`).join('\n')}`
+    : 'All special abilities have been used.'
+
+  const choiceLine = currentTurn === 1
+    ? 'Open the story.'
+    : `The players chose: "${choiceText}"`
+
+  const freeTextNote = isFreeText
+    ? '\nNOTE: Players typed a custom action. Interpret it within the current phase. If the action would abruptly end the story, offer dramatic in-story consequences instead.'
     : ''
 
-  return `${langInstruction(language)}\n\nThis is turn ${currentTurn} of a ${duration} length ${genre} game.${contextBlock} The current parameter states are: ${parameterStates}. The following special abilities are available: ${availableAbilities || 'None'}. The players chose: "${choiceText}". Continue the story. Strictly follow these rules: 1. The new scene MUST reflect the current parameter states and the player's choice. 2. You MUST change the parameters based on the choice. For each parameter, provide its name and an integer change (-1 for worse, 0 for no change, 1 for better). 3. Provide 2-3 new team-based choices. 4. RARELY, you may offer a choice to use a special ability. If you do, set isAbility to true and provide the roleIndex (0-based) of the role whose ability is being offered. Do NOT offer abilities for roles that are not in the 'availableAbilities' list. 5. Pace the story towards a conclusion. If the turn count (${currentTurn}) is nearing the limit for the game length (${maxTurns}), you MUST start concluding the story. If this is the final turn, set gameOver to true and write a concluding gameOverText. The gameOverText should describe the final outcome and also reflect on the critical choice "${choiceText}" that led the players to this fate.${freeTextRule}`
+  const user = `TURN ${currentTurn} / ${maxTurns}
+
+${phaseInstruction(phase)}
+
+CURRENT PARAMETER STATES:
+${currentStates}
+
+${abilitiesLine}
+
+${choiceLine}${freeTextNote}`
+
+  return { system, user }
 }

@@ -10,11 +10,14 @@ export async function callAI<T = unknown>(
   prompt: string,
   schema: JsonSchema,
   provider: Provider,
+  systemPrompt?: string,
 ): Promise<T> {
+  const body: Record<string, unknown> = { prompt, schema, provider }
+  if (systemPrompt) body.systemPrompt = systemPrompt
   const response = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, schema, provider }),
+    body: JSON.stringify(body),
   })
 
   if (!response.ok) {

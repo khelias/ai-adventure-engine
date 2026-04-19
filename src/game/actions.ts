@@ -136,22 +136,20 @@ export async function handlePlayerChoice(
   store.setLoading(true)
 
   try {
-    const response = await callAI<TurnResponse>(
-      turnPrompt({
-        currentTurn: store.currentTurn,
-        maxTurns: store.maxTurns,
-        duration: store.settings.duration,
-        genre: store.settings.genre,
-        parameters: store.parameters,
-        roles: store.roles,
-        choiceText,
-        language: store.settings.language,
-        context: store.settings.context,
-        isFreeText: opts.isFreeText,
-      }),
-      turnSchema,
-      store.settings.provider,
-    )
+    const { system, user } = turnPrompt({
+      currentTurn: store.currentTurn,
+      maxTurns: store.maxTurns,
+      genre: store.settings.genre,
+      title: store.title,
+      summary: store.summary,
+      parameters: store.parameters,
+      roles: store.roles,
+      choiceText,
+      language: store.settings.language,
+      context: store.settings.context,
+      isFreeText: opts.isFreeText,
+    })
+    const response = await callAI<TurnResponse>(user, turnSchema, store.settings.provider, system)
 
     const strings = translations[store.settings.language]
 
