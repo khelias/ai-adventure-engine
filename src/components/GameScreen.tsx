@@ -51,30 +51,41 @@ export function GameScreen() {
     void handlePlayerChoice(text, { isFreeText: true })
   }
 
-  return (
-    <section className="space-y-5 max-w-3xl mx-auto">
-      <header className="flex justify-between items-center text-sm text-neutral-400">
-        <span>
-          {strings.turn}: {currentTurn}/{maxTurns}
-        </span>
-        <span>
-          {strings.durationDisplay}: {durationLabel}
-        </span>
-      </header>
+  const progressPct = Math.round((currentTurn / maxTurns) * 100)
 
-      <div className="card">
-        <h3 className="text-xs text-neutral-500 uppercase tracking-wider mb-3">{strings.parametersTitle}</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+  return (
+    <section className="max-w-2xl mx-auto space-y-0">
+
+      {/* ── Turn progress + params ── */}
+      <div className="rounded-t border border-b-0 px-5 py-4 space-y-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+
+        {/* Progress bar */}
+        <div className="flex items-center gap-3">
+          <span className="label-caps shrink-0">{strings.turn} {currentTurn}/{maxTurns}</span>
+          <div className="flex-1 h-px rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+            <div
+              className="h-full transition-all duration-500"
+              style={{ width: `${progressPct}%`, background: 'var(--text-muted)' }}
+            />
+          </div>
+          <span className="label-caps shrink-0 opacity-60">{durationLabel.split(' ')[0]}</span>
+        </div>
+
+        {/* Parameters */}
+        <div className="grid grid-cols-3 gap-5">
           {parameters.map((p) => (
             <ParameterBar key={p.name} param={p} />
           ))}
         </div>
       </div>
 
-      <div className="rounded border border-neutral-800 bg-neutral-900/60 px-6 py-6 space-y-4">
-        <h3 className="text-xs text-neutral-500 uppercase tracking-wider">{strings.sceneTitle}</h3>
+      {/* ── Scene ── */}
+      <div
+        className="border-x border-b-0 border-t px-6 py-8 space-y-5"
+        style={{ background: 'var(--surface-alt)', borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }}
+      >
         {isLoading && !sceneText ? (
-          <p className="text-neutral-500 scene-text">{strings.loading}</p>
+          <p className="scene-text opacity-30">{strings.loading}</p>
         ) : (
           sceneText
             .split('\n')
@@ -85,12 +96,18 @@ export function GameScreen() {
               </p>
             ))
         )}
+        {isLoading && sceneText ? (
+          <p className="label-caps opacity-40">{strings.loading}</p>
+        ) : null}
       </div>
 
+      {/* ── Choices ── */}
       {!isLoading && choices.length > 0 ? (
-        <div className="space-y-3">
-          <h3 className="text-sm text-neutral-400">{strings.choiceTitle}</h3>
-          <div className="grid gap-2">
+        <div className="border rounded-b" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div className="px-5 pt-4 pb-1">
+            <span className="label-caps">{strings.choiceTitle}</span>
+          </div>
+          <div className="p-3 space-y-1.5">
             {choices.map((choice, i) => {
               const abilityRole =
                 choice.isAbility && choice.roleIndex !== undefined
@@ -102,64 +119,60 @@ export function GameScreen() {
                   key={i}
                   onClick={() => onChoice(choice)}
                   disabled={isUsed || isLoading}
-                  className="btn-secondary text-left"
+                  className="choice-btn"
                 >
-                  {choice.text}
-                  {isUsed ? ` (${strings.usedLabel})` : ''}
+                  <span className="choice-btn-arrow">›</span>
+                  <span>{choice.text}{isUsed ? ` (${strings.usedLabel})` : ''}</span>
                 </button>
               )
             })}
           </div>
 
-          {!showCustomInput ? (
-            <button
-              type="button"
-              onClick={() => setShowCustomInput(true)}
-              className="text-sm text-neutral-500 hover:text-neutral-300 underline underline-offset-2 transition-colors"
-            >
-              {strings.customChoiceLink} →
-            </button>
-          ) : (
-            <div className="space-y-2">
-              <textarea
-                value={customText}
-                onChange={(e) => setCustomText(e.target.value)}
-                placeholder={strings.customChoicePlaceholder}
-                rows={2}
-                className="w-full input-base resize-none"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    onCustomSubmit()
-                  }
-                }}
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={onCustomSubmit}
-                  disabled={!customText.trim()}
-                  className="btn-primary text-sm py-1.5"
-                >
-                  {strings.customChoiceSubmit}
-                </button>
-                <button
-                  onClick={() => { setShowCustomInput(false); setCustomText('') }}
-                  className="btn-secondary text-sm py-1.5"
-                >
-                  {strings.customChoiceCancel}
-                </button>
+          {/* Custom input */}
+          <div className="px-3 pb-3">
+            {!showCustomInput ? (
+              <button
+                type="button"
+                onClick={() => setShowCustomInput(true)}
+                className="w-full text-left px-5 py-2.5 rounded text-sm transition-colors flex items-center gap-3"
+                style={{ color: 'var(--text-faint)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}
+              >
+                <span className="choice-btn-arrow opacity-40">›</span>
+                <span className="italic">{strings.customChoiceLink}…</span>
+              </button>
+            ) : (
+              <div className="space-y-2 px-2">
+                <textarea
+                  value={customText}
+                  onChange={(e) => setCustomText(e.target.value)}
+                  placeholder={strings.customChoicePlaceholder}
+                  rows={2}
+                  className="input-base resize-none text-sm"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      onCustomSubmit()
+                    }
+                  }}
+                />
+                <div className="flex gap-2">
+                  <button onClick={onCustomSubmit} disabled={!customText.trim()} className="btn-primary text-sm py-1.5 px-3">
+                    {strings.customChoiceSubmit}
+                  </button>
+                  <button onClick={() => { setShowCustomInput(false); setCustomText('') }} className="btn-secondary text-sm py-1.5 px-3">
+                    {strings.customChoiceCancel}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       ) : null}
 
-      {isLoading && sceneText ? (
-        <p className="text-neutral-500 text-sm">{strings.loading}</p>
-      ) : null}
-
-      {error ? <p className="text-red-400 text-sm">{error}</p> : null}
+      {error ? <p className="text-red-400 text-sm mt-4">{error}</p> : null}
     </section>
   )
 }
@@ -170,26 +183,27 @@ function ParameterBar({ param }: { param: Parameter }) {
   const isCritical = param.currentStateIndex >= maxIdx
 
   const barColor = isCritical
-    ? 'bg-red-600'
+    ? '#dc2626'
     : fill > 0.66
-      ? 'bg-emerald-500'
+      ? '#10b981'
       : fill > 0.33
-        ? 'bg-amber-500'
-        : 'bg-orange-500'
+        ? '#f59e0b'
+        : '#f97316'
 
   return (
     <div className={isCritical ? 'animate-pulse' : ''}>
-      <div className="flex justify-between items-baseline mb-1.5">
-        <span className="text-xs text-neutral-400 truncate pr-2">{param.name}</span>
-        <span className={`text-xs font-medium shrink-0 ${isCritical ? 'text-red-400' : 'text-neutral-300'}`}>
-          {param.states[param.currentStateIndex]}
-        </span>
-      </div>
-      <div className="h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+      <div className="label-caps mb-2 truncate">{param.name}</div>
+      <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
         <div
-          className={`h-full rounded-full transition-all duration-500 ease-out ${barColor}`}
-          style={{ width: `${Math.max(fill * 100, isCritical ? 0 : 4)}%` }}
+          className="h-full rounded-full transition-all duration-500 ease-out"
+          style={{
+            width: `${Math.max(fill * 100, isCritical ? 0 : 3)}%`,
+            background: barColor,
+          }}
         />
+      </div>
+      <div className="mt-1.5 text-xs" style={{ color: isCritical ? '#f87171' : 'var(--text-muted)' }}>
+        {param.states[param.currentStateIndex]}
       </div>
     </div>
   )

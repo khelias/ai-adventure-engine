@@ -11,10 +11,8 @@ export default function App() {
 
   return (
     <div className="min-h-dvh flex flex-col">
-      <header className="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-neutral-900">
-        <span className="text-sm text-neutral-500 tracking-wide uppercase">
-          V2 · Faas 0
-        </span>
+      <header className="flex justify-between items-center px-4 sm:px-6 py-3 border-b" style={{ borderColor: 'var(--border-dim)' }}>
+        <span className="label-caps opacity-40">staging</span>
         <LangToggle />
       </header>
 
