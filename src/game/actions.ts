@@ -43,7 +43,7 @@ export async function generateStories(): Promise<void> {
         context: settings.context,
       }),
       storyGenerationSchema,
-      settings.provider,
+      'gemini', // story metadata: Gemini Flash is fast (~5s) and free; Claude saved for narrative turns
     )
     store.setAvailableStories(stories)
   } catch (err) {
@@ -68,7 +68,7 @@ export async function generateCustomStory(storyText: string): Promise<void> {
         language: settings.language,
       }),
       customStorySchema,
-      settings.provider,
+      'gemini',
     )
     const title = t().customStoryTitle.replace('...', '')
     store.initStory({
@@ -100,7 +100,7 @@ export async function generateSequel(sequelText: string): Promise<void> {
         language: settings.language,
       }),
       sequelSchema,
-      settings.provider,
+      'gemini',
     )
     state.initStory({
       title: settings.language === 'et' ? 'Järjelugu' : 'Sequel',
