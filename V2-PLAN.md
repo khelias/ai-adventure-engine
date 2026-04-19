@@ -257,94 +257,103 @@ test** sõpradega, õpid, järgmine faas või iteratsioon. *Ei mingit 3-kuu clos
 beta'd.*
 
 **Ajalised hinnangud on sessiooni-tunnid, mitte kalendripäevad.** 1 sessioon =
-~2-3h tööd. Realistlik mitme-faasi kokkulugemine: V2 valmis F0-F4 on 12-17
-sessiooni, ~1-2 kuud kõrvalprojektina.
+~2-3h tööd.
 
-### Faas 0 — Skeleton (~2-3 sessiooni)
-- React + Vite + TypeScript scaffold
-- Tailwind + shadcn/ui setup, baaskomponendid
-- Routing (React Router), state management (Zustand store struktuur)
-- **i18n setup** (react-i18next, et/en namespaces, V1 stringid üle migreeritud)
-- **Testimise scope**: Zustand store'i unit-testid (Vitest). Komponendid ei
-  testitud visuaalselt V2-s.
-- Proxy sama, V1 turn-loop kopeeritud üle et kohe mängitav
-- Deploy `/adventure-v2/` staging'usse
-- **Edukriteerium**: V1 mäng töötab V2 React-versioonis, visuaal toores aga funktsionaalne
+---
 
-### Faas 1 — Kontekst-teadlik setup + hübriid-valikud (~1-2 sessiooni)
-- Setup ekraan: žanr (zombi default), mängijate arv, kestvus — *see on FAST-PATH*
-- "Advanced" paneel (optional, collapsed default): kus oleme, kes ruumis, vibe, inside joke
-- Proxy prompt laieneb: kontekst-väljad sisestatakse system prompt'i
-- **Hübriid-valikute UI**: `ChoiceCards` renderdab 2-3 AI-nuppu primary +
-  sekundaarne link "Või kirjutage oma valik →" mis avab tekstivälja
-- **Vaba-teksti guardrail** süsteem-prompt'is: "vabatekst interpreteeri praeguse
-  loo-faasi kontekstis, ära lase grupile minna loost välja ('lähme koju' keset
-  climax'it = AI pakub keskelt drama'lahendusi, mitte loo lõppu)"
-- **Edukriteerium**: seltskond mainib arutelus *kontekstist tulnud asju* ("see
-  nagu meie buss!", "nagu Marko lugu eile"). Kui ei maini → F1 iteratsioon,
-  ära liigu F2-le.
+### ✅ Faas 0 — Skeleton
+React+Vite+TS scaffold, Tailwind, Zustand, kõik 5 ekraani, deploy pipeline `/adventure-v2/`.
 
-### Faas 2 — AI upgrade + pacing (~3-4 sessiooni)
-- Proxy: Anthropic SDK integration (Sonnet 4.6 default)
-- Prompt caching struktuur: static system-prompt + lugu cache-boundary'iga,
-  turn-variable osa hiljem (vt Hinnang kuludele — realistlik cache hit 50-70%)
-- Tool use: `update_parameter(name, change, reason)`, `damage_character`,
-  `introduce_npc`, `raise_stakes` — state muutused tool call'idena
-- **Phase-aware pacing**: `getStoryPhase(turn, maxTurns)` → *setup /
-  inciting-incident / rising-stakes / midpoint-reversal / climax / resolution*.
-  Faasi-instruktsioon lisatakse süsteem-prompt'i.
-  *Näide medium (12 käiku): 1-3 setup, 4 inciting, 5-8 rising, 9 midpoint,
-  10-11 climax, 12 resolution.*
-- **GameOver override**: kui parameeter kukub kriitiliseks varakult (parametric
-  loss), phase-logic skipib `resolution`-i → AI saab otse "lõpeta dramaatiliselt"
-  instruktsiooni
-- **Gemini fallback parity**: baastool'id (`update_parameter`, `raise_stakes`,
-  `gameOver`) töötavad mõlemal provideril. *Täiustatud tool'id* (whisperid,
-  staatuse-transitionid — Faas 3) ainult Claude'il. UI näitab hoiatust kui
-  Gemini-režiimis ja kasutab degraded-flow'd (ei whispereid, kui karakter sureb
-  jääb mängija pealtvaataja — V1-käitumine).
-- **Edukriteerium**: sama stsenaarium käivitatud F1-s vs F2-s → seltskond
-  tunneb et F2 kirjutab paremini. Keskmised käigud ei jää enam tühjaks.
+### ✅ Faas 1 — Kontekst-teadlik setup + hübriid-valikud
+Setup paneel (kus/kes/vibe/inside joke), hübriid-valikud (AI nupud + "kirjuta oma"), free-text guardrail.
 
-### Faas 3 — Saladused + mitte-elimineerimine: wounded + ghost (~3-5 sessiooni)
+### ✅ Prompt Overhaul (enne F2 arhitektuuri)
+Tehtud 2026-04-19. Suurim kvaliteedimuutus ilma F2 arhitektuurita:
+- `getStoryPhase(turn, maxTurns)` — 5 narratiivset faasi skaleeruvad mängu pikkusega
+- `turnPrompt()` → `{ system, user }` — staatiline kontekst system promptis (cachitud), dünaamiline käik user promptis
+- Prompt caching (`cache_control: ephemeral`) süsteemipromptile
+- Story gen → alati Gemini Flash (kiire, tasuta); käigud → Claude Sonnet 4.6
+- Turn history: viimased 2 scene'i user promptis (loo järjepidevus)
+- Eestikeelne few-shot stiilimall süsteemipromptis (Opus kirjutas)
+- Scene-length varieerimine; setup = 2 käiku pikemas mängus
+- Language reminder iga käigu user promptis
+
+**Edukriteerium (täitmata):** Kaido mängib ühe täismängu ja ütleb et lood on huvitavad.
+
+---
+
+### ⏳ Faas 2 — UI/UX ergonoomia (järgmine sessioon)
+
+Opus analüüsis (2026-04-19) kõik 5 ekraani. Disaini põhi on hea (Fraunces serif,
+soe tume paleet, parameetri värvid), aga mäng on "üksinda mängitava interaktiivse
+loo" tasemel — **pass-the-phone seltskonnamängu ergonoomika puudub**.
+
+**Prioriteet 1 — GameScreen: numeerilised valikud** *(kriitiliselt tähtis)*
+Pass-the-phone mängus lugeja küsib "1, 2 või 3?". Hetkel grupil pole millele
+viidata. Lisa iga `choice-btn` ette `<span>` numbriga (aktsendivärvis ring).
+
+**Prioriteet 2 — SetupScreen: fast-path cleanup** *(kõrge)*
+- Provider-valik → Advanced alla (tavakasutaja ei hooli)
+- Players min=3 (mitte 1), max=6 — mäng on 3-6 inimesele
+- Players count: `[3] [4] [5] [6]` segmented button (üks tap, mitte number input)
+- Genre + Duration: chip-grid (üks tap), mitte `<select>`
+- CTA "Generate Story" → "Alusta seiklust" vms
+
+**Prioriteet 3 — RoleAssignmentScreen: nimed on friction** *(kõrge)*
+- Lisa "Kasuta Mängija 1, 2, 3…" nupp (üks klõps → kõik nimed täidetud)
+- Eemalda topelt-nimi label (nimi on inputis näha, pole vaja bold'is labeli sees korrata)
+- Ability on rolli südames — suuremaks / rõhutada visuaalselt
+
+**Prioriteet 4 — GameScreen: uus stseen ei märku** *(keskmine)*
+- `window.scrollTo({ top: 0, behavior: 'smooth' })` pärast iga käiku
+- Fade-in animatsioon uuele stseenile (järgmine lugeja teab kohe kust lugeda)
+- "Stseen N" badge scene-boxi ülaosas
+
+**Prioriteet 5 — GameOverScreen: säilita raamatukogemus** *(keskmine)*
+- Lõpptekst peaks kasutama `scene-text` klassi (Fraunces serif), mitte sans-serif
+- "Näita kogu lugu" collapsible (kõik stseenid järjest — grupp saab koos üle käia)
+- Export tekstina (clipboard)
+
+**Parameetrid mobiilis:** `grid-cols-3` lõikab pikemad state-tekstid. Vajab
+`grid-cols-1 sm:grid-cols-3` või horizontal scroll mobile-l.
+
+**Edukriteerium:** Mängi läbi 5 inimesega. Ei tohiks olla hetke kus keegi küsib
+"mida ma peaksin tegema?" või "mis see nupp teeb?". Käivitus alla 60 sekundi.
+
+---
+
+### ⏳ Faas 3 — Saladused + wounded + ghost (~3-5 sessiooni)
 - Tool: `whisper_to_player(playerIndex, message)` — privaatne info ühele
-- Tool: `transition_player_state(playerIndex, "wounded"|"ghost")` — kui
-  karakter "sureb" narratiivselt, muutub staatus (mitte eemaldamine).
-  **Zombi/poole-vahetus nihutatud V3-sse** — kaks-poole draama ühe seadme peal
-  ei ole veel lahendatud disaini-probleem, ei taha F3 rikkuda sellega
-- **Hold-to-reveal UX** (`WhisperOverlay`): blur'itud tekst + "Marko, vajuta
-  ja hoia et lugeda". Vabastades kaob kohe. Whisper max 3-4 rida, pikk tekst
-  tükkideks jaotatud ("1/3 — hoia edasi")
-- **GhostView**: surnud mängija saab uue vaate — eksklusiivseid whispereid
-  ("sa näed mida grupp ei näe"), piiratud valikud ("sosista elusatele").
-  Phone pass-the-phone rütm: ghost saab oma hetke siis kui AI kutsub
-  `whisper_to_player(ghost)`. Muul ajal tavaline grupi-vaade.
-- *Wounded*: erivõime kadunud, jääb avalikule vaatele, AI ei paku aktiivseid
-  valikuid (arutelus osalemine säilib)
-- **Edukriteerium**: test 2 mänguga → (a) whisper-saladused tekitavad arutelu
-  ("miks sa nii tegid?"), (b) surma korral mängija ei istu pealt, jääb
-  osaleks. Kui ei tööta → F3 iteratsioon.
+- Tool: `transition_player_state(playerIndex, "wounded"|"ghost")`
+- **Hold-to-reveal UX** (`WhisperOverlay`): blur'd tekst + hoia et lugeda, vabastades kaob
+- **GhostView**: eksklusiivsed whisperid, piiratud valikud ("sosista elusatele")
+- *Wounded*: erivõime kadunud, osalus säilib
+- **Zombi/poole-vahetus → V3** (ühe seadmega lahendamata disainprobleem)
+- **Edukriteerium**: whisper-saladused tekitavad arutelu; surm ei eemalda mängijat
 
-### Faas 4 — Design polish (~2-3 sessiooni)
-- Tüpograafia viimistlus (serif Fraunces narratiivi, loetavus mobiilil)
-- Stseeni pikkuse varieerimine prompt'is (lühikesed-põrutavad, pikemad-dramaatilised)
-- Parameetri muutuste animatsioon (Framer Motion — dramaatiline "moraal kukub")
-- `PhaseIndicator` komponent — progress-visuaal loo kaarele (mitte turn-number)
-- Žanripõhine teemastamine (`GenreTheme` — värvid/tekstuurid/fondid)
+### ⏳ Faas 4 — Tool use arhitektuur (~2-3 sessiooni)
+*(Opus hinnang: tool use on arhitektuuriline cleanup, mitte narratiivikvaliteedi
+eeldus. Teha pärast F2+F3, kui mäng on muidu hea.)*
+- `update_parameter(name, change, reason)` — reason kuvatakse UI-s (dramaatiline kontekst)
+- `introduce_npc`, `raise_stakes` tool'id
+- Gemini fallback: baastool'id töötavad mõlemal provideril
+- Proxy laiendus Claude tool-use jaoks
+- **Edukriteerium**: parameter muutusel kuvatakse põhjus; narratiiv järjepidevam
+
+### ⏳ Faas 5 — Design polish (~2-3 sessiooni)
+- Parameetri muutuste animatsioon (Framer Motion — "moraal kukub")
+- `PhaseIndicator` — progress-visuaal loo kaarele (mitte turn-number tekst)
+- Žanripõhine teemastamine (`GenreTheme` — värvid/tekstuurid/fondid per žanr)
 - Staatuse-animatsioonid karakteri-kaartidel (wounded/ghost üleminekud)
-- Optional TTS: ElevenLabs eesti hääl (lugeja saab kuulata / puhata)
-- **Edukriteerium**: võrdle V1 screenshotiga. V2 "tunneb nagu raamat", V1
-  "tunneb nagu veebivorm".
-- **Cutover**: /adventure (V1) jääb **arhiivi** /adventure-v1/ alla, /adventure
-  suunab /adventure-v2-le. V1 kättesaadav URL-iga kui V2-s bug.
+- Optional TTS: ElevenLabs eesti hääl
+- **Cutover**: `/adventure` → `/adventure-v2`, V1 arhiivi `/adventure-v1/`
+- **Edukriteerium**: V2 "tunneb nagu raamat", V1 "tunneb nagu veebivorm"
 
-### Faas 5 — Persistens (~2-3 sessiooni, hilisem)
-- Postgres (Docker volume, ai-adventure-engine stack)
+### ⏳ Faas 6 — Persistens (~2-3 sessiooni, hilisem)
+- Postgres (Docker volume)
 - Mängu salvestus + resume hiljem
-- Jaga-link: "vaata mida me eile mängisime" URL
-- Mängu ajalugu: tagasi vaatamine
-- **Edukriteerium**: testi 1 mäng → sulge brauser → ava URL → mäng on samas
-  kohas, jätkab.
+- Jaga-link: "vaata mida me eile mängisime"
+- **Edukriteerium**: sulge brauser → ava URL → mäng jätkub samast kohast
 
 ---
 
