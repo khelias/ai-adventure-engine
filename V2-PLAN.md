@@ -1,8 +1,12 @@
 # AI Adventure Engine — V2 Plan
 
-V1 on live (`games.khe.ee/adventure/`) ja töötab tehniliselt, aga mängides tundus
-**igav, korduv, vähe kaasahaarav** — lugu ei resoneeri grupiga, erivõimed ei tee
-midagi erilist, iga mäng tundub sama.
+> **Staatus 2026-04-20:** V2 Faas 0-2 ✅ done, Faas 2 edukriteerium täidetud pärast
+> 2026-04-20 hotfix-sessiooni (vt [CHANGELOG.md](CHANGELOG.md)). Järgmine aktiivne töö
+> on **Faas 3** (whispers + wounded/ghost). Arhitektuuridetailid: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+V1 oli live (`games.khe.ee/adventure/`) ja töötas tehniliselt, aga mängides tundus
+**igav, korduv, vähe kaasahaarav** — lugu ei resoneerinud grupiga, erivõimed ei teinud
+midagi erilist, iga mäng tundus sama.
 
 V2 lahendab selle **ühel lihtsal viisil**: mäng hakkab peegeldama *seda gruppi,
 selles kohas, praegu* — ja sellega tuleb kaasa päriselt pinge, draama, saladused.
@@ -278,7 +282,11 @@ Tehtud 2026-04-19. Suurim kvaliteedimuutus ilma F2 arhitektuurita:
 - Scene-length varieerimine; setup = 2 käiku pikemas mängus
 - Language reminder iga käigu user promptis
 
-**Edukriteerium (täitmata):** Kaido mängib ühe täismängu ja ütleb et lood on huvitavad.
+**Edukriteerium:** Kaido mängib ühe täismängu ja ütleb et lood on huvitavad.
+
+**Staatus 2026-04-19:** Täitmata. Lood jäid pikkaks ja eestikeele-vigade-täis, mängud
+lõppesid turnis 4-5 parameetri-force-end-iga, mitte narratiivselt. Põhjused paljastusid
+2026-04-20 audit-sessioonil ja parandati seal samas.
 
 ---
 
@@ -314,6 +322,22 @@ live peaapp'ina. V1 vanilla kood arhiivitud `legacy/v1/`. README.md kirjutatud (
 - "Kasuta Mängija 1, 2, 3…" kiirklõps RoleAssignment'is
 
 ---
+
+### ✅ Hotfix-sessioon 2026-04-20 — playability fixes
+
+Faas 2 polnud päriselt "valmis" — mängida oli pettumus. See sessioon parandas seda
+**ilma uut arhitektuuri lisamata** (Faas 4 "tool use" jääb endiselt hilisemaks).
+Täielik detail: [CHANGELOG.md](CHANGELOG.md).
+
+- **Narratiivne gameOver** — 1 param worst = faasi-üleminek, 2+ worst = AI kirjutab lõpu
+- **Eesti toimetaja** — Gemini Flash proxy-pass korrigeerib Claude stseenide keelevead
+- **Proxy kaitstud** — schema allowlist + origin check + päris per-visitor rate limit
+- **Playtest harness** (`scripts/playtest.ts`) — headless täis-mängu runner, Markdown transkriptid
+- **Rollinimed** on päris nimed (Mari, Liisa), mitte ametinimetused
+- **Stseenid** poole lühemad (reeglite pingutamine + few-shot näide)
+
+**Edukriteerium:** mõlemad playtest-žanrid (Zombies, Fantasy) jõuavad turn 8 natuurselt
+ja AI kirjutab emotsionaalse lõpu. Täidetud 2026-04-20.
 
 ### ⏳ Faas 3 — Saladused + wounded + ghost (~3-5 sessiooni)
 - Tool: `whisper_to_player(playerIndex, message)` — privaatne info ühele

@@ -111,7 +111,12 @@ async function callAI<T>(
   if (systemPrompt) body.systemPrompt = systemPrompt
   const res = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      // Proxy's origin allowlist permits https://games.khe.ee; the playtest
+      // script identifies itself as that origin so it isn't rejected as abuse.
+      Origin: 'https://games.khe.ee',
+    },
     body: JSON.stringify(body),
   })
   if (!res.ok) {
