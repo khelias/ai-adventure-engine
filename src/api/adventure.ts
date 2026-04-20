@@ -1,4 +1,4 @@
-import type { Provider } from '../game/types'
+import type { Language, Provider } from '../game/types'
 
 const API_URL = '/adventure/api/generate'
 
@@ -11,9 +11,11 @@ export async function callAI<T = unknown>(
   schema: JsonSchema,
   provider: Provider,
   systemPrompt?: string,
+  language?: Language,
 ): Promise<T> {
   const body: Record<string, unknown> = { prompt, schema, provider }
   if (systemPrompt) body.systemPrompt = systemPrompt
+  if (language) body.language = language
   const response = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

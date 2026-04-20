@@ -5,13 +5,12 @@ const langLabel = (lang: Language) => (lang === 'et' ? 'Estonian' : 'English')
 
 function langInstruction(lang: Language): string {
   if (lang === 'et') {
-    return `LANGUAGE: Write all player-facing text in natural Estonian (eesti keel).
-CRITICAL: Think and write in Estonian — do NOT translate from English. Avoid anglicised sentence structure.
+    return `LANGUAGE: Write all player-facing text in natural, native-level Estonian (eesti keel).
+- Think and write in Estonian. Do NOT translate from English. Avoid anglicised sentence structure.
 - Choices MUST be in meie-vormi imperatiiv (we-form): "Avame ukse." / "Ootame varjus." NOT "Te avate ukse."
-- Avoid calques: NOT "see on see hea asi X juures, et" → USE "X juures on hea, et"
-- Short sentences for action. Flowing sentences for dread. Vary rhythm.
-- Use Estonian idioms naturally: "pole muud kui", "mis siis saab", "teeme ära", "käed külge"
-- Parameter names: 1-3 words, noun/noun phrase. States: 2-4 words each, no full sentences.`
+- Parameter names: 1-3 words, noun/noun phrase. States: 2-4 words each, no full sentences.
+- Character names (role.name) MUST be proper Estonian first names (e.g. Mari, Jaan, Karin, Mattis) — NOT job titles. Put the profession/role in role.description.
+- Prefer simple, common words over rare compounds. If unsure whether a compound exists, use two separate words instead.`
   }
   return 'LANGUAGE: Write all player-facing text in English.'
 }
@@ -31,7 +30,7 @@ function buildContextBlock(ctx: ContextInput): string {
   return `\nGroup context (weave subtly and naturally into the story — the setting, the people, the mood):\n${parts.map((p) => `- ${p}`).join('\n')}`
 }
 
-// ----- Story generation (setup → 3 story options) -----
+// ----- Story generation (setup → 1 story) -----
 
 export const storyGenerationSchema: JsonSchema = {
   type: 'OBJECT',
@@ -83,17 +82,25 @@ export function storyGenerationPrompt(args: {
 }): string {
   const { players, genre, duration, language, context } = args
   const contextBlock = buildContextBlock(context)
-  return `${langInstruction(language)}\n\nGenerate 1 adventure story for ${players} players in the ${genre} genre, suitable for a ${duration} duration game. Provide a compelling title, a vivid summary (2-3 sentences), and exactly ${players} unique roles each with a name, description, and a single powerful one-time-use special ability.
+  return `${langInstruction(language)}
 
-Also design EXACTLY THREE parameters — the mechanical spine of this story. Each MUST be a DIFFERENT archetype:
+Generate 1 adventure story for ${players} players in the ${genre} genre, suitable for a ${duration} duration game. Provide a compelling title, a vivid summary (2-3 sentences), and exactly ${players} unique roles.
+
+ROLES:
+- role.name: a PROPER FIRST NAME (e.g. "Mari", "Karin", "Mattis") — NOT a job title, NOT a description. Just a single first name.
+- role.description: one sentence describing who this person is and their relevant skill/background.
+- role.ability: a single powerful one-time-use special ability. Clearly name the ability and what it does.
+
+Design EXACTLY THREE parameters — the mechanical spine of this story. Each MUST be a DIFFERENT archetype:
 
 1. RESOURCE (depletes with action, rarely restored): e.g. "Kütus", "Laskemoon", "Toit", "Aku". Starts full, ends empty. Players spend it to act.
-2. BOND (shifts both ways from social/moral choices): e.g. "Usaldus", "Grupi moraal", "Koostöö". Can improve from sacrifice, collapse from betrayal.
-3. THREAT (escalates automatically each turn, choices only delay): e.g. "Zombide lähedus", "Ohu kaugus", "Infektsioon". Ticks worse by default; rarely improvable except at climax.
+2. BOND (shifts both ways from social/moral choices): e.g. "Usaldus", "Grupi side", "Koostöö". Can improve from sacrifice, collapse from betrayal. Use gender-neutral framing ("Grupi side" not "Meeste side").
+3. PRESSURE (escalates from events in the story): e.g. "Zombide surve", "Ohu lähedus", "Infektsioon". Only the AI's choice costs determine when this changes — there is no hidden per-turn automatic worsening.
 
 PARAMETER FORMAT:
-- name: 1-3 word concrete noun, genre-specific (NOT abstract like "Moraal" alone — use "Grupi moraal" or "Meeste side")
+- name: 1-3 word concrete noun, genre-specific (NOT abstract like "Moraal" alone — use "Grupi moraal")
 - states: exactly 4 short phrases (2-4 words each), best → worst. Each state must be OBSERVABLE — something a character would SEE or FEEL. Good: "Paak täis", "Paak pooleldi". Bad: "Hea", "Halvasti".
+- Double-check word order of every state phrase — in Estonian "Pinged pinna all" is correct, "Pinged all pinna" is wrong.
 
 The three parameters must create a TRILEMMA: no single choice can improve all three. Every meaningful decision trades one against another.${contextBlock}`
 }
@@ -137,7 +144,7 @@ export function customStoryPrompt(args: {
   language: Language
 }): string {
   const { storyText, players, genre, language } = args
-  return `Based on this custom story idea: "${storyText}", generate ${players} thematically appropriate roles and 3 unique parameters for a ${genre} game. Each role needs a name, description, and a one-time-use ability. Parameter format: name = 1-3 word noun; states = 4 short phrases (2-4 words each) from best to worst — no full sentences. Output language must be ${langLabel(language)}.`
+  return `Based on this custom story idea: "${storyText}", generate ${players} thematically appropriate roles and 3 unique parameters for a ${genre} game. Each role needs a PROPER FIRST NAME (not a title), description, and a one-time-use ability. Parameter format: name = 1-3 word noun; states = 4 short phrases (2-4 words each) from best to worst — no full sentences. Output language must be ${langLabel(language)}.`
 }
 
 // ----- Sequel generation -----
@@ -211,7 +218,6 @@ export interface TurnResponse {
   gameOverText?: string
 }
 
-
 export interface TurnPromptResult {
   system: string
   user: string
@@ -261,6 +267,18 @@ export const turnSchema: JsonSchema = {
   required: ['scene', 'parameters', 'choices', 'gameOver'],
 }
 
+const ESTONIAN_EXAMPLE = `EXAMPLE OF A GOOD TURN (match this style — especially scene length and sentence rhythm):
+
+Scene:
+"Koridor lõpeb raudukse ees. Midagi kriibib seina taga metalli vastu — aeglaselt, nagu küüned, kes otsivad pragu. Mari taskulamp väriseb; ta hoiab seda kahe käega, aga käed ise ei pea."
+
+Choices:
+- "Avame ukse vaikselt." — (cost: Kütus:-1, Zombide surve:+0)
+- "Kustutame lambi ja ootame." — (cost: Grupi side:-1, Zombide surve:+1)
+- "Mari koputab uksele ja räägib sellega — äkki vastab keegi." — (cost: Grupi side:+1, Zombide surve:-1)
+
+Note: 3 sentences total in the scene. Each choice is short and states its cost. Choices touch different parameter combinations.`
+
 export function turnPrompt(args: {
   currentTurn: number
   maxTurns: number
@@ -274,8 +292,12 @@ export function turnPrompt(args: {
   language: Language
   context: ContextInput
   isFreeText?: boolean
+  forceEnd?: 'unrecoverable' // set when 2+ params at worst — AI must conclude now
 }): TurnPromptResult {
-  const { currentTurn, maxTurns, genre, title, summary, parameters, roles, recentScenes, choiceText, language, context, isFreeText } = args
+  const {
+    currentTurn, maxTurns, genre, title, summary,
+    parameters, roles, recentScenes, choiceText, language, context, isFreeText, forceEnd,
+  } = args
 
   const phase = getStoryPhase(currentTurn, maxTurns)
   const contextBlock = buildContextBlock(context)
@@ -288,9 +310,11 @@ export function turnPrompt(args: {
     .map((p) => `- ${p.name}: ${p.states.join(' → ')}`)
     .join('\n')
 
+  const exampleBlock = language === 'et' ? `\n${ESTONIAN_EXAMPLE}\n` : ''
+
   const system = `${langInstruction(language)}
 
-You are the narrator for an interactive group storytelling adventure. Players collectively make choices; you narrate the consequences. Your goal: create a genuinely thrilling, immersive story where every choice matters and every turn feels different from the last.
+You are the narrator for an interactive group storytelling adventure played aloud by a group of friends. Players collectively make choices; you narrate the consequences. Your goal: create a genuinely thrilling story where every choice matters.
 
 STORY: "${title}"
 GENRE: ${genre}
@@ -300,54 +324,43 @@ CHARACTERS:
 ${rolesBlock}
 
 PARAMETERS (each has 4 states, best → worst):
-${parametersBlock}
-
-WRITING STYLE (follow this closely):
-${language === 'et'
-  ? `Stseen: "Koridor lõpeb raudukse ees. Kuskil seina taga kriibib miski aeglaselt metalli vastu — nagu küüned, kes otsivad pragu. Teie taskulambi valguskiir väriseb, sest käsi, mis seda hoiab, ei suuda enam paigal püsida. Õhk haiseb rooste ja millegi magusalt mädaneva järele."
-Valikud: "Avame ukse vaikselt ja vaatame, mis teisel pool on." / "Kustutame lambi ja ootame, kuni heli kaugeneb."`
-  : `Scene: "The corridor ends at an iron door. Behind the wall, something scrapes slowly against metal — like fingernails searching for a crack. Your torchlight trembles, because the hand holding it can no longer stay still. The air smells of rust and something sweetly rotting."
-Choices: "Open the door quietly and see what's on the other side." / "Kill the light and wait for the sound to fade."`}
-
+${parametersBlock}${exampleBlock}
 CORE RULES:
-1. PARAMETERS ARE THE STORY, NOT DECORATION. Every scene MUST show ≥2 parameters as diegetic sensory detail (something a character sees/hears/feels), never as narrator metadata.
-   BAD: "Pinge tõuseb."
-   GOOD: "Kütusenäidik jõuab punasesse; Mariko käsi väriseb rooli peal." (shows resource + threat)
 
-2. CHOICES MUST DECLARE THEIR COST. Each choice is a TRADE between parameters — write the cost into the choice text itself so players feel the dilemma:
-   GOOD: "Murrame tõkke läbi — kulutame kütust, aga jätame jälitajad maha."
-   BAD: "Murrame tõkke läbi." (player can't feel the trade-off)
-   Fill expectedChanges on each choice to match the cost hinted in the text. These must agree.
+1. SCENE LENGTH IS LAW. Write 2-3 sentences per scene in setup/inciting/rising, 3-4 at climax, 4-5 at resolution. Count them. HARD MAX: 60 words per scene in non-climax turns. Groups read aloud — dense prose loses the room.
 
-3. TRILEMMA ENFORCEMENT. With 3 choices: each must affect a DIFFERENT combination of parameters. Two choices that move the same parameters are a design failure — rewrite one.
+2. PARAMETERS AS SENSORY DETAIL. Each scene must surface ≥1 parameter state as something a character sees/hears/feels. Do NOT write them as narrator metadata ("Pinge tõuseb"). Show them ("Kütusenäidik jõuab punasesse; Mari käsi väriseb rooli peal").
 
-4. ARCHETYPE DISCIPLINE:
-   - RESOURCE: only worsens or stays. Improves ONLY when a specific item is found/given in the narration.
-   - BOND: swings ±1 based on the social/moral content of the chosen action.
-   - THREAT: worsens by at least 1 each turn UNLESS the chosen action specifically delays it. Never improves except at climax.
+3. CHOICES MUST DECLARE THEIR COST. Each choice is a TRADE — write the cost into the choice text itself AND fill expectedChanges to match. The text and expectedChanges MUST agree in sign: if the text says "kulutame X", then X's expectedChange must be negative. NEVER output a choice whose expectedChanges are all zero or all positive — there must be at least one negative cost.
 
-5. parameter.change: +1 = better (index toward best), -1 = worse (index toward worst). Use ±2 ONLY at climax or when a choice is explicitly extreme ("riskime kõigega"). Never ±2 in setup or inciting.
+4. TRILEMMA. The 3 choices must each affect a DIFFERENT combination of parameters. Two choices that move the same two parameters (even with opposite signs) are a design failure — rewrite one to touch a third parameter.
 
-6. FAILURE DRAMATIZATION: If a parameter reaches its worst state, the NEXT scene opens with the narrative consequence — the group lives through the disaster (supplies run out, trust collapses, threat arrives). Do not set gameOver mechanically — dramatize it in the scene.
+5. NO HIDDEN RULES. All parameter changes you apply must come from the chosen action's consequences that are visible to the player in the scene and choices. Do NOT auto-degrade any parameter "because time passed". If pressure should rise, write it into the scene's narrated events or the choice costs — never as silent drift.
 
-7. Abilities: offer only in rising or climax, when dramatically earned. isAbility: true + roleIndex (0-based). Never in setup, inciting, resolution.
+6. parameter.change semantics: +1 = better (index toward best), -1 = worse (index toward worst). Use ±2 ONLY at climax or when a choice is explicitly extreme ("riskime kõigega"). Never ±2 in setup or inciting.
 
-8. Final turn: set gameOver: true. gameOverText names the parameters that held and those that broke, the choices that mattered, what each character became.
+7. JUST-BROKE DRAMATIZATION: If CURRENT PARAMETER STATES marks a parameter "⚠ JUST HIT WORST", open the scene with the immediate narrative consequence of that collapse — the group lives through the disaster (supplies run out, trust collapses, pressure overwhelms). Do NOT set gameOver from this alone — dramatize it. New choices should reflect the changed situation.
 
-9. Scene length: 2-4 sentences normally, max 5 at climax. Read aloud to a group — dense prose loses the room.
+8. ABILITIES: offer only in rising or climax, when dramatically earned. isAbility: true + roleIndex (0-based). Never in setup, inciting, resolution.
+
+9. FINAL TURN at maxTurns: set gameOver: true. gameOverText names the parameters that held and those that broke, the choices that mattered, what each character became.
 
 SELF-CHECK before responding:
-- Does my scene show ≥2 parameters as concrete sensory details? If not, rewrite.
-- Do my 3 choices each touch a DIFFERENT combination of parameters? If two are parameter-twins, rewrite one.
-- Does each choice text hint at its cost? If a player can't feel the trade-off from reading the choice, rewrite it.
-- Does expectedChanges for each choice match what the choice text promises?`
+- Scene length: count sentences. Under limit? If not, DELETE until it is.
+- Each choice has ≥1 negative expectedChange? If any choice is "free", rewrite it.
+- Choices cover 3 different parameter combinations?
+- Every choice text matches its expectedChanges in sign?
+- Scene surfaces ≥1 parameter as sensory detail (not metadata)?`
 
   const currentStates = parameters
     .map((p) => {
       const stateName = p.states[p.currentStateIndex]
-      const step = `${p.currentStateIndex + 1}/4`
-      const warning = p.currentStateIndex >= p.states.length - 1 ? ' ⚠ CRITICAL' : ''
-      return `- ${p.name}: "${stateName}" (step ${step})${warning}`
+      const step = `${p.currentStateIndex + 1}/${p.states.length}`
+      let marker = ''
+      if (p.justBroke) marker = ' ⚠ JUST HIT WORST — open next scene with the consequence of this collapse'
+      else if (p.currentStateIndex >= p.states.length - 1) marker = ' (still at worst state)'
+      else if (p.currentStateIndex === p.states.length - 2) marker = ' (near worst — one step from collapse)'
+      return `- ${p.name}: "${stateName}" (step ${step})${marker}`
     })
     .join('\n')
 
@@ -372,11 +385,23 @@ SELF-CHECK before responding:
     ? `STORY SO FAR (recent scenes — maintain continuity, reference past events):\n${recentScenes.map((s, i) => `[Scene ${currentTurn - recentScenes.length + i}] ${s}`).join('\n\n')}\n\n`
     : ''
 
+  const forceEndBlock = forceEnd === 'unrecoverable'
+    ? `\n⚠ FORCED CONCLUSION — UNRECOVERABLE STATE ⚠
+Two or more parameters have collapsed to worst state simultaneously. The situation is unrecoverable.
+
+Write the final scene NOW:
+- Set gameOver: true.
+- Write a full gameOverText (3-5 paragraphs) that names which parameters held and which broke, the key choices that led here, and what happened to each character. Honor the journey — this is the group's ending.
+- The scene field can be short — the gameOverText carries the weight.
+- You may output choices but they will not be used; prefer empty array or minimal placeholders.
+`
+    : ''
+
+  const phaseLine = forceEnd === 'unrecoverable' ? '' : `${phaseInstruction(phase)}\n`
+
   const user = `TURN ${currentTurn} / ${maxTurns}
 
-${langReminder}${phaseInstruction(phase)}
-
-${recentScenesBlock}CURRENT PARAMETER STATES:
+${langReminder}${phaseLine}${forceEndBlock}${recentScenesBlock}CURRENT PARAMETER STATES:
 ${currentStates}
 
 ${abilitiesLine}

@@ -14,8 +14,9 @@ import {
 } from './prompts'
 import {
   applyParameterChanges,
-  findCriticalParameter,
+  findBrokenParameters,
   isAbilityChoice,
+  isUnrecoverable,
   markAbilityUsed,
 } from './engine'
 import type { Story } from './types'
@@ -43,7 +44,7 @@ export async function generateStories(): Promise<void> {
         context: settings.context,
       }),
       storyGenerationSchema,
-      'claude', // story gen now uses Claude for better quality; Gemini still used for custom/sequel
+      'claude',
     )
     store.setAvailableStories(stories)
   } catch (err) {
@@ -150,7 +151,7 @@ export async function handlePlayerChoice(
       context: store.settings.context,
       isFreeText: opts.isFreeText,
     })
-    const response = await callAI<TurnResponse>(user, turnSchema, store.settings.provider, system)
+    const response = await callAI<TurnResponse>(user, turnSchema, store.settings.provider, system, store.settings.language)
 
     const strings = translations[store.settings.language]
 
@@ -169,18 +170,18 @@ export async function handlePlayerChoice(
       : store.roles
 
     const nextTurn = opts.isFirstTurn ? store.currentTurn : store.currentTurn + 1
-    const parametersAfter = applyParameterChanges(store.parameters, response.parameters)
+    const parametersAfter = applyParameterChanges(store.parameters, response.parameters ?? [])
 
-    const critical = findCriticalParameter(parametersAfter)
-    if (critical) {
-      store.setGameOver(
-        'parametric',
-        strings.endParametric,
-        strings.endParametricText(
-          critical.name,
-          critical.states[critical.states.length - 1],
-        ),
-      )
+    // Unrecoverable = 2+ parameters at worst. Trigger AI-narrated ending.
+    // A single parameter at worst is a phase transition, not a game-over.
+    if (isUnrecoverable(parametersAfter)) {
+      await narrateUnrecoverableEnd({
+        parameters: parametersAfter,
+        roles: rolesAfterAbility,
+        choiceText,
+        nextTurn,
+        lastScene: response.scene,
+      })
       return
     }
 
@@ -195,5 +196,67 @@ export async function handlePlayerChoice(
     store.setError(t().errorApi(errorMessage(err)))
   } finally {
     store.setLoading(false)
+  }
+}
+
+// When 2+ parameters collapse, ask the AI for a narrated ending instead of
+// ending mechanically with a template string. Falls back to template on error.
+async function narrateUnrecoverableEnd(args: {
+  parameters: ReturnType<typeof applyParameterChanges>
+  roles: ReturnType<typeof markAbilityUsed>
+  choiceText: string
+  nextTurn: number
+  lastScene: string
+}): Promise<void> {
+  const store = useGameStore.getState()
+  const strings = translations[store.settings.language]
+  const { parameters, roles, choiceText, nextTurn, lastScene } = args
+
+  const recentPlusLast = [...store.recentScenes, lastScene].slice(-3)
+
+  try {
+    const { system, user } = turnPrompt({
+      currentTurn: nextTurn,
+      maxTurns: store.maxTurns,
+      genre: store.settings.genre,
+      title: store.title,
+      summary: store.summary,
+      parameters,
+      roles,
+      recentScenes: recentPlusLast,
+      choiceText,
+      language: store.settings.language,
+      context: store.settings.context,
+      forceEnd: 'unrecoverable',
+    })
+    const endResponse = await callAI<TurnResponse>(
+      user,
+      turnSchema,
+      store.settings.provider,
+      system,
+      store.settings.language,
+    )
+    store.setGameOver(
+      'parametric',
+      strings.endParametric,
+      endResponse.gameOverText ||
+        strings.endParametricText(
+          findBrokenParameters(parameters)[0].name,
+          findBrokenParameters(parameters)[0].states[
+            findBrokenParameters(parameters)[0].states.length - 1
+          ],
+        ),
+    )
+  } catch {
+    // Fallback: hardcoded text (used to be the only path)
+    const first = findBrokenParameters(parameters)[0]
+    store.setGameOver(
+      'parametric',
+      strings.endParametric,
+      strings.endParametricText(
+        first.name,
+        first.states[first.states.length - 1],
+      ),
+    )
   }
 }

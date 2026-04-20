@@ -28,6 +28,9 @@ export interface Parameter {
   name: string
   states: string[]
   currentStateIndex: number
+  // true for exactly one turn — the turn it transitions into its worst state.
+  // Used by prompts to signal the AI that next scene must dramatize the consequence.
+  justBroke?: boolean
 }
 
 export interface ParameterCost {

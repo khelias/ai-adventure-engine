@@ -11,6 +11,9 @@ dist
 dist-ssr
 *.local
 
+# Playtest transcripts (large, mostly one-off; copy a specific one manually if worth preserving)
+playtest-transcripts
+
 # Editor
 .vscode/*
 !.vscode/extensions.json

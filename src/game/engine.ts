@@ -5,9 +5,8 @@ export interface ParameterChange {
   change: number
 }
 
-// V1 parity: change=-1 means *worse* (index increases toward last state),
-// change=+1 means *better* (index decreases toward 0). States are ordered
-// best → worst.
+// change=+1 → index decreases toward 0 (best). change=-1 → index increases toward last (worst).
+// States are ordered best → worst.
 export function applyParameterChanges(
   parameters: Parameter[],
   changes: ParameterChange[],
@@ -18,16 +17,32 @@ export function applyParameterChanges(
       0,
       Math.min(p.states.length - 1, p.currentStateIndex - change),
     )
-    return { ...p, currentStateIndex: next }
+    const wasAtWorst = p.currentStateIndex === p.states.length - 1
+    const isAtWorst = next === p.states.length - 1
+    return {
+      ...p,
+      currentStateIndex: next,
+      justBroke: !wasAtWorst && isAtWorst,
+    }
   })
 }
 
-export function findCriticalParameter(
-  parameters: Parameter[],
-): Parameter | null {
-  return (
-    parameters.find((p) => p.currentStateIndex >= p.states.length - 1) ?? null
-  )
+// Parameters currently sitting at their worst state.
+export function findBrokenParameters(parameters: Parameter[]): Parameter[] {
+  return parameters.filter((p) => p.currentStateIndex >= p.states.length - 1)
+}
+
+// Parameters that just transitioned to worst state this turn. These need to be
+// dramatized in the NEXT scene (prompt layer signals the AI about this).
+export function findJustBrokenParameters(parameters: Parameter[]): Parameter[] {
+  return parameters.filter((p) => p.justBroke === true)
+}
+
+// Game ends mechanically only when the situation is truly unrecoverable:
+// two or more parameters collapsed to worst state simultaneously.
+// A single broken parameter is a narrative phase transition, not a game-over.
+export function isUnrecoverable(parameters: Parameter[]): boolean {
+  return findBrokenParameters(parameters).length >= 2
 }
 
 export function durationToMaxTurns(duration: 'Short' | 'Medium' | 'Long'): number {
@@ -37,7 +52,7 @@ export function durationToMaxTurns(duration: 'Short' | 'Medium' | 'Long'): numbe
 }
 
 export function markAbilityUsed(roles: Role[], choiceText: string): Role[] {
-  // V1 parity: the ability-choice text contains "[RoleName]" marker.
+  // V1 parity: ability-choice text contains "[RoleName]" marker.
   const match = choiceText.match(/\[(.*?)\]/)
   if (!match?.[1]) return roles
   const roleName = match[1]
