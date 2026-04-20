@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 @keyframes scene-enter {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px); filter: blur(1px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
 }
 .scene-fade {
-  animation: scene-enter 0.4s ease-out;
+  animation: scene-enter 0.45s ease-out;
 }
 
 :root {
@@ -21,10 +21,13 @@
   --text-faint:   #3d3530;
   --accent:       #b84232;
   --accent-hover: #cd4e3c;
+  --accent-glow:  rgba(184, 66, 50, 0.18);
+  --accent-glow-sm: rgba(184, 66, 50, 0.10);
 }
 
 body {
-  background-color: var(--bg);
+  background: radial-gradient(ellipse 120% 55% at 50% -5%, #1e1409 0%, #0d0b0a 55%);
+  min-height: 100vh;
   color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -36,36 +39,47 @@ body {
     background: var(--surface);
     border: 1px solid var(--border);
     color: var(--text);
-    @apply rounded px-3 py-2 w-full focus:outline-none transition-colors;
+    @apply rounded px-3 py-2 w-full focus:outline-none transition-all;
   }
   .input-base:focus {
-    border-color: #4a3f38;
+    border-color: #5c4f45;
+    box-shadow: 0 0 0 3px rgba(184, 66, 50, 0.10);
   }
 
   /* ── Buttons ── */
   .btn-primary {
-    background: var(--text);
+    background: linear-gradient(to bottom, #ede5d8, #e0d6c6);
     color: var(--bg);
-    @apply font-medium px-4 py-2.5 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset, 0 2px 10px rgba(0,0,0,0.4);
+    @apply font-medium px-4 py-2.5 rounded transition-all disabled:opacity-40 disabled:cursor-not-allowed;
   }
   .btn-primary:hover:not(:disabled) {
-    background: #f0e8dc;
+    background: linear-gradient(to bottom, #f5ede0, #ede5d8);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 4px 18px rgba(0,0,0,0.45);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
   }
 
   .btn-secondary {
     background: var(--surface);
     border: 1px solid var(--border);
     color: var(--text);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
     @apply px-4 py-2.5 rounded transition-all disabled:opacity-40 disabled:cursor-not-allowed;
   }
   .btn-secondary:hover:not(:disabled) {
     border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 0 18px var(--accent-glow);
   }
 
-  /* ── Generic card (setup screens) ── */
+  /* ── Generic card ── */
   .card {
-    background: var(--surface);
+    background: linear-gradient(160deg, #1c1814 0%, #161310 100%);
     border: 1px solid var(--border);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,220,160,0.03);
     @apply rounded p-4;
   }
 
@@ -74,11 +88,17 @@ body {
     background: var(--surface);
     border: 1px solid var(--border);
     color: var(--text);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     @apply w-full text-left px-5 py-3.5 rounded transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-start gap-3;
   }
   .choice-btn:hover:not(:disabled) {
     background: var(--surface-alt);
     border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 0 24px var(--accent-glow-sm), inset 4px 0 20px rgba(184,66,50,0.05);
+    transform: translateX(2px);
+  }
+  .choice-btn:active:not(:disabled) {
+    transform: translateX(0);
   }
   .choice-btn-arrow {
     color: var(--accent);
@@ -92,6 +112,7 @@ body {
     line-height: 1.9;
     letter-spacing: -0.01em;
     color: var(--text);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.35);
   }
 
   /* ── Chip selectors (setup screen) ── */
@@ -99,23 +120,48 @@ body {
     background: var(--surface);
     border: 1px solid var(--border);
     color: var(--text-muted);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     @apply px-3 py-1.5 rounded text-sm transition-all cursor-pointer whitespace-nowrap;
   }
   .chip:hover {
     border-color: var(--accent);
     color: var(--text);
+    box-shadow: 0 0 0 1px rgba(184,66,50,0.4), 0 0 10px var(--accent-glow-sm);
   }
   .chip-active {
     background: var(--accent);
     border-color: var(--accent);
     color: var(--text);
+    box-shadow: 0 0 16px var(--accent-glow), 0 0 0 1px rgba(184,66,50,0.5);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
   }
 
   /* ── Numbered choice badge ── */
   .choice-num {
     color: var(--accent);
-    border: 1px solid var(--accent);
+    border: 1px solid rgba(184, 66, 50, 0.55);
+    box-shadow: 0 0 10px rgba(184,66,50,0.22), inset 0 0 8px rgba(184,66,50,0.05);
     @apply shrink-0 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center mt-0.5;
+  }
+
+  /* ── Game / screen title (Fraunces serif) ── */
+  .game-title {
+    font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+    font-size: 2.25rem;
+    font-weight: 300;
+    font-style: italic;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  /* ── Accent ornament line ── */
+  .ornament {
+    width: 2.5rem;
+    height: 1px;
+    background: linear-gradient(to right, var(--accent), transparent);
+    margin: 0.25rem 0 0.5rem;
+    opacity: 0.7;
   }
 
   /* ── Small caps label ── */

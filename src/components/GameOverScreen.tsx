@@ -28,7 +28,8 @@ export function GameOverScreen() {
 
   return (
     <section className="space-y-5 max-w-2xl mx-auto text-center">
-      <h2 className="text-2xl font-bold">{title}</h2>
+      <h2 className="game-title">{title}</h2>
+      <div className="ornament mx-auto" />
 
       <div className="card text-left space-y-4">
         {text.split('\n').filter(Boolean).map((p, i) => (

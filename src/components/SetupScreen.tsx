@@ -34,11 +34,14 @@ export function SetupScreen() {
   const setCtx = (patch: Partial<typeof ctx>) =>
     setSetting('context', { ...ctx, ...patch })
 
-  const playerCount = PLAYER_COUNTS.includes(settings.players) ? settings.players : 4
+  const playerCount = PLAYER_COUNTS.includes(settings.players) ? settings.players : 3
 
   return (
     <section className="space-y-5 max-w-md mx-auto">
-      <h2 className="text-2xl font-bold">{strings.appTitle}</h2>
+      <div>
+        <h2 className="game-title">{strings.appTitle}</h2>
+        <div className="ornament" />
+      </div>
 
       <Field label={strings.playerCountLabel}>
         <div className="flex gap-1">

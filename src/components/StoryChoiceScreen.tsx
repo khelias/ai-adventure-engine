@@ -18,7 +18,10 @@ export function StoryChoiceScreen() {
 
   return (
     <section className="space-y-5 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold">{strings.storyChoiceTitle}</h2>
+      <div>
+        <h2 className="game-title">{strings.storyChoiceTitle}</h2>
+        <div className="ornament" />
+      </div>
 
       {isLoading ? (
         <div className="card space-y-4 animate-pulse">
@@ -32,7 +35,7 @@ export function StoryChoiceScreen() {
         </div>
       ) : story ? (
         <div className="card space-y-4">
-          <h3 className="text-xl font-semibold">{story.title}</h3>
+          <h3 className="text-xl font-semibold" style={{ fontFamily: 'Fraunces, Georgia, serif', fontStyle: 'italic', fontWeight: 400 }}>{story.title}</h3>
           <p className="scene-text text-base">{story.summary}</p>
           <div className="flex gap-2">
             <button className="btn-primary" onClick={() => initStory(story)}>

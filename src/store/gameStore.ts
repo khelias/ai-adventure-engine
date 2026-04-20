@@ -22,9 +22,9 @@ function loadStoredProvider(): Settings['provider'] {
 const initialSettings: Settings = {
   language: 'et',
   provider: loadStoredProvider(),
-  players: 4,
+  players: 3,
   genre: 'Zombies',
-  duration: 'Medium',
+  duration: 'Short',
   context: {
     location: '',
     playersDesc: '',

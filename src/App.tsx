@@ -12,7 +12,7 @@ export default function App() {
   return (
     <div className="min-h-dvh flex flex-col">
       <header className="flex justify-between items-center px-4 sm:px-6 py-3 border-b" style={{ borderColor: 'var(--border-dim)' }}>
-        <span className="label-caps opacity-40">staging</span>
+        <a href="/" className="label-caps opacity-40 hover:opacity-70 transition-opacity">← Games</a>
         <LangToggle />
       </header>
 

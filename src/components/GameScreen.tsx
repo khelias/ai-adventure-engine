@@ -69,7 +69,7 @@ export function GameScreen() {
           <div className="flex-1 h-px rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
             <div
               className="h-full transition-all duration-500"
-              style={{ width: `${progressPct}%`, background: 'var(--text-muted)' }}
+              style={{ width: `${progressPct}%`, background: 'var(--text-muted)', boxShadow: '2px 0 8px rgba(110,99,90,0.6)' }}
             />
           </div>
           <span className="label-caps shrink-0 opacity-60">{durationLabel.split(' ')[0]}</span>
@@ -87,7 +87,7 @@ export function GameScreen() {
       <div
         key={currentTurn}
         className="scene-fade border-x border-b-0 border-t px-6 py-8 space-y-5"
-        style={{ background: 'var(--surface-alt)', borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }}
+        style={{ background: 'var(--surface-alt)', borderColor: 'var(--border)', borderTopColor: 'var(--accent)', borderTopWidth: '2px', boxShadow: 'inset 0 14px 40px rgba(184,66,50,0.05)' }}
       >
         <div className="flex items-center gap-3 mb-1">
           <span className="label-caps">{strings.sceneLabel} {currentTurn}</span>
