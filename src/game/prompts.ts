@@ -317,7 +317,7 @@ CORE RULES:
 2. CHOICES MUST DECLARE THEIR COST. Each choice is a TRADE between parameters — write the cost into the choice text itself so players feel the dilemma:
    GOOD: "Murrame tõkke läbi — kulutame kütust, aga jätame jälitajad maha."
    BAD: "Murrame tõkke läbi." (player can't feel the trade-off)
-   Fill `expectedChanges` on each choice to match the cost hinted in the text. These must agree.
+   Fill expectedChanges on each choice to match the cost hinted in the text. These must agree.
 
 3. TRILEMMA ENFORCEMENT. With 3 choices: each must affect a DIFFERENT combination of parameters. Two choices that move the same parameters are a design failure — rewrite one.
 
@@ -340,7 +340,7 @@ SELF-CHECK before responding:
 - Does my scene show ≥2 parameters as concrete sensory details? If not, rewrite.
 - Do my 3 choices each touch a DIFFERENT combination of parameters? If two are parameter-twins, rewrite one.
 - Does each choice text hint at its cost? If a player can't feel the trade-off from reading the choice, rewrite it.
-- Does `expectedChanges` for each choice match what the choice text promises?`
+- Does expectedChanges for each choice match what the choice text promises?`
 
   const currentStates = parameters
     .map((p) => {
