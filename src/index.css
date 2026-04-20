@@ -338,7 +338,7 @@ body {
 .btn-begin:disabled { opacity: 0.45; cursor: wait; }
 
 .setup-advanced-toggle {
-  margin-top: 1rem;
+  margin-top: 1.25rem;
   max-width: 360px;
   width: 100%;
   text-align: center;
@@ -346,14 +346,60 @@ body {
   font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: var(--text-muted);
   cursor: pointer;
   background: none;
   border: none;
-  padding: 0.4rem 0;
+  padding: 0.5rem 0;
   transition: color 0.15s;
 }
-.setup-advanced-toggle:hover { color: var(--text-muted); }
+.setup-advanced-toggle:hover { color: var(--text-dim); }
+
+/* Advanced context section */
+.ctx-section {
+  width: 100%;
+  max-width: 360px;
+  border-top: 1px solid var(--line);
+  padding-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.ctx-field {}
+.ctx-label {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+.ctx-vibe-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  flex-wrap: wrap;
+}
+.ctx-vibe-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  padding: 0.2rem 0;
+  transition: color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.ctx-vibe-btn.active { color: var(--accent); }
+.ctx-vibe-btn:hover:not(.active) { color: var(--text-muted); }
+
+.ctx-provider {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
 
 /* ════════════════════════════════════════════
    GAME SCREENS — dark, readable

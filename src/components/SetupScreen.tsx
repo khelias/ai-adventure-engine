@@ -199,35 +199,83 @@ export function SetupScreen() {
       </button>
 
       {showAdvanced && (
-        <div style={{ width: '100%', maxWidth: '360px', display: 'flex', flexDirection: 'column', gap: '0.875rem', paddingTop: '0.5rem' }}>
-          <AdvancedField label={strings.locationLabel}>
-            <input type="text" value={ctx.location} placeholder={strings.locationPlaceholder}
-              onChange={(e) => setCtx({ location: e.target.value })} className="input-base" />
-          </AdvancedField>
-          <AdvancedField label={strings.playersDescLabel}>
-            <input type="text" value={ctx.playersDesc} placeholder={strings.playersDescPlaceholder}
-              onChange={(e) => setCtx({ playersDesc: e.target.value })} className="input-base" />
-          </AdvancedField>
-          <AdvancedField label={strings.vibeLabel}>
-            <select value={ctx.vibe} onChange={(e) => setCtx({ vibe: e.target.value as Vibe })} className="input-base">
-              <option value="">{strings.vibeAny}</option>
-              <option value="light">{strings.vibeLight}</option>
-              <option value="tense">{strings.vibeTense}</option>
-              <option value="dark">{strings.vibeDark}</option>
-            </select>
-          </AdvancedField>
-          <AdvancedField label={strings.insideJokeLabel}>
-            <input type="text" value={ctx.insideJoke} placeholder={strings.insideJokePlaceholder}
-              onChange={(e) => setCtx({ insideJoke: e.target.value })} className="input-base" />
-          </AdvancedField>
-          <AdvancedField label={strings.providerLabel}>
-            <select value={settings.provider}
-              onChange={(e) => setSetting('provider', e.target.value as 'claude' | 'gemini')}
-              className="input-base">
-              <option value="claude">{strings.providerClaude}</option>
-              <option value="gemini">{strings.providerGemini}</option>
-            </select>
-          </AdvancedField>
+        <div className="ctx-section">
+          {/* Location */}
+          <div className="ctx-field">
+            <span className="ctx-label">{strings.locationLabel}</span>
+            <input
+              type="text"
+              value={ctx.location}
+              placeholder={strings.locationPlaceholder}
+              onChange={(e) => setCtx({ location: e.target.value })}
+              className="input-page"
+            />
+          </div>
+
+          {/* Players description */}
+          <div className="ctx-field">
+            <span className="ctx-label">{strings.playersDescLabel}</span>
+            <input
+              type="text"
+              value={ctx.playersDesc}
+              placeholder={strings.playersDescPlaceholder}
+              onChange={(e) => setCtx({ playersDesc: e.target.value })}
+              className="input-page"
+            />
+          </div>
+
+          {/* Vibe — word buttons instead of select */}
+          <div className="ctx-field">
+            <span className="ctx-label">{strings.vibeLabel}</span>
+            <div className="ctx-vibe-btns">
+              {(
+                [
+                  { value: '' as Vibe, label: language === 'et' ? 'vaba' : 'any' },
+                  { value: 'light' as Vibe, label: language === 'et' ? 'kerge' : 'light' },
+                  { value: 'tense' as Vibe, label: language === 'et' ? 'pingeline' : 'tense' },
+                  { value: 'dark' as Vibe, label: language === 'et' ? 'tume' : 'dark' },
+                ] as const
+              ).map((v) => (
+                <button
+                  key={v.value}
+                  type="button"
+                  className={`ctx-vibe-btn${ctx.vibe === v.value ? ' active' : ''}`}
+                  onClick={() => setCtx({ vibe: v.value })}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Inside joke */}
+          <div className="ctx-field">
+            <span className="ctx-label">{strings.insideJokeLabel}</span>
+            <input
+              type="text"
+              value={ctx.insideJoke}
+              placeholder={strings.insideJokePlaceholder}
+              onChange={(e) => setCtx({ insideJoke: e.target.value })}
+              className="input-page"
+            />
+          </div>
+
+          {/* Provider — technical, at the bottom */}
+          <div className="ctx-provider">
+            <span className="ctx-label">{strings.providerLabel}</span>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              {(['claude', 'gemini'] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className={`ctx-vibe-btn${settings.provider === p ? ' active' : ''}`}
+                  onClick={() => setSetting('provider', p)}
+                >
+                  {p === 'claude' ? 'Claude' : 'Gemini'}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -238,13 +286,3 @@ export function SetupScreen() {
   )
 }
 
-function AdvancedField({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div>
-      <span style={{ display: 'block', fontSize: '0.625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
-        {label}
-      </span>
-      {children}
-    </div>
-  )
-}
