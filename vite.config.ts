@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/adventure-v2/' : '/',
+  base: command === 'build' ? '/adventure/' : '/',
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
