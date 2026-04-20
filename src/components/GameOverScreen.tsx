@@ -27,78 +27,83 @@ export function GameOverScreen() {
   }
 
   return (
-    <section className="space-y-5 max-w-2xl mx-auto text-center">
-      <h2 className="game-title">{title}</h2>
-      <div className="ornament mx-auto" />
+    <section className="space-y-7 text-center">
+      <div>
+        <p className="type-caps" style={{ marginBottom: '0.5rem' }}>
+          {language === 'et' ? 'lugu on räägitud' : 'the story is told'}
+        </p>
+        <h2
+          className="type-fell"
+          style={{ fontSize: '2rem', fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.2 }}
+        >
+          {title}
+        </h2>
+        <div className="ornament-rule type-fell" style={{ margin: '0.75rem 0', color: 'var(--ink-faint)', fontSize: '1rem' }}>
+          ❧
+        </div>
+      </div>
 
-      <div className="card text-left space-y-4">
+      <div className="text-left space-y-3">
         {text.split('\n').filter(Boolean).map((p, i) => (
-          <p key={i} className="scene-text">{p}</p>
+          <p key={i} className="type-prose ink-reveal" style={{ animationDelay: `${i * 0.1}s`, animationFillMode: 'both' }}>
+            {p}
+          </p>
         ))}
       </div>
 
-      {/* Collapsible full story */}
+      {/* Full story toggle */}
       {allScenes.length > 0 && (
-        <div className="text-left space-y-2">
-          <div className="flex items-center gap-3">
+        <div className="text-left space-y-3">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderTop: '1px solid var(--page-edge)', paddingTop: '1rem' }}>
             <button
               type="button"
               onClick={() => setShowFullStory((v) => !v)}
-              className="text-sm transition-colors"
-              style={{ color: 'var(--text-muted)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+              className="type-caps transition-colors"
+              style={{ color: 'var(--ink-faint)', fontSize: '0.65rem' }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-faint)')}
             >
               {showFullStory ? strings.hideFullStoryBtn : strings.showFullStoryBtn}
             </button>
-            <div className="flex-1 h-px" style={{ background: 'var(--border-dim)' }} />
+            <div style={{ flex: 1, height: '1px', background: 'var(--page-edge)' }} />
             <button
               type="button"
               onClick={copyToClipboard}
-              className="text-sm transition-colors"
-              style={{ color: copied ? 'var(--accent)' : 'var(--text-muted)' }}
-              onMouseEnter={(e) => { if (!copied) e.currentTarget.style.color = 'var(--text)' }}
-              onMouseLeave={(e) => { if (!copied) e.currentTarget.style.color = 'var(--text-muted)' }}
+              className="type-caps transition-colors"
+              style={{ color: copied ? 'var(--gild)' : 'var(--ink-faint)', fontSize: '0.65rem' }}
             >
               {copied ? strings.copiedMsg : strings.copyStoryBtn}
             </button>
           </div>
 
           {showFullStory && (
-            <div className="card space-y-6 text-left">
+            <div className="space-y-6">
               {allScenes.map((scene, i) => (
-                <div key={i} className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <span className="label-caps">{strings.sceneLabel} {i + 1}</span>
-                    <div className="flex-1 h-px" style={{ background: 'var(--border-dim)' }} />
+                <div key={i}>
+                  <div className="ornament-rule type-caps" style={{ marginBottom: '0.75rem', fontSize: '0.6rem' }}>
+                    {strings.sceneLabel} {i + 1}
                   </div>
                   {scene.split('\n').filter(Boolean).map((p, j) => (
-                    <p key={j} className="scene-text text-base">{p}</p>
+                    <p key={j} className="type-prose" style={{ fontSize: '0.95rem', marginBottom: '0.15em' }}>{p}</p>
                   ))}
                 </div>
               ))}
-              <div className="space-y-3 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
-                <span className="label-caps">{title}</span>
-                {text.split('\n').filter(Boolean).map((p, i) => (
-                  <p key={i} className="scene-text text-base">{p}</p>
-                ))}
-              </div>
             </div>
           )}
         </div>
       )}
 
+      {/* Sequel */}
       {kind === 'narrative' ? (
-        <div className="space-y-3 text-left">
-          <label className="block space-y-1.5">
-            <span className="text-sm text-neutral-400">{strings.sequelLabel}</span>
-            <textarea
-              value={sequelText}
-              onChange={(e) => setSequelText(e.target.value)}
-              rows={5}
-              className="w-full input-base"
-            />
-          </label>
+        <div className="space-y-3 text-left" style={{ borderTop: '1px solid var(--page-edge)', paddingTop: '1.25rem' }}>
+          <label className="type-caps" style={{ display: 'block', fontSize: '0.65rem' }}>{strings.sequelLabel}</label>
+          <textarea
+            value={sequelText}
+            onChange={(e) => setSequelText(e.target.value)}
+            rows={4}
+            className="input-page resize-none"
+            style={{ fontStyle: 'italic' }}
+          />
           <button
             onClick={() => generateSequel(sequelText)}
             disabled={isLoading || !sequelText.trim()}
@@ -109,11 +114,15 @@ export function GameOverScreen() {
         </div>
       ) : null}
 
+      <div className="type-fell" style={{ color: 'var(--ink-faint)', fontSize: '1.5rem', letterSpacing: '0.2em' }}>
+        · · ·
+      </div>
+
       <button onClick={reset} className="btn-secondary">
         {strings.restartBtn}
       </button>
 
-      {error ? <p className="text-red-400 text-sm">{error}</p> : null}
+      {error ? <p style={{ color: 'var(--vermilion)', fontSize: '0.85rem' }}>{error}</p> : null}
     </section>
   )
 }

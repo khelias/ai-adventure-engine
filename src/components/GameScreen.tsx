@@ -4,9 +4,14 @@ import { translations } from '../i18n/translations'
 import { handlePlayerChoice } from '../game/actions'
 import type { Choice, Parameter } from '../game/types'
 
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
+
+function toRoman(n: number): string {
+  return ROMAN[n - 1] ?? String(n)
+}
+
 export function GameScreen() {
   const language = useGameStore((s) => s.settings.language)
-  const duration = useGameStore((s) => s.settings.duration)
   const currentTurn = useGameStore((s) => s.currentTurn)
   const maxTurns = useGameStore((s) => s.maxTurns)
   const parameters = useGameStore((s) => s.parameters)
@@ -23,13 +28,6 @@ export function GameScreen() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [currentTurn])
-
-  const durationLabel =
-    duration === 'Short'
-      ? strings.durationShort
-      : duration === 'Medium'
-        ? strings.durationMedium
-        : strings.durationLong
 
   const onChoice = (choice: Choice) => {
     setShowCustomInput(false)
@@ -55,69 +53,67 @@ export function GameScreen() {
     void handlePlayerChoice(text, { isFreeText: true })
   }
 
-  const progressPct = Math.round((currentTurn / maxTurns) * 100)
+  const ribbonHeight = maxTurns > 0 ? Math.max((currentTurn / maxTurns) * 100, 8) : 8
+
+  const paragraphs = sceneText.split('\n').filter(Boolean)
 
   return (
-    <section className="max-w-2xl mx-auto space-y-0">
+    <section>
+      {/* Silk ribbon bookmark */}
+      <div className="ribbon" style={{ height: `${ribbonHeight}%` }} />
 
-      {/* ── Turn progress + params ── */}
-      <div className="rounded-t border border-b-0 px-5 py-4 space-y-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-
-        {/* Progress bar */}
-        <div className="flex items-center gap-3">
-          <span className="label-caps shrink-0">{strings.turn} {currentTurn}/{maxTurns}</span>
-          <div className="flex-1 h-px rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
-            <div
-              className="h-full transition-all duration-500"
-              style={{ width: `${progressPct}%`, background: 'var(--text-muted)', boxShadow: '2px 0 8px rgba(110,99,90,0.6)' }}
-            />
+      {/* Wax seal parameters — frame panel above the page text */}
+      <div
+        className="flex justify-around items-center py-3 px-2 mb-6 rounded"
+        style={{ background: 'rgba(26,21,16,0.06)', borderBottom: '1px solid var(--page-edge)' }}
+      >
+        {parameters.map((p) => (
+          <SealParameter key={p.name} param={p} />
+        ))}
+        <div className="text-right">
+          <div className="type-fell" style={{ color: 'var(--vermilion)', fontSize: '1.1rem', lineHeight: 1 }}>
+            {toRoman(currentTurn)}
           </div>
-          <span className="label-caps shrink-0 opacity-60">{durationLabel.split(' ')[0]}</span>
-        </div>
-
-        {/* Parameters */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
-          {parameters.map((p) => (
-            <ParameterBar key={p.name} param={p} />
-          ))}
+          <div className="type-caps" style={{ fontSize: '0.58rem', marginTop: '2px' }}>
+            {language === 'et' ? 'stseen' : 'scene'}
+          </div>
         </div>
       </div>
 
-      {/* ── Scene ── */}
-      <div
-        key={currentTurn}
-        className="scene-fade border-x border-b-0 border-t px-6 py-8 space-y-5"
-        style={{ background: 'var(--surface-alt)', borderColor: 'var(--border)', borderTopColor: 'var(--accent)', borderTopWidth: '2px', boxShadow: 'inset 0 14px 40px rgba(184,66,50,0.05)' }}
-      >
-        <div className="flex items-center gap-3 mb-1">
-          <span className="label-caps">{strings.sceneLabel} {currentTurn}</span>
-          <div className="flex-1 h-px" style={{ background: 'var(--border-dim)' }} />
-        </div>
-
+      {/* Scene text */}
+      <div key={currentTurn} className="scene-fade space-y-0">
         {isLoading && !sceneText ? (
-          <p className="scene-text opacity-30">{strings.loading}</p>
+          <div className="py-8 text-center">
+            <span className="type-fell" style={{ color: 'var(--gild)', fontSize: '0.85rem', letterSpacing: '0.15em' }}>
+              {language === 'et' ? '· tint voolab ·' : '· ink flows ·'}
+            </span>
+          </div>
         ) : (
-          sceneText
-            .split('\n')
-            .filter(Boolean)
-            .map((paragraph, i) => (
-              <p key={i} className="scene-text">
-                {paragraph}
-              </p>
-            ))
+          paragraphs.map((paragraph, i) => (
+            <p
+              key={i}
+              className={`type-prose ink-reveal ink-reveal-${Math.min(i + 1, 4)} ${i === 0 && currentTurn === 1 ? 'drop-cap' : ''}`}
+              style={{ marginBottom: i < paragraphs.length - 1 ? '0.2em' : 0 }}
+            >
+              {paragraph}
+            </p>
+          ))
         )}
         {isLoading && sceneText ? (
-          <p className="label-caps opacity-40">{strings.loading}</p>
+          <p className="type-fell text-center py-2" style={{ color: 'var(--gild)', fontSize: '0.85rem', letterSpacing: '0.12em' }}>
+            · · ·
+          </p>
         ) : null}
       </div>
 
-      {/* ── Choices ── */}
+      {/* Choices */}
       {!isLoading && choices.length > 0 ? (
-        <div className="border rounded-b" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <div className="px-5 pt-4 pb-1">
-            <span className="label-caps">{strings.choiceTitle}</span>
+        <div className="mt-6">
+          <div className="ornament-rule type-caps mb-3" style={{ fontSize: '0.6rem' }}>
+            {strings.choiceTitle}
           </div>
-          <div className="p-3 space-y-1.5">
+
+          <div style={{ paddingLeft: '1.5rem' }}>
             {choices.map((choice, i) => {
               const abilityRole =
                 choice.isAbility && choice.roleIndex !== undefined
@@ -129,37 +125,39 @@ export function GameScreen() {
                   key={i}
                   onClick={() => onChoice(choice)}
                   disabled={isUsed || isLoading}
-                  className="choice-btn"
+                  className={`choice-marginalia w-full text-left ${isUsed ? 'opacity-40' : ''}`}
                 >
-                  <span className="choice-num">{i + 1}</span>
-                  <span>{choice.text}{isUsed ? ` (${strings.usedLabel})` : ''}</span>
+                  <span className="choice-numeral">{toRoman(i + 1)}.</span>
+                  <span className="choice-text">
+                    {choice.text}{isUsed ? ` — ${strings.usedLabel}` : ''}
+                  </span>
                 </button>
               )
             })}
           </div>
 
           {/* Custom input */}
-          <div className="px-3 pb-3">
+          <div className="mt-3" style={{ paddingLeft: '1.5rem' }}>
             {!showCustomInput ? (
               <button
                 type="button"
                 onClick={() => setShowCustomInput(true)}
-                className="w-full text-left px-5 py-2.5 rounded text-sm transition-colors flex items-center gap-3"
-                style={{ color: 'var(--text-faint)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}
+                className="type-fell transition-colors"
+                style={{ color: 'var(--ink-faint)', fontStyle: 'italic', fontSize: '0.95rem' }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-faint)')}
               >
-                <span className="choice-btn-arrow opacity-40">›</span>
-                <span className="italic">{strings.customChoiceLink}…</span>
+                {strings.customChoiceLink}…
               </button>
             ) : (
-              <div className="space-y-2 px-2">
+              <div className="space-y-2">
                 <textarea
                   value={customText}
                   onChange={(e) => setCustomText(e.target.value)}
                   placeholder={strings.customChoicePlaceholder}
                   rows={2}
-                  className="input-base resize-none text-sm"
+                  className="input-page resize-none"
+                  style={{ fontStyle: 'italic', fontSize: '1rem' }}
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -168,11 +166,18 @@ export function GameScreen() {
                     }
                   }}
                 />
-                <div className="flex gap-2">
-                  <button onClick={onCustomSubmit} disabled={!customText.trim()} className="btn-primary text-sm py-1.5 px-3">
+                <div className="flex gap-3">
+                  <button
+                    onClick={onCustomSubmit}
+                    disabled={!customText.trim()}
+                    className="btn-primary text-xs py-1.5 px-3"
+                  >
                     {strings.customChoiceSubmit}
                   </button>
-                  <button onClick={() => { setShowCustomInput(false); setCustomText('') }} className="btn-secondary text-sm py-1.5 px-3">
+                  <button
+                    onClick={() => { setShowCustomInput(false); setCustomText('') }}
+                    style={{ color: 'var(--ink-faint)', fontSize: '0.8rem' }}
+                  >
                     {strings.customChoiceCancel}
                   </button>
                 </div>
@@ -182,39 +187,62 @@ export function GameScreen() {
         </div>
       ) : null}
 
-      {error ? <p className="text-red-400 text-sm mt-4">{error}</p> : null}
+      {error ? <p className="text-red-600 text-sm mt-4 type-caps">{error}</p> : null}
     </section>
   )
 }
 
-function ParameterBar({ param }: { param: Parameter }) {
+function SealParameter({ param }: { param: Parameter }) {
   const maxIdx = param.states.length - 1
   const fill = maxIdx > 0 ? (maxIdx - param.currentStateIndex) / maxIdx : 1
   const isCritical = param.currentStateIndex >= maxIdx
 
-  const barColor = isCritical
-    ? '#dc2626'
+  const sealColor = isCritical
+    ? 'var(--state-failing)'
     : fill > 0.66
-      ? '#10b981'
+      ? 'var(--state-vital)'
       : fill > 0.33
-        ? '#f59e0b'
-        : '#f97316'
+        ? 'var(--state-waning)'
+        : 'var(--state-failing)'
+
+  const fillPct = Math.round(fill * 100)
 
   return (
-    <div className={isCritical ? 'animate-pulse' : ''}>
-      <div className="label-caps mb-2 truncate">{param.name}</div>
-      <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+    <div className={`seal-wrap ${isCritical ? 'seal-critical' : ''}`}>
+      <div
+        className="seal"
+        style={{
+          background: `conic-gradient(${sealColor} ${fillPct}%, rgba(26,21,16,0.15) ${fillPct}%)`,
+          boxShadow: isCritical
+            ? `0 0 0 2px ${sealColor}, 0 0 16px rgba(168,52,28,0.4)`
+            : `0 0 0 1px rgba(26,21,16,0.2), 0 2px 8px rgba(0,0,0,0.15)`,
+        }}
+      >
         <div
-          className="h-full rounded-full transition-all duration-500 ease-out"
           style={{
-            width: `${Math.max(fill * 100, isCritical ? 0 : 3)}%`,
-            background: barColor,
+            width: '30px',
+            height: '30px',
+            borderRadius: '50%',
+            background: 'var(--page)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
-        />
+        >
+          <span
+            className="type-fell"
+            style={{
+              fontSize: '0.7rem',
+              color: isCritical ? 'var(--vermilion)' : 'var(--ink-soft)',
+              lineHeight: 1,
+              fontStyle: 'italic',
+            }}
+          >
+            {param.name.charAt(0)}
+          </span>
+        </div>
       </div>
-      <div className="mt-1.5 text-xs" style={{ color: isCritical ? '#f87171' : 'var(--text-muted)' }}>
-        {param.states[param.currentStateIndex]}
-      </div>
+      <div className="seal-label">{param.states[param.currentStateIndex]}</div>
     </div>
   )
 }

@@ -19,63 +19,94 @@ export function RoleAssignmentScreen() {
   }
 
   return (
-    <section className="space-y-5 max-w-2xl mx-auto">
+    <section className="space-y-7">
       <div className="space-y-2">
-        <h2 className="game-title">{title}</h2>
-        <div className="ornament" />
-        <p className="text-neutral-300">{summary}</p>
+        <p className="type-caps">{language === 'et' ? 'rollid' : 'cast'}</p>
+        <h2
+          className="type-fell"
+          style={{ fontSize: '1.75rem', fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.25 }}
+        >
+          {title}
+        </h2>
+        <p className="type-prose" style={{ fontSize: '0.95rem', color: 'var(--ink-soft)', fontStyle: 'italic' }}>
+          {summary}
+        </p>
+        <div style={{ width: '2rem', height: '1px', background: 'var(--page-edge)', marginTop: '0.25rem' }} />
       </div>
 
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">{strings.roleAssignTitle}</h3>
+      <div className="flex justify-end">
         <button
           type="button"
           onClick={fillDefaultNames}
-          className="text-sm px-3 py-1.5 rounded transition-colors"
-          style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-          onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-          onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+          className="type-caps transition-colors"
+          style={{ color: 'var(--ink-faint)', fontSize: '0.65rem' }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-faint)')}
         >
           {strings.defaultNamesBtn}
         </button>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-5">
         {roles.map((role, index) => (
-          <div key={role.id} className="card space-y-3">
-            <label className="block space-y-1.5">
-              <span className="text-sm text-neutral-400">
-                {strings.playerName} {index + 1}
-              </span>
-              <input
-                type="text"
-                value={role.name}
-                placeholder={strings.playerNamePlaceholder}
-                onChange={(e) => setRoleName(index, e.target.value)}
-                className="w-full input-base"
-              />
-            </label>
-            <p className="text-sm text-neutral-300">{role.description}</p>
-            <div
-              className="rounded px-3 py-2.5"
-              style={{ background: 'var(--surface-alt)', borderLeft: '2px solid var(--accent)', boxShadow: '-6px 0 20px rgba(184,66,50,0.12)' }}
-            >
-              <span className="label-caps block mb-1">{strings.abilityLabel}</span>
-              <span className="text-sm text-neutral-200 font-medium">{role.ability}</span>
+          <div
+            key={role.id}
+            style={{ borderBottom: '1px solid var(--page-edge)', paddingBottom: '1.25rem' }}
+          >
+            <div className="space-y-3">
+              <div className="flex items-baseline gap-3">
+                <span
+                  className="type-fell"
+                  style={{ color: 'var(--vermilion)', fontSize: '1.1rem', minWidth: '1.2rem', flexShrink: 0 }}
+                >
+                  {index + 1}.
+                </span>
+                <input
+                  type="text"
+                  value={role.name}
+                  placeholder={strings.playerNamePlaceholder}
+                  onChange={(e) => setRoleName(index, e.target.value)}
+                  className="input-page flex-1"
+                  style={{ fontWeight: 600, fontSize: '1.05rem' }}
+                />
+              </div>
+              <p
+                className="type-prose"
+                style={{ fontSize: '0.95rem', color: 'var(--ink-soft)', paddingLeft: '2rem' }}
+              >
+                {role.description}
+              </p>
+              <div
+                style={{
+                  paddingLeft: '2rem',
+                  display: 'flex',
+                  gap: '0.5rem',
+                  alignItems: 'flex-start',
+                }}
+              >
+                <span
+                  className="type-fell"
+                  style={{ color: 'var(--gild)', fontSize: '1rem', flexShrink: 0, lineHeight: 1.5 }}
+                >
+                  ❧
+                </span>
+                <p
+                  className="type-prose"
+                  style={{ fontSize: '0.9rem', color: 'var(--ink-soft)', fontStyle: 'italic' }}
+                >
+                  {role.ability}
+                </p>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      <button
-        onClick={startGameAndFirstTurn}
-        disabled={isLoading}
-        className="btn-primary"
-      >
+      <button onClick={startGameAndFirstTurn} disabled={isLoading} className="w-full btn-primary py-3">
         {isLoading ? strings.loading : strings.startGameBtn}
       </button>
 
-      {error ? <p className="text-red-400 text-sm">{error}</p> : null}
+      {error ? <p style={{ color: 'var(--vermilion)', fontSize: '0.85rem' }}>{error}</p> : null}
     </section>
   )
 }

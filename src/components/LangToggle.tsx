@@ -4,25 +4,29 @@ export function LangToggle() {
   const language = useGameStore((s) => s.settings.language)
   const setSetting = useGameStore((s) => s.setSetting)
 
-  const base =
-    'px-3 py-1 text-sm rounded transition-colors border border-neutral-700'
-  const active = 'bg-neutral-100 text-neutral-900 border-neutral-100'
-  const idle = 'text-neutral-400 hover:text-neutral-100'
-
   return (
     <div className="flex gap-1">
-      <button
-        className={`${base} ${language === 'et' ? active : idle}`}
-        onClick={() => setSetting('language', 'et')}
-      >
-        ET
-      </button>
-      <button
-        className={`${base} ${language === 'en' ? active : idle}`}
-        onClick={() => setSetting('language', 'en')}
-      >
-        EN
-      </button>
+      {(['et', 'en'] as const).map((lang) => (
+        <button
+          key={lang}
+          onClick={() => setSetting('language', lang)}
+          style={{
+            padding: '3px 10px',
+            fontSize: '0.7rem',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            borderRadius: '3px',
+            border: `1px solid ${language === lang ? 'var(--gild)' : 'var(--frame-edge)'}`,
+            background: language === lang ? 'var(--gild)' : 'transparent',
+            color: language === lang ? '#0d0a06' : '#5a4a38',
+            fontWeight: language === lang ? 600 : 400,
+            transition: 'all 0.15s',
+            cursor: 'pointer',
+          }}
+        >
+          {lang.toUpperCase()}
+        </button>
+      ))}
     </div>
   )
 }
