@@ -129,7 +129,7 @@ sequenceDiagram
     Engine->>Engine: setGameOver('parametric', aiText)
 ```
 
-Before this change (pre-2026-04-20), a single parameter at worst would trigger an engine-mechanical end with a hardcoded template string. Now: one parameter = phase transition (AI narrates consequence, game continues); two or more = dedicated finale Claude call, AI writes the ending. See [CHANGELOG.md](../CHANGELOG.md) for details.
+One parameter at worst = phase transition (AI narrates the consequence, game continues); two or more at worst = dedicated finale Claude call with `forceEnd: 'unrecoverable'`, AI writes the ending. The hardcoded template line in `translations.ts` is a fallback that fires only if this second call throws.
 
 ## 4. Prompt architecture
 
@@ -241,5 +241,4 @@ Long-term: move the proxy into the `ai-adventure-engine` repo as a `proxy/` fold
 | Proxy routing + editor pass + security | `khe-homelab/services/apps/games/adventure-proxy/server.js` |
 | nginx rate limit + reverse proxy | `khe-homelab/services/apps/games/nginx.conf` |
 | Full-game smoke test | `scripts/playtest.ts` — see [`scripts/README.md`](../scripts/README.md) |
-| Design principles / invariants | `V2-PLAN.md` |
-| What changed and when | [CHANGELOG.md](../CHANGELOG.md) |
+| Design principles / invariants, roadmap | [`ROADMAP.md`](../ROADMAP.md) |

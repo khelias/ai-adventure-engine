@@ -68,7 +68,7 @@ The dev build proxies `/adventure/api/` to the production endpoint at `games.khe
 - **Tool use** — structured AI actions (`update_parameter`, `introduce_npc`, `raise_stakes`) instead of JSON-in-prose parsing
 - **Wounded / ghost states** — players who "die" narratively continue as wounded (limited agency) or a ghost (exclusive whispers only they receive), so no one sits out of a 20-minute session
 
-Full roadmap in [V2-PLAN.md](V2-PLAN.md).
+Full roadmap in [ROADMAP.md](ROADMAP.md).
 
 ---
 
