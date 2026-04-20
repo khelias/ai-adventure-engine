@@ -35,6 +35,7 @@ interface StringTable {
   providerGemini: string
   generateStoryBtn: string
   storyChoiceTitle: string
+  regenerateBtn: string
   customStoryTitle: string
   customStoryPlaceholder: string
   useCustomStoryBtn: string
@@ -106,8 +107,9 @@ export const translations: Record<Language, StringTable> = {
     providerClaude: 'Claude (parem kvaliteet)',
     providerGemini: 'Gemini (kiire, odav)',
     generateStoryBtn: 'Loo seiklus',
-    storyChoiceTitle: 'Vali seikluse algus',
-    customStoryTitle: '...või kirjuta omaenda stsenaarium:',
+    storyChoiceTitle: 'Sinu seiklus',
+    regenerateBtn: 'Genereeri uus',
+    customStoryTitle: 'Kirjuta oma stsenaarium',
     customStoryPlaceholder:
       'Näiteks: Ellujäänud on varjunud vanasse kaubamajja, kuid toiduvarud on lõppemas ja hord läheneb...',
     useCustomStoryBtn: 'Kasuta oma lugu',
@@ -178,8 +180,9 @@ export const translations: Record<Language, StringTable> = {
     providerClaude: 'Claude (better quality)',
     providerGemini: 'Gemini (fast, cheap)',
     generateStoryBtn: 'Create Adventure',
-    storyChoiceTitle: "Choose your adventure's start",
-    customStoryTitle: '...or write your own scenario:',
+    storyChoiceTitle: 'Your adventure',
+    regenerateBtn: 'Regenerate',
+    customStoryTitle: 'Write your own scenario',
     customStoryPlaceholder:
       'Example: The survivors are hiding in an old mall, but food is running out and the horde is approaching...',
     useCustomStoryBtn: 'Use your story',

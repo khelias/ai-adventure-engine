@@ -43,7 +43,7 @@ export async function generateStories(): Promise<void> {
         context: settings.context,
       }),
       storyGenerationSchema,
-      'gemini', // story metadata: Gemini Flash is fast (~5s) and free; Claude saved for narrative turns
+      'claude', // story gen now uses Claude for better quality; Gemini still used for custom/sequel
     )
     store.setAvailableStories(stories)
   } catch (err) {

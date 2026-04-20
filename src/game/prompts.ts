@@ -77,7 +77,7 @@ export function storyGenerationPrompt(args: {
 }): string {
   const { players, genre, duration, language, context } = args
   const contextBlock = buildContextBlock(context)
-  return `${langInstruction(language)}\n\nGenerate 3 adventure stories for ${players} players in the ${genre} genre. Each story should be suitable for a ${duration} duration game. For each story, provide a title, a summary, exactly ${players} unique roles with a name, description, and a single powerful, one-time-use special ability. Also provide THREE unique, story-specific parameters. Each parameter must have a name and exactly 4 states, from best to worst.${contextBlock}`
+  return `${langInstruction(language)}\n\nGenerate 1 adventure story for ${players} players in the ${genre} genre, suitable for a ${duration} duration game. Provide a compelling title, a vivid summary (2-3 sentences), exactly ${players} unique roles each with a name, description, and a single powerful one-time-use special ability. Also provide THREE unique story-specific parameters, each with a name and exactly 4 states from best to worst.${contextBlock}`
 }
 
 // ----- Custom story from user text -----
