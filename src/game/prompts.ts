@@ -5,7 +5,13 @@ const langLabel = (lang: Language) => (lang === 'et' ? 'Estonian' : 'English')
 
 function langInstruction(lang: Language): string {
   if (lang === 'et') {
-    return 'LANGUAGE: Write all player-facing text in natural Estonian (eesti keel). This is a party game for Estonian adults — use vivid, engaging, colloquial language with its own rhythm and idioms. Do NOT translate from English patterns. Avoid anglicisms. The writing should feel like a native Estonian author, not a translation.'
+    return `LANGUAGE: Write all player-facing text in natural Estonian (eesti keel).
+CRITICAL: Think and write in Estonian — do NOT translate from English. Avoid anglicised sentence structure.
+- Choices MUST be in meie-vormi imperatiiv (we-form): "Avame ukse." / "Ootame varjus." NOT "Te avate ukse."
+- Avoid calques: NOT "see on see hea asi X juures, et" → USE "X juures on hea, et"
+- Short sentences for action. Flowing sentences for dread. Vary rhythm.
+- Use Estonian idioms naturally: "pole muud kui", "mis siis saab", "teeme ära", "käed külge"
+- Parameter names: 1-3 words, noun/noun phrase. States: 2-4 words each, no full sentences.`
   }
   return 'LANGUAGE: Write all player-facing text in English.'
 }
@@ -77,7 +83,7 @@ export function storyGenerationPrompt(args: {
 }): string {
   const { players, genre, duration, language, context } = args
   const contextBlock = buildContextBlock(context)
-  return `${langInstruction(language)}\n\nGenerate 1 adventure story for ${players} players in the ${genre} genre, suitable for a ${duration} duration game. Provide a compelling title, a vivid summary (2-3 sentences), exactly ${players} unique roles each with a name, description, and a single powerful one-time-use special ability. Also provide THREE unique story-specific parameters, each with a name and exactly 4 states from best to worst.${contextBlock}`
+  return `${langInstruction(language)}\n\nGenerate 1 adventure story for ${players} players in the ${genre} genre, suitable for a ${duration} duration game. Provide a compelling title, a vivid summary (2-3 sentences), exactly ${players} unique roles each with a name, description, and a single powerful one-time-use special ability. Also provide THREE unique story-specific parameters tracking the group's survival/progress. PARAMETER FORMAT: name = 1-3 word noun (e.g. "Varustus", "Bensiin", "Usaldus", "Moraal"); states = exactly 4 short phrases 2-4 words each from best to worst (e.g. "Täis" → "Napib" → "Kriitiliselt vähe" → "Otsas"). No full sentences in parameter names or states.${contextBlock}`
 }
 
 // ----- Custom story from user text -----
@@ -119,7 +125,7 @@ export function customStoryPrompt(args: {
   language: Language
 }): string {
   const { storyText, players, genre, language } = args
-  return `Based on this custom story idea: "${storyText}", generate ${players} thematically appropriate roles and 3 unique parameters for a ${genre} game. Each role needs a name, description, and a one-time-use ability. Each parameter needs a name and 4 states from best to worst. Output language must be ${langLabel(language)}.`
+  return `Based on this custom story idea: "${storyText}", generate ${players} thematically appropriate roles and 3 unique parameters for a ${genre} game. Each role needs a name, description, and a one-time-use ability. Parameter format: name = 1-3 word noun; states = 4 short phrases (2-4 words each) from best to worst — no full sentences. Output language must be ${langLabel(language)}.`
 }
 
 // ----- Sequel generation -----

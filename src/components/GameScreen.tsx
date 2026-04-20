@@ -70,7 +70,7 @@ export function GameScreen() {
       <div key={currentTurn} className="space-y-0">
         {isLoading && !sceneText ? (
           <div className="py-10 text-center">
-            <span className="loading-mark">· · ·</span>
+            <LoadingDots />
           </div>
         ) : (
           paragraphs.map((paragraph, i) => (
@@ -86,10 +86,7 @@ export function GameScreen() {
         <div className="mt-8">
           {isLoading ? (
             <div className="turn-loading">
-              <span className="loading-mark">· · ·</span>
-              <p className="turn-loading__label">
-                {language === 'et' ? 'Järgmine stseen laeb…' : 'Loading next scene…'}
-              </p>
+              <LoadingDots />
             </div>
           ) : (
             <>
@@ -213,6 +210,16 @@ function ParamPill({ param }: { param: Parameter }) {
           />
         ))}
       </span>
+    </span>
+  )
+}
+
+function LoadingDots() {
+  return (
+    <span className="loading-dots">
+      <span />
+      <span />
+      <span />
     </span>
   )
 }
