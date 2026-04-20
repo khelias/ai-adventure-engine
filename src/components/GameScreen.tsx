@@ -70,9 +70,7 @@ export function GameScreen() {
       <div key={currentTurn} className="space-y-0">
         {isLoading && !sceneText ? (
           <div className="py-10 text-center">
-            <span className="loading-mark">
-              {language === 'et' ? '· · ·' : '· · ·'}
-            </span>
+            <span className="loading-mark">· · ·</span>
           </div>
         ) : (
           paragraphs.map((paragraph, i) => (
@@ -81,93 +79,101 @@ export function GameScreen() {
             </p>
           ))
         )}
-        {isLoading && sceneText ? (
-          <p className="loading-mark text-center py-3">· · ·</p>
-        ) : null}
       </div>
 
-      {/* Choices */}
-      {!isLoading && choices.length > 0 ? (
+      {/* Choices / turn loading */}
+      {choices.length > 0 ? (
         <div className="mt-8">
-          <div className="ornament-rule type-caps mb-4" style={{ fontSize: '0.6rem' }}>
-            {strings.choiceTitle}
-          </div>
-
-          <div>
-            {choices.map((choice, i) => {
-              const abilityRole =
-                choice.isAbility && choice.roleIndex !== undefined
-                  ? roles[choice.roleIndex]
-                  : null
-              const isUsed = abilityRole ? abilityRole.used : false
-              return (
-                <button
-                  key={i}
-                  onClick={() => onChoice(choice)}
-                  disabled={isUsed || isLoading}
-                  className="choice"
-                >
-                  <span className="choice__num">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="choice__text">
-                    {choice.text}{isUsed ? ` — ${strings.usedLabel}` : ''}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Custom input */}
-          <div className="mt-4">
-            {!showCustomInput ? (
-              <button
-                type="button"
-                onClick={() => setShowCustomInput(true)}
-                style={{
-                  color: 'var(--text-faint)',
-                  fontFamily: "'Fraunces', Georgia, serif",
-                  fontStyle: 'italic',
-                  fontSize: '0.95rem',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '0.25rem 0',
-                  transition: 'color 0.15s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}
-              >
-                {strings.customChoiceLink}…
-              </button>
-            ) : (
-              <div className="space-y-2">
-                <textarea
-                  value={customText}
-                  onChange={(e) => setCustomText(e.target.value)}
-                  placeholder={strings.customChoicePlaceholder}
-                  rows={2}
-                  className="input-page resize-none"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      onCustomSubmit()
-                    }
-                  }}
-                />
-                <div className="flex gap-3">
-                  <button onClick={onCustomSubmit} disabled={!customText.trim()} className="btn-primary text-xs py-1.5 px-3">
-                    {strings.customChoiceSubmit}
-                  </button>
-                  <button
-                    onClick={() => { setShowCustomInput(false); setCustomText('') }}
-                    style={{ color: 'var(--text-faint)', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer' }}
-                  >
-                    {strings.customChoiceCancel}
-                  </button>
-                </div>
+          {isLoading ? (
+            <div className="turn-loading">
+              <span className="loading-mark">· · ·</span>
+              <p className="turn-loading__label">
+                {language === 'et' ? 'Järgmine stseen laeb…' : 'Loading next scene…'}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="ornament-rule type-caps mb-4" style={{ fontSize: '0.6rem' }}>
+                {strings.choiceTitle}
               </div>
-            )}
-          </div>
+
+              <div>
+                {choices.map((choice, i) => {
+                  const abilityRole =
+                    choice.isAbility && choice.roleIndex !== undefined
+                      ? roles[choice.roleIndex]
+                      : null
+                  const isUsed = abilityRole ? abilityRole.used : false
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => onChoice(choice)}
+                      disabled={isUsed}
+                      className="choice"
+                    >
+                      <span className="choice__num">{String(i + 1).padStart(2, '0')}</span>
+                      <span className="choice__text">
+                        {choice.text}{isUsed ? ` — ${strings.usedLabel}` : ''}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Custom input */}
+              <div className="mt-4">
+                {!showCustomInput ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomInput(true)}
+                    style={{
+                      color: 'var(--text-faint)',
+                      fontFamily: "'Fraunces', Georgia, serif",
+                      fontStyle: 'italic',
+                      fontSize: '0.95rem',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '0.25rem 0',
+                      transition: 'color 0.15s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}
+                  >
+                    {strings.customChoiceLink}…
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <textarea
+                      value={customText}
+                      onChange={(e) => setCustomText(e.target.value)}
+                      placeholder={strings.customChoicePlaceholder}
+                      rows={2}
+                      className="input-page resize-none"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          onCustomSubmit()
+                        }
+                      }}
+                    />
+                    <div className="flex gap-3">
+                      <button onClick={onCustomSubmit} disabled={!customText.trim()} className="btn-primary text-xs py-1.5 px-3">
+                        {strings.customChoiceSubmit}
+                      </button>
+                      <button
+                        onClick={() => { setShowCustomInput(false); setCustomText('') }}
+                        style={{ color: 'var(--text-faint)', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer' }}
+                      >
+                        {strings.customChoiceCancel}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       ) : null}
 
@@ -190,9 +196,23 @@ function paramClass(param: Parameter): string {
 }
 
 function ParamPill({ param }: { param: Parameter }) {
+  const cls = paramClass(param)
+  const filledCount = param.states.length - param.currentStateIndex
+  const stateText = param.states[param.currentStateIndex]
   return (
-    <span className={`param-pill ${paramClass(param)}`} title={param.name}>
-      {param.states[param.currentStateIndex]}
+    <span
+      className={`param-pill ${cls}`}
+      title={`${param.name}: ${stateText}`}
+    >
+      <span className="param-pill__name">{param.name}</span>
+      <span className="param-pill__dots">
+        {param.states.map((_, i) => (
+          <span
+            key={i}
+            className={`param-dot${i < filledCount ? ' param-dot--filled' : ''}`}
+          />
+        ))}
+      </span>
     </span>
   )
 }

@@ -282,43 +282,36 @@ Tehtud 2026-04-19. Suurim kvaliteedimuutus ilma F2 arhitektuurita:
 
 ---
 
-### ⏳ Faas 2 — UI/UX ergonoomia (järgmine sessioon)
+### ✅ Faas 2 — Séance redesign + UI/UX ergonoomia
+Tehtud 2026-04-20. Opus auditeeris algse disaini (soojad toonid, raamatumuster) — tuvastas
+et see on **soolo-mängija UI, mitte pass-the-phone seltskonnamäng**. Täielik ümberkujundamine
+"Séance" kontseptsiooni järgi.
 
-Opus analüüsis (2026-04-19) kõik 5 ekraani. Disaini põhi on hea (Fraunces serif,
-soe tume paleet, parameetri värvid), aga mäng on "üksinda mängitava interaktiivse
-loo" tasemel — **pass-the-phone seltskonnamängu ergonoomika puudub**.
+**Disain (Séance):**
+- `#0a0913` taust, `#a78bfa` violett aktsent, `#f5f3ff` tekst (17.8:1 kontrast)
+- **Fraunces** variable serif (`opsz,wght`) narratiivile ja valikutele — literaarne tunne, kõrge loetavus
+- **Inter** UI chrome'ile
+- `body::before` ambient hingav kuma (8s tsükkel, `prefers-reduced-motion` respekteeritud)
+- Täielik CSS custom properties design system (`src/index.css`)
 
-**Prioriteet 1 — GameScreen: numeerilised valikud** *(kriitiliselt tähtis)*
-Pass-the-phone mängus lugeja küsib "1, 2 või 3?". Hetkel grupil pole millele
-viidata. Lisa iga `choice-btn` ette `<span>` numbriga (aktsendivärvis ring).
+**Ergonoomia-muutused:**
+- Valikute numbritega eesliide (`01 / 02 / 03`) — lugeja küsib "üks, kaks või kolm?"
+- "The Circle" — 140px žanri-ring koos violett beam'iga, 6 žanri-punktiga; genre-nimi all
+- Players: `[3] [4] [5] [6]` Fraunces numbritega segmented buttons (min=3, max=6)
+- Duration: sõnanupp-read `·` eraldajatega (mitte `<select>`)
+- Provider → Advanced sektsiooni (tavakasutaja ei näe)
+- Vibe: sõnanupud dropdown asemel
+- Context: `input-page` stiil (underline-only, mitte dark box)
+- Role assignment: `◈` erivõime sümbol, `01 / 02` numbrid aktsendivärvis
+- GameOver: Fraunces serif `.scene-prose` lõpptekstile
 
-**Prioriteet 2 — SetupScreen: fast-path cleanup** *(kõrge)*
-- Provider-valik → Advanced alla (tavakasutaja ei hooli)
-- Players min=3 (mitte 1), max=6 — mäng on 3-6 inimesele
-- Players count: `[3] [4] [5] [6]` segmented button (üks tap, mitte number input)
-- Genre + Duration: chip-grid (üks tap), mitte `<select>`
-- CTA "Generate Story" → "Alusta seiklust" vms
+**Cutover:** `/adventure-v2/` staging liideti `/adventure/`-ga — React app on nüüd
+live peaapp'ina. V1 vanilla kood arhiivitud `legacy/v1/`. README.md kirjutatud (2026-04-20).
 
-**Prioriteet 3 — RoleAssignmentScreen: nimed on friction** *(kõrge)*
-- Lisa "Kasuta Mängija 1, 2, 3…" nupp (üks klõps → kõik nimed täidetud)
-- Eemalda topelt-nimi label (nimi on inputis näha, pole vaja bold'is labeli sees korrata)
-- Ability on rolli südames — suuremaks / rõhutada visuaalselt
-
-**Prioriteet 4 — GameScreen: uus stseen ei märku** *(keskmine)*
-- `window.scrollTo({ top: 0, behavior: 'smooth' })` pärast iga käiku
-- Fade-in animatsioon uuele stseenile (järgmine lugeja teab kohe kust lugeda)
-- "Stseen N" badge scene-boxi ülaosas
-
-**Prioriteet 5 — GameOverScreen: säilita raamatukogemus** *(keskmine)*
-- Lõpptekst peaks kasutama `scene-text` klassi (Fraunces serif), mitte sans-serif
-- "Näita kogu lugu" collapsible (kõik stseenid järjest — grupp saab koos üle käia)
-- Export tekstina (clipboard)
-
-**Parameetrid mobiilis:** `grid-cols-3` lõikab pikemad state-tekstid. Vajab
-`grid-cols-1 sm:grid-cols-3` või horizontal scroll mobile-l.
-
-**Edukriteerium:** Mängi läbi 5 inimesega. Ei tohiks olla hetke kus keegi küsib
-"mida ma peaksin tegema?" või "mis see nupp teeb?". Käivitus alla 60 sekundi.
+**Järelejäänud väikesed asjad (järgmine sessioon):**
+- `window.scrollTo({ top: 0 })` pärast iga käiku
+- "Näita kogu lugu" collapsible GameOver ekraanil + export clipboard
+- "Kasuta Mängija 1, 2, 3…" kiirklõps RoleAssignment'is
 
 ---
 
@@ -341,13 +334,14 @@ eeldus. Teha pärast F2+F3, kui mäng on muidu hea.)*
 - **Edukriteerium**: parameter muutusel kuvatakse põhjus; narratiiv järjepidevam
 
 ### ⏳ Faas 5 — Design polish (~2-3 sessiooni)
+*(Séance redesign (F2) täitis suure osa F5 algsest eesmärgist — Fraunces, design system,
+The Circle, violett atmosfäär. Järelejäänud F5 on animatsioonid + per-žanr teemad.)*
 - Parameetri muutuste animatsioon (Framer Motion — "moraal kukub")
 - `PhaseIndicator` — progress-visuaal loo kaarele (mitte turn-number tekst)
 - Žanripõhine teemastamine (`GenreTheme` — värvid/tekstuurid/fondid per žanr)
 - Staatuse-animatsioonid karakteri-kaartidel (wounded/ghost üleminekud)
 - Optional TTS: ElevenLabs eesti hääl
-- **Cutover**: `/adventure` → `/adventure-v2`, V1 arhiivi `/adventure-v1/`
-- **Edukriteerium**: V2 "tunneb nagu raamat", V1 "tunneb nagu veebivorm"
+- **Edukriteerium**: iga žanr tunneb erinev; parameetri muutus on visuaalselt dramaatiline
 
 ### ⏳ Faas 6 — Persistens (~2-3 sessiooni, hilisem)
 - Postgres (Docker volume)

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
@@ -96,6 +96,24 @@ export function SetupScreen() {
   const strings = translations[language]
 
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const swipeStartX = useRef<number | null>(null)
+
+  const handleSwipeStart = (e: React.TouchEvent) => {
+    swipeStartX.current = e.touches[0].clientX
+  }
+
+  const handleSwipeEnd = (e: React.TouchEvent) => {
+    if (swipeStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - swipeStartX.current
+    swipeStartX.current = null
+    if (Math.abs(dx) < 40) return
+    const currentIdx = GENRES.findIndex((g) => g.value === genre)
+    const base = currentIdx < 0 ? 0 : currentIdx
+    const nextIdx = dx < 0
+      ? (base + 1) % GENRES.length
+      : (base - 1 + GENRES.length) % GENRES.length
+    setSetting('genre', GENRES[nextIdx].value)
+  }
   const ctx = settings.context
   const setCtx = (patch: Partial<typeof ctx>) =>
     setSetting('context', { ...ctx, ...patch })
@@ -117,7 +135,11 @@ export function SetupScreen() {
       <span className="setup-eyebrow">adventure</span>
 
       {/* The Circle */}
-      <div className="circle-wrap">
+      <div
+        className="circle-wrap"
+        onTouchStart={handleSwipeStart}
+        onTouchEnd={handleSwipeEnd}
+      >
         <div className={`circle-beam${genre ? ' active' : ''}`} />
         <div className={`circle${genre ? ' active' : ''}`}>
           <span className={`circle__icon${genre ? ' visible' : ''}`}>

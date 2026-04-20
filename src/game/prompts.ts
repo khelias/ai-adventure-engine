@@ -287,7 +287,7 @@ CORE RULES:
 5. Abilities: offer only during rising or climax phases, when dramatically earned. Set isAbility: true and roleIndex (0-based). During setup, inciting, and resolution, do NOT offer abilities.
 6. If any parameter reaches its worst state, do NOT set gameOver — the engine handles this. Write the scene normally.
 7. On the final turn, set gameOver: true with a gameOverText that reflects the full journey.
-8. Vary scene length to control pacing: short punchy scenes (2-3 sentences) for action and shock; longer atmospheric scenes (5-7 sentences) for tension build-up. Never uniform length.`
+8. Keep scenes concise — 2-4 sentences is the sweet spot. Max 5 for the climax only. Short punchy for action, slightly longer for atmosphere. Never exceed 5 sentences. This is read aloud to a group, so dense prose loses the room.`
 
   const currentStates = parameters
     .map((p) => {

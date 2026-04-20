@@ -122,6 +122,7 @@ body {
   flex-direction: column;
   align-items: center;
   margin-bottom: 2.25rem;
+  touch-action: pan-y;
 }
 
 .circle-beam {
@@ -449,16 +450,41 @@ body {
 .topbar__turn-num { color: var(--accent); }
 .topbar__params {
   display: flex;
-  gap: 0.75rem;
+  gap: 1rem;
   align-items: center;
 }
 .param-pill {
-  font: 500 0.625rem/1 'Inter', system-ui;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
   transition: color 0.3s;
+}
+.param-pill__name {
+  font: 500 0.5rem/1 'Inter', system-ui;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  max-width: 4.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.param-pill__dots {
+  display: flex;
+  gap: 3px;
+}
+.param-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  opacity: 0.35;
+  transition: background 0.4s, opacity 0.4s;
+}
+.param-dot--filled {
+  background: currentColor;
+  opacity: 1;
 }
 .param-pill--vital   { color: var(--state-vital); }
 .param-pill--waning  { color: var(--state-waning); }
@@ -475,6 +501,20 @@ body {
   color: var(--accent);
   letter-spacing: 0.2em;
   animation: breath 1.8s ease-in-out infinite;
+}
+.turn-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2rem 0 1.5rem;
+  border-top: 1px solid var(--line);
+}
+.turn-loading__label {
+  font: 400 0.7rem/1 'Inter', system-ui;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
 }
 
 /* Choices */
