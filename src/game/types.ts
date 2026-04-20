@@ -30,10 +30,16 @@ export interface Parameter {
   currentStateIndex: number
 }
 
+export interface ParameterCost {
+  name: string
+  change: number
+}
+
 export interface Choice {
   text: string
   isAbility: boolean
   roleIndex?: number
+  expectedChanges?: ParameterCost[]
 }
 
 export interface Story {

@@ -59,12 +59,16 @@ export function GameScreen() {
           </span>
           <span>/ {String(maxTurns).padStart(2, '0')}</span>
         </div>
-        <div className="topbar__params">
+      </div>
+
+      {/* Parameters */}
+      {parameters.length > 0 && (
+        <div className="param-bar">
           {parameters.map((p) => (
             <ParamPill key={p.name} param={p} />
           ))}
         </div>
-      </div>
+      )}
 
       {/* Scene text */}
       <div key={currentTurn} className="space-y-0">
@@ -101,6 +105,7 @@ export function GameScreen() {
                       ? roles[choice.roleIndex]
                       : null
                   const isUsed = abilityRole ? abilityRole.used : false
+                  const costs = choice.expectedChanges?.filter((c) => c.change !== 0) ?? []
                   return (
                     <button
                       key={i}
@@ -109,8 +114,22 @@ export function GameScreen() {
                       className="choice"
                     >
                       <span className="choice__num">{String(i + 1).padStart(2, '0')}</span>
-                      <span className="choice__text">
-                        {choice.text}{isUsed ? ` — ${strings.usedLabel}` : ''}
+                      <span className="choice__body">
+                        <span className="choice__text">
+                          {choice.text}{isUsed ? ` — ${strings.usedLabel}` : ''}
+                        </span>
+                        {costs.length > 0 && (
+                          <span className="choice__costs">
+                            {costs.map((c) => (
+                              <span
+                                key={c.name}
+                                className={`choice__cost${c.change > 0 ? ' choice__cost--up' : ' choice__cost--down'}`}
+                              >
+                                {c.change > 0 ? '+' : ''}{c.change} {c.name}
+                              </span>
+                            ))}
+                          </span>
+                        )}
                       </span>
                     </button>
                   )
@@ -197,10 +216,7 @@ function ParamPill({ param }: { param: Parameter }) {
   const filledCount = param.states.length - param.currentStateIndex
   const stateText = param.states[param.currentStateIndex]
   return (
-    <span
-      className={`param-pill ${cls}`}
-      title={`${param.name}: ${stateText}`}
-    >
+    <div className={`param-pill ${cls}`}>
       <span className="param-pill__name">{param.name}</span>
       <span className="param-pill__dots">
         {param.states.map((_, i) => (
@@ -210,7 +226,8 @@ function ParamPill({ param }: { param: Parameter }) {
           />
         ))}
       </span>
-    </span>
+      <span className="param-pill__state">{stateText}</span>
+    </div>
   )
 }
 
