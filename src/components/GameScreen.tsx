@@ -4,12 +4,6 @@ import { translations } from '../i18n/translations'
 import { handlePlayerChoice } from '../game/actions'
 import type { Choice, Parameter } from '../game/types'
 
-const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
-
-function toRoman(n: number): string {
-  return ROMAN[n - 1] ?? String(n)
-}
-
 export function GameScreen() {
   const language = useGameStore((s) => s.settings.language)
   const currentTurn = useGameStore((s) => s.currentTurn)
@@ -53,67 +47,53 @@ export function GameScreen() {
     void handlePlayerChoice(text, { isFreeText: true })
   }
 
-  const ribbonHeight = maxTurns > 0 ? Math.max((currentTurn / maxTurns) * 100, 8) : 8
-
   const paragraphs = sceneText.split('\n').filter(Boolean)
 
   return (
     <section>
-      {/* Silk ribbon bookmark */}
-      <div className="ribbon" style={{ height: `${ribbonHeight}%` }} />
-
-      {/* Wax seal parameters — frame panel above the page text */}
-      <div
-        className="flex justify-around items-center py-3 px-2 mb-6 rounded"
-        style={{ background: 'rgba(26,21,16,0.06)', borderBottom: '1px solid var(--page-edge)' }}
-      >
-        {parameters.map((p) => (
-          <SealParameter key={p.name} param={p} />
-        ))}
-        <div className="text-right">
-          <div className="type-fell" style={{ color: 'var(--vermilion)', fontSize: '1.1rem', lineHeight: 1 }}>
-            {toRoman(currentTurn)}
-          </div>
-          <div className="type-caps" style={{ fontSize: '0.58rem', marginTop: '2px' }}>
-            {language === 'et' ? 'stseen' : 'scene'}
-          </div>
+      {/* Top bar */}
+      <div className="topbar">
+        <div className="topbar__turn">
+          <span className="topbar__turn-num">
+            {String(currentTurn).padStart(2, '0')}
+          </span>
+          <span>/ {String(maxTurns).padStart(2, '0')}</span>
+        </div>
+        <div className="topbar__params">
+          {parameters.map((p) => (
+            <ParamPill key={p.name} param={p} />
+          ))}
         </div>
       </div>
 
       {/* Scene text */}
-      <div key={currentTurn} className="scene-fade space-y-0">
+      <div key={currentTurn} className="space-y-0">
         {isLoading && !sceneText ? (
-          <div className="py-8 text-center">
-            <span className="type-fell" style={{ color: 'var(--gild)', fontSize: '0.85rem', letterSpacing: '0.15em' }}>
-              {language === 'et' ? '· tint voolab ·' : '· ink flows ·'}
+          <div className="py-10 text-center">
+            <span className="loading-mark">
+              {language === 'et' ? '· · ·' : '· · ·'}
             </span>
           </div>
         ) : (
           paragraphs.map((paragraph, i) => (
-            <p
-              key={i}
-              className={`type-prose ink-reveal ink-reveal-${Math.min(i + 1, 4)} ${i === 0 && currentTurn === 1 ? 'drop-cap' : ''}`}
-              style={{ marginBottom: i < paragraphs.length - 1 ? '0.2em' : 0 }}
-            >
+            <p key={i} className="scene-prose" style={{ marginBottom: i < paragraphs.length - 1 ? '0.85em' : 0 }}>
               {paragraph}
             </p>
           ))
         )}
         {isLoading && sceneText ? (
-          <p className="type-fell text-center py-2" style={{ color: 'var(--gild)', fontSize: '0.85rem', letterSpacing: '0.12em' }}>
-            · · ·
-          </p>
+          <p className="loading-mark text-center py-3">· · ·</p>
         ) : null}
       </div>
 
       {/* Choices */}
       {!isLoading && choices.length > 0 ? (
-        <div className="mt-6">
-          <div className="ornament-rule type-caps mb-3" style={{ fontSize: '0.6rem' }}>
+        <div className="mt-8">
+          <div className="ornament-rule type-caps mb-4" style={{ fontSize: '0.6rem' }}>
             {strings.choiceTitle}
           </div>
 
-          <div style={{ paddingLeft: '1.5rem' }}>
+          <div>
             {choices.map((choice, i) => {
               const abilityRole =
                 choice.isAbility && choice.roleIndex !== undefined
@@ -125,10 +105,10 @@ export function GameScreen() {
                   key={i}
                   onClick={() => onChoice(choice)}
                   disabled={isUsed || isLoading}
-                  className={`choice-marginalia w-full text-left ${isUsed ? 'opacity-40' : ''}`}
+                  className="choice"
                 >
-                  <span className="choice-numeral">{toRoman(i + 1)}.</span>
-                  <span className="choice-text">
+                  <span className="choice__num">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="choice__text">
                     {choice.text}{isUsed ? ` — ${strings.usedLabel}` : ''}
                   </span>
                 </button>
@@ -137,15 +117,24 @@ export function GameScreen() {
           </div>
 
           {/* Custom input */}
-          <div className="mt-3" style={{ paddingLeft: '1.5rem' }}>
+          <div className="mt-4">
             {!showCustomInput ? (
               <button
                 type="button"
                 onClick={() => setShowCustomInput(true)}
-                className="type-fell transition-colors"
-                style={{ color: 'var(--ink-faint)', fontStyle: 'italic', fontSize: '0.95rem' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-faint)')}
+                style={{
+                  color: 'var(--text-faint)',
+                  fontFamily: "'Fraunces', Georgia, serif",
+                  fontStyle: 'italic',
+                  fontSize: '0.95rem',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.25rem 0',
+                  transition: 'color 0.15s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}
               >
                 {strings.customChoiceLink}…
               </button>
@@ -157,7 +146,6 @@ export function GameScreen() {
                   placeholder={strings.customChoicePlaceholder}
                   rows={2}
                   className="input-page resize-none"
-                  style={{ fontStyle: 'italic', fontSize: '1rem' }}
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -167,16 +155,12 @@ export function GameScreen() {
                   }}
                 />
                 <div className="flex gap-3">
-                  <button
-                    onClick={onCustomSubmit}
-                    disabled={!customText.trim()}
-                    className="btn-primary text-xs py-1.5 px-3"
-                  >
+                  <button onClick={onCustomSubmit} disabled={!customText.trim()} className="btn-primary text-xs py-1.5 px-3">
                     {strings.customChoiceSubmit}
                   </button>
                   <button
                     onClick={() => { setShowCustomInput(false); setCustomText('') }}
-                    style={{ color: 'var(--ink-faint)', fontSize: '0.8rem' }}
+                    style={{ color: 'var(--text-faint)', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer' }}
                   >
                     {strings.customChoiceCancel}
                   </button>
@@ -187,62 +171,28 @@ export function GameScreen() {
         </div>
       ) : null}
 
-      {error ? <p className="text-red-600 text-sm mt-4 type-caps">{error}</p> : null}
+      {error ? (
+        <p style={{ color: 'var(--state-failing)', fontSize: '0.85rem', marginTop: '1rem' }} className="type-caps">
+          {error}
+        </p>
+      ) : null}
     </section>
   )
 }
 
-function SealParameter({ param }: { param: Parameter }) {
+function paramClass(param: Parameter): string {
   const maxIdx = param.states.length - 1
-  const fill = maxIdx > 0 ? (maxIdx - param.currentStateIndex) / maxIdx : 1
-  const isCritical = param.currentStateIndex >= maxIdx
+  if (maxIdx === 0) return 'param-pill--vital'
+  const fill = (maxIdx - param.currentStateIndex) / maxIdx
+  if (fill > 0.66) return 'param-pill--vital'
+  if (fill > 0.33) return 'param-pill--waning'
+  return 'param-pill--failing'
+}
 
-  const sealColor = isCritical
-    ? 'var(--state-failing)'
-    : fill > 0.66
-      ? 'var(--state-vital)'
-      : fill > 0.33
-        ? 'var(--state-waning)'
-        : 'var(--state-failing)'
-
-  const fillPct = Math.round(fill * 100)
-
+function ParamPill({ param }: { param: Parameter }) {
   return (
-    <div className={`seal-wrap ${isCritical ? 'seal-critical' : ''}`}>
-      <div
-        className="seal"
-        style={{
-          background: `conic-gradient(${sealColor} ${fillPct}%, rgba(26,21,16,0.15) ${fillPct}%)`,
-          boxShadow: isCritical
-            ? `0 0 0 2px ${sealColor}, 0 0 16px rgba(168,52,28,0.4)`
-            : `0 0 0 1px rgba(26,21,16,0.2), 0 2px 8px rgba(0,0,0,0.15)`,
-        }}
-      >
-        <div
-          style={{
-            width: '30px',
-            height: '30px',
-            borderRadius: '50%',
-            background: 'var(--page)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <span
-            className="type-fell"
-            style={{
-              fontSize: '0.7rem',
-              color: isCritical ? 'var(--vermilion)' : 'var(--ink-soft)',
-              lineHeight: 1,
-              fontStyle: 'italic',
-            }}
-          >
-            {param.name.charAt(0)}
-          </span>
-        </div>
-      </div>
-      <div className="seal-label">{param.states[param.currentStateIndex]}</div>
-    </div>
+    <span className={`param-pill ${paramClass(param)}`} title={param.name}>
+      {param.states[param.currentStateIndex]}
+    </span>
   )
 }

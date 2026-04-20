@@ -19,46 +19,54 @@ export function StoryChoiceScreen() {
   return (
     <section className="space-y-8">
       <div>
-        <p className="type-caps" style={{ marginBottom: '0.4rem' }}>
+        <p className="type-caps" style={{ marginBottom: '0.5rem' }}>
           {language === 'et' ? 'teie seiklus' : 'your adventure'}
         </p>
         <h2
-          className="type-fell"
           style={{
+            fontFamily: "'Fraunces', Georgia, serif",
+            fontVariationSettings: "'opsz' 72",
             fontSize: isLoading ? '1.4rem' : '1.75rem',
-            fontStyle: 'italic',
-            color: 'var(--ink)',
+            fontWeight: 300,
+            color: 'var(--text)',
             lineHeight: 1.25,
             minHeight: '2rem',
+            transition: 'font-size 0.2s',
           }}
         >
           {isLoading
             ? (language === 'et' ? 'Tint voolab…' : 'Ink flows…')
             : story?.title ?? ''}
         </h2>
-        <div style={{ width: '2rem', height: '1px', background: 'var(--page-edge)', marginTop: '0.6rem' }} />
+        <div style={{ width: '2rem', height: '1px', background: 'var(--line-accent)', marginTop: '0.75rem', opacity: 0.6 }} />
       </div>
 
       {isLoading ? (
         <div className="space-y-2">
-          {[100, 90, 75].map((w, i) => (
+          {[100, 85, 70].map((w, i) => (
             <div
               key={i}
-              className="type-prose"
               style={{
-                height: '1.2em',
+                height: '1.1em',
                 width: `${w}%`,
-                background: 'var(--page-edge)',
+                background: 'var(--line-strong)',
                 borderRadius: '2px',
-                opacity: 0.5 - i * 0.1,
-                animation: `seal-pulse ${1.8 + i * 0.3}s ease-in-out infinite`,
+                opacity: 0.4 - i * 0.08,
               }}
             />
           ))}
         </div>
       ) : story ? (
         <div className="space-y-5">
-          <p className="type-prose">{story.summary}</p>
+          <p style={{
+            fontFamily: "'Fraunces', Georgia, serif",
+            fontVariationSettings: "'opsz' 14, 'SOFT' 50",
+            fontSize: '1.0625rem',
+            lineHeight: 1.7,
+            color: 'var(--text-dim)',
+          }}>
+            {story.summary}
+          </p>
           <div className="flex gap-3 items-center">
             <button className="btn-primary" onClick={() => initStory(story)}>
               {strings.useThisStoryBtn}
@@ -70,15 +78,24 @@ export function StoryChoiceScreen() {
         </div>
       ) : null}
 
-      <div style={{ borderTop: '1px solid var(--page-edge)', paddingTop: '1.25rem' }}>
+      <div style={{ borderTop: '1px solid var(--line)', paddingTop: '1.25rem' }}>
         {!showCustom ? (
           <button
             type="button"
             onClick={() => setShowCustom(true)}
-            className="type-fell transition-colors"
-            style={{ color: 'var(--ink-faint)', fontStyle: 'italic', fontSize: '0.95rem' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-faint)')}
+            style={{
+              color: 'var(--text-faint)',
+              fontFamily: "'Fraunces', Georgia, serif",
+              fontStyle: 'italic',
+              fontSize: '0.95rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '0.25rem 0',
+              transition: 'color 0.15s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}
           >
             {strings.customStoryTitle}…
           </button>
@@ -90,7 +107,6 @@ export function StoryChoiceScreen() {
               placeholder={strings.customStoryPlaceholder}
               rows={4}
               className="input-page resize-none"
-              style={{ fontStyle: 'italic', fontSize: '1rem' }}
               autoFocus
             />
             <div className="flex gap-3 items-center">
@@ -103,7 +119,7 @@ export function StoryChoiceScreen() {
               </button>
               <button
                 onClick={() => { setShowCustom(false); setCustomText('') }}
-                style={{ color: 'var(--ink-faint)', fontSize: '0.85rem' }}
+                style={{ color: 'var(--text-faint)', fontSize: '0.85rem', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 {strings.customChoiceCancel}
               </button>
@@ -112,7 +128,9 @@ export function StoryChoiceScreen() {
         )}
       </div>
 
-      {error ? <p style={{ color: 'var(--vermilion)', fontSize: '0.85rem' }} className="type-caps">{error}</p> : null}
+      {error ? (
+        <p style={{ color: 'var(--state-failing)', fontSize: '0.85rem' }} className="type-caps">{error}</p>
+      ) : null}
     </section>
   )
 }

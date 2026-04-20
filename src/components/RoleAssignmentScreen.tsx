@@ -23,25 +23,37 @@ export function RoleAssignmentScreen() {
       <div className="space-y-2">
         <p className="type-caps">{language === 'et' ? 'rollid' : 'cast'}</p>
         <h2
-          className="type-fell"
-          style={{ fontSize: '1.75rem', fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.25 }}
+          style={{
+            fontFamily: "'Fraunces', Georgia, serif",
+            fontVariationSettings: "'opsz' 72",
+            fontSize: '1.75rem',
+            fontWeight: 300,
+            color: 'var(--text)',
+            lineHeight: 1.25,
+          }}
         >
           {title}
         </h2>
-        <p className="type-prose" style={{ fontSize: '0.95rem', color: 'var(--ink-soft)', fontStyle: 'italic' }}>
+        <p style={{
+          fontFamily: "'Fraunces', Georgia, serif",
+          fontVariationSettings: "'opsz' 14, 'SOFT' 50",
+          fontSize: '0.9375rem',
+          color: 'var(--text-muted)',
+          fontStyle: 'italic',
+        }}>
           {summary}
         </p>
-        <div style={{ width: '2rem', height: '1px', background: 'var(--page-edge)', marginTop: '0.25rem' }} />
+        <div style={{ width: '2rem', height: '1px', background: 'var(--line-accent)', marginTop: '0.25rem', opacity: 0.5 }} />
       </div>
 
       <div className="flex justify-end">
         <button
           type="button"
           onClick={fillDefaultNames}
-          className="type-caps transition-colors"
-          style={{ color: 'var(--ink-faint)', fontSize: '0.65rem' }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-faint)')}
+          className="type-caps"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.15s' }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-dim)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = '')}
         >
           {strings.defaultNamesBtn}
         </button>
@@ -51,15 +63,21 @@ export function RoleAssignmentScreen() {
         {roles.map((role, index) => (
           <div
             key={role.id}
-            style={{ borderBottom: '1px solid var(--page-edge)', paddingBottom: '1.25rem' }}
+            style={{ borderBottom: '1px solid var(--line)', paddingBottom: '1.25rem' }}
           >
             <div className="space-y-3">
               <div className="flex items-baseline gap-3">
                 <span
-                  className="type-fell"
-                  style={{ color: 'var(--vermilion)', fontSize: '1.1rem', minWidth: '1.2rem', flexShrink: 0 }}
+                  style={{
+                    color: 'var(--accent)',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    minWidth: '1.2rem',
+                    flexShrink: 0,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
-                  {index + 1}.
+                  {String(index + 1).padStart(2, '0')}
                 </span>
                 <input
                   type="text"
@@ -67,33 +85,29 @@ export function RoleAssignmentScreen() {
                   placeholder={strings.playerNamePlaceholder}
                   onChange={(e) => setRoleName(index, e.target.value)}
                   className="input-page flex-1"
-                  style={{ fontWeight: 600, fontSize: '1.05rem' }}
+                  style={{ fontWeight: 500, fontSize: '1.0625rem' }}
                 />
               </div>
-              <p
-                className="type-prose"
-                style={{ fontSize: '0.95rem', color: 'var(--ink-soft)', paddingLeft: '2rem' }}
-              >
+              <p style={{
+                fontFamily: "'Fraunces', Georgia, serif",
+                fontVariationSettings: "'opsz' 14",
+                fontSize: '0.9375rem',
+                color: 'var(--text-dim)',
+                paddingLeft: '2rem',
+                lineHeight: 1.6,
+              }}>
                 {role.description}
               </p>
-              <div
-                style={{
-                  paddingLeft: '2rem',
-                  display: 'flex',
-                  gap: '0.5rem',
-                  alignItems: 'flex-start',
-                }}
-              >
-                <span
-                  className="type-fell"
-                  style={{ color: 'var(--gild)', fontSize: '1rem', flexShrink: 0, lineHeight: 1.5 }}
-                >
-                  ❧
-                </span>
-                <p
-                  className="type-prose"
-                  style={{ fontSize: '0.9rem', color: 'var(--ink-soft)', fontStyle: 'italic' }}
-                >
+              <div style={{ paddingLeft: '2rem', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                <span style={{ color: 'var(--accent)', fontSize: '0.875rem', flexShrink: 0, lineHeight: 1.6, opacity: 0.7 }}>◈</span>
+                <p style={{
+                  fontFamily: "'Fraunces', Georgia, serif",
+                  fontVariationSettings: "'opsz' 14",
+                  fontSize: '0.875rem',
+                  color: 'var(--text-muted)',
+                  fontStyle: 'italic',
+                  lineHeight: 1.55,
+                }}>
                   {role.ability}
                 </p>
               </div>
@@ -106,7 +120,9 @@ export function RoleAssignmentScreen() {
         {isLoading ? strings.loading : strings.startGameBtn}
       </button>
 
-      {error ? <p style={{ color: 'var(--vermilion)', fontSize: '0.85rem' }}>{error}</p> : null}
+      {error ? (
+        <p style={{ color: 'var(--state-failing)', fontSize: '0.85rem' }}>{error}</p>
+      ) : null}
     </section>
   )
 }

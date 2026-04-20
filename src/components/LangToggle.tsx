@@ -12,14 +12,14 @@ export function LangToggle() {
           onClick={() => setSetting('language', lang)}
           style={{
             padding: '3px 10px',
-            fontSize: '0.7rem',
-            letterSpacing: '0.08em',
+            fontSize: '0.6875rem',
+            letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            borderRadius: '3px',
-            border: `1px solid ${language === lang ? 'var(--gild)' : 'var(--frame-edge)'}`,
-            background: language === lang ? 'var(--gild)' : 'transparent',
-            color: language === lang ? '#0d0a06' : '#5a4a38',
             fontWeight: language === lang ? 600 : 400,
+            borderRadius: '3px',
+            border: `1px solid ${language === lang ? 'var(--accent)' : 'var(--line-strong)'}`,
+            background: language === lang ? 'var(--accent-deep)' : 'transparent',
+            color: language === lang ? '#f5f3ff' : 'var(--text-muted)',
             transition: 'all 0.15s',
             cursor: 'pointer',
           }}
