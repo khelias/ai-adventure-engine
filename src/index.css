@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@keyframes scene-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.scene-fade {
+  animation: scene-enter 0.4s ease-out;
+}
+
 :root {
   color-scheme: dark;
 
@@ -84,6 +92,30 @@ body {
     line-height: 1.9;
     letter-spacing: -0.01em;
     color: var(--text);
+  }
+
+  /* ── Chip selectors (setup screen) ── */
+  .chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    @apply px-3 py-1.5 rounded text-sm transition-all cursor-pointer whitespace-nowrap;
+  }
+  .chip:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+  .chip-active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  /* ── Numbered choice badge ── */
+  .choice-num {
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    @apply shrink-0 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center mt-0.5;
   }
 
   /* ── Small caps label ── */

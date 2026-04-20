@@ -19,6 +19,8 @@ const DURATIONS: { value: Duration; labelKey: keyof typeof translations.et }[] =
   { value: 'Long', labelKey: 'durationLong' },
 ]
 
+const PLAYER_COUNTS = [3, 4, 5, 6]
+
 export function SetupScreen() {
   const settings = useGameStore((s) => s.settings)
   const setSetting = useGameStore((s) => s.setSetting)
@@ -32,60 +34,57 @@ export function SetupScreen() {
   const setCtx = (patch: Partial<typeof ctx>) =>
     setSetting('context', { ...ctx, ...patch })
 
+  const playerCount = PLAYER_COUNTS.includes(settings.players) ? settings.players : 4
+
   return (
     <section className="space-y-5 max-w-md mx-auto">
       <h2 className="text-2xl font-bold">{strings.appTitle}</h2>
 
       <Field label={strings.playerCountLabel}>
-        <input
-          type="number"
-          min={1}
-          max={6}
-          value={settings.players}
-          onChange={(e) => setSetting('players', Math.max(1, Number(e.target.value)))}
-          className="w-full input-base"
-        />
+        <div className="flex gap-1">
+          {PLAYER_COUNTS.map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setSetting('players', n)}
+              className={`flex-1 py-2 rounded text-sm font-medium transition-all ${
+                playerCount === n ? 'chip-active' : 'chip'
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
       </Field>
 
       <Field label={strings.genreLabel}>
-        <select
-          value={settings.genre}
-          onChange={(e) => setSetting('genre', e.target.value as Genre)}
-          className="w-full input-base"
-        >
+        <div className="flex flex-wrap gap-2">
           {GENRES.map((g) => (
-            <option key={g.value} value={g.value}>
+            <button
+              key={g.value}
+              type="button"
+              onClick={() => setSetting('genre', g.value)}
+              className={`chip ${settings.genre === g.value ? 'chip-active' : ''}`}
+            >
               {strings[g.labelKey] as string}
-            </option>
+            </button>
           ))}
-        </select>
+        </div>
       </Field>
 
       <Field label={strings.durationLabel}>
-        <select
-          value={settings.duration}
-          onChange={(e) => setSetting('duration', e.target.value as Duration)}
-          className="w-full input-base"
-        >
+        <div className="flex flex-wrap gap-2">
           {DURATIONS.map((d) => (
-            <option key={d.value} value={d.value}>
+            <button
+              key={d.value}
+              type="button"
+              onClick={() => setSetting('duration', d.value)}
+              className={`chip ${settings.duration === d.value ? 'chip-active' : ''}`}
+            >
               {strings[d.labelKey] as string}
-            </option>
+            </button>
           ))}
-        </select>
-      </Field>
-
-      <Field label={strings.providerLabel}>
-        <select
-          value={settings.provider}
-          onChange={(e) =>
-            setSetting('provider', e.target.value as 'claude' | 'gemini')
-          }
-          className="w-full input-base"
-        >
-          <option value="gemini">{strings.providerGemini}</option>
-          <option value="claude">{strings.providerClaude}</option>
-        </select>
+        </div>
       </Field>
 
       <div className="border border-neutral-800 rounded">
@@ -141,6 +140,19 @@ export function SetupScreen() {
                 onChange={(e) => setCtx({ insideJoke: e.target.value })}
                 className="w-full input-base"
               />
+            </Field>
+
+            <Field label={strings.providerLabel}>
+              <select
+                value={settings.provider}
+                onChange={(e) =>
+                  setSetting('provider', e.target.value as 'claude' | 'gemini')
+                }
+                className="w-full input-base"
+              >
+                <option value="claude">{strings.providerClaude}</option>
+                <option value="gemini">{strings.providerGemini}</option>
+              </select>
             </Field>
           </div>
         )}

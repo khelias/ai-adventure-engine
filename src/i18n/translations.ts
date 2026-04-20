@@ -54,6 +54,12 @@ interface StringTable {
   playerName: string
   playerNamePlaceholder: string
   usedLabel: string
+  defaultNamesBtn: string
+  sceneLabel: string
+  showFullStoryBtn: string
+  hideFullStoryBtn: string
+  copyStoryBtn: string
+  copiedMsg: string
   endNarrative: string
   endParametric: string
   endGenericText: string
@@ -99,7 +105,7 @@ export const translations: Record<Language, StringTable> = {
     providerLabel: 'AI mudel:',
     providerClaude: 'Claude (parem kvaliteet)',
     providerGemini: 'Gemini (kiire, odav)',
-    generateStoryBtn: 'Genereeri Lugu',
+    generateStoryBtn: 'Loo seiklus',
     storyChoiceTitle: 'Vali seikluse algus',
     customStoryTitle: '...või kirjuta omaenda stsenaarium:',
     customStoryPlaceholder:
@@ -121,6 +127,12 @@ export const translations: Record<Language, StringTable> = {
     playerName: 'Mängija',
     playerNamePlaceholder: 'Sisesta uus nimi soovi korral',
     usedLabel: 'Kasutatud',
+    defaultNamesBtn: 'Kasuta Mängija 1, 2, 3…',
+    sceneLabel: 'Stseen',
+    showFullStoryBtn: 'Näita kogu lugu',
+    hideFullStoryBtn: 'Peida kogu lugu',
+    copyStoryBtn: 'Kopeeri tekst',
+    copiedMsg: 'Kopeeritud!',
     endNarrative: 'Narratiivne Lõpp',
     endParametric: 'Parameetriline Kaotus',
     endGenericText: 'Seiklus on jõudnud ootamatu lõpuni.',
@@ -165,7 +177,7 @@ export const translations: Record<Language, StringTable> = {
     providerLabel: 'AI model:',
     providerClaude: 'Claude (better quality)',
     providerGemini: 'Gemini (fast, cheap)',
-    generateStoryBtn: 'Generate Story',
+    generateStoryBtn: 'Create Adventure',
     storyChoiceTitle: "Choose your adventure's start",
     customStoryTitle: '...or write your own scenario:',
     customStoryPlaceholder:
@@ -187,6 +199,12 @@ export const translations: Record<Language, StringTable> = {
     playerName: 'Player',
     playerNamePlaceholder: 'Enter new name if desired',
     usedLabel: 'Used',
+    defaultNamesBtn: 'Use Player 1, 2, 3…',
+    sceneLabel: 'Scene',
+    showFullStoryBtn: 'Show full story',
+    hideFullStoryBtn: 'Hide full story',
+    copyStoryBtn: 'Copy text',
+    copiedMsg: 'Copied!',
     endNarrative: 'Narrative End',
     endParametric: 'Parametric Loss',
     endGenericText: 'The adventure has come to an unexpected end.',

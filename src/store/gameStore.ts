@@ -50,6 +50,7 @@ interface GameState {
   sceneText: string
   choices: Choice[]
   recentScenes: string[]
+  allScenes: string[]
 
   // End state
   gameOverKind: GameOverKind
@@ -93,6 +94,7 @@ const initialGameSlice = {
   sceneText: '',
   choices: [] as Choice[],
   recentScenes: [] as string[],
+  allScenes: [] as string[],
   gameOverKind: null as GameOverKind,
   gameOverTitle: '',
   gameOverText: '',
@@ -155,6 +157,7 @@ export const useGameStore = create<GameState & GameActions>()((set) => ({
       roles,
       currentTurn,
       recentScenes: [...state.recentScenes, sceneText].slice(-2),
+      allScenes: [...state.allScenes, sceneText],
     })),
 
   setGameOver: (kind, title, text) =>

@@ -12,6 +12,12 @@ export function RoleAssignmentScreen() {
   const error = useGameStore((s) => s.error)
   const strings = translations[language]
 
+  const fillDefaultNames = () => {
+    roles.forEach((_, index) => {
+      setRoleName(index, `${strings.playerName} ${index + 1}`)
+    })
+  }
+
   return (
     <section className="space-y-5 max-w-2xl mx-auto">
       <div className="space-y-2">
@@ -19,15 +25,26 @@ export function RoleAssignmentScreen() {
         <p className="text-neutral-300">{summary}</p>
       </div>
 
-      <h3 className="text-lg font-semibold">{strings.roleAssignTitle}</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">{strings.roleAssignTitle}</h3>
+        <button
+          type="button"
+          onClick={fillDefaultNames}
+          className="text-sm px-3 py-1.5 rounded transition-colors"
+          style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
+          onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+        >
+          {strings.defaultNamesBtn}
+        </button>
+      </div>
 
       <div className="space-y-3">
         {roles.map((role, index) => (
-          <div key={role.id} className="card space-y-2">
+          <div key={role.id} className="card space-y-3">
             <label className="block space-y-1.5">
               <span className="text-sm text-neutral-400">
-                {strings.playerName} {index + 1}:{' '}
-                <strong className="text-neutral-100">{role.name}</strong>
+                {strings.playerName} {index + 1}
               </span>
               <input
                 type="text"
@@ -38,10 +55,13 @@ export function RoleAssignmentScreen() {
               />
             </label>
             <p className="text-sm text-neutral-300">{role.description}</p>
-            <p className="text-sm">
-              <span className="text-neutral-400">{strings.abilityLabel}:</span>{' '}
-              {role.ability}
-            </p>
+            <div
+              className="rounded px-3 py-2.5"
+              style={{ background: 'var(--surface-alt)', borderLeft: '2px solid var(--accent)' }}
+            >
+              <span className="label-caps block mb-1">{strings.abilityLabel}</span>
+              <span className="text-sm text-neutral-200 font-medium">{role.ability}</span>
+            </div>
           </div>
         ))}
       </div>

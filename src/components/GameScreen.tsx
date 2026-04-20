@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { handlePlayerChoice } from '../game/actions'
@@ -19,6 +19,10 @@ export function GameScreen() {
 
   const [showCustomInput, setShowCustomInput] = useState(false)
   const [customText, setCustomText] = useState('')
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentTurn])
 
   const durationLabel =
     duration === 'Short'
@@ -72,7 +76,7 @@ export function GameScreen() {
         </div>
 
         {/* Parameters */}
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
           {parameters.map((p) => (
             <ParameterBar key={p.name} param={p} />
           ))}
@@ -81,9 +85,15 @@ export function GameScreen() {
 
       {/* ── Scene ── */}
       <div
-        className="border-x border-b-0 border-t px-6 py-8 space-y-5"
+        key={currentTurn}
+        className="scene-fade border-x border-b-0 border-t px-6 py-8 space-y-5"
         style={{ background: 'var(--surface-alt)', borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }}
       >
+        <div className="flex items-center gap-3 mb-1">
+          <span className="label-caps">{strings.sceneLabel} {currentTurn}</span>
+          <div className="flex-1 h-px" style={{ background: 'var(--border-dim)' }} />
+        </div>
+
         {isLoading && !sceneText ? (
           <p className="scene-text opacity-30">{strings.loading}</p>
         ) : (
@@ -121,7 +131,7 @@ export function GameScreen() {
                   disabled={isUsed || isLoading}
                   className="choice-btn"
                 >
-                  <span className="choice-btn-arrow">›</span>
+                  <span className="choice-num">{i + 1}</span>
                   <span>{choice.text}{isUsed ? ` (${strings.usedLabel})` : ''}</span>
                 </button>
               )
