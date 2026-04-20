@@ -1,420 +1,324 @@
 # Roadmap
 
-Live: `games.khe.ee/adventure/`. Aktiivne töö: **Faas 3** (whispers + wounded/ghost).
-Arhitektuur: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Live at `games.khe.ee/adventure/`. Active work: **Phase 3** (whispers + wounded/ghost).
+Architecture detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-Mäng peegeldab *seda gruppi, selles kohas, praegu* — kontekst (asukoht, inimesed,
-vibe) koob loosse, saladused loovad info-asümmeetriat, surm muudab osaluse-modelli
-mitte ei eemalda mängijat laualt.
-
----
-
-## Fookus (ühelauseline)
-
-**Seltskonnamäng 3-6 täiskasvanule, 20-30 min sessioon, autoreis / õhtu / kodu,
-üks loeb ette ja teised arutavad.**
-
-Kõik disaini-otsused järgnevad sellest. Solo-mäng, laste-variant, mobiil-single-player —
-*eraldi projektid hiljem*, mitte V2.
+The game reflects *this group, in this place, right now* — group context (location,
+people, vibe) is woven into the story; secrets introduce information asymmetry;
+narrative "death" changes how a player participates rather than removing them from
+the table.
 
 ---
 
-## Kolm põhimuutust V2-s
+## Focus (one sentence)
 
-### 1. Kontekst-teadlik jutustaja
-Praegune mäng genereerib "Zombid-Lugu-27" mis võiks olla ükskõik kelle oma. V2
-setup küsib *optional* lisasisendit enne mängu algust:
-- **Kus te füüsiliselt olete?** (buss, köök, kontor, ranna-maja...)
-- **Kes on ruumis?** (nimed, suhted, vanused, rollid)
-- **Vibe?** (kerge & totter / pingeline / tume)
-- **Midagi täna juhtus?** (inside joke, päeva-sündmus)
+**A party game for 3-6 adults, 20-30 min session, played on a car trip / evening /
+at home, one person reads aloud and the others discuss.**
 
-AI koob need stsenaariumisse. Buss → juht kaob rooli tagant. Kontor → kohv lõppeb,
-sein variseb. Pere juures → uksele tuleb keegi keda pole näinud 20 aastat.
-
-**Fast-path kohustuslik**: 1-click start jätab kontekst-küsimused vahele, AI
-kasutab targalt defaulte (zombi-žanr, 4 mängijat, "seltskond arutab"). Setup
-kestab ~60 sek kui inimesed tahavad mängida *praegu*.
-
-### 2. AI kvaliteet
-Praegu on Gemini Flash default — teeb JSON-i õigesti, aga *toon, huumor, üllatus
-on lame*. Seltskonnamängus peab kirjutamine *lööma*.
-
-- **Default mudel**: Claude Sonnet 4.6 (Anthropic võti lisatud VM-i)
-- **Prompt caching**: system prompt + lugu stabiilne (cache hit), turn variable
-  osa on ainus mis iga käik saadab. Tõmbab hinna alla, kiiremad vastused.
-- **Tool use**: AI ei "loe" state'i promptist, vaid *kutsub* tool'e:
-  `damage_character`, `introduce_npc`, `raise_stakes`, `whisper_to(player)`.
-  Struktuurne, kontrollitud, järjepidev.
-- **Gemini jääb fallback'iks** (kiire/odav). Kohalik mudel (Ollama) pole V2-s —
-  tool-use töökindlus kohalikel mudelitel pole veel piisav, latents liiga kõrge.
-  Vt "V3 suunad" allpool.
-
-### 3. Saladused / privaatne info
-Praegune mäng = 100% avalik info, kõik näevad sama ekraani. V2-s AI saab
-**whisper**-tool'i kasutades anda ühele mängijale privaatset infot mida teised
-ei näe. Telefon liigub salaja tema kätte, ta loeb vaikselt, paneb tagasi.
-
-> *"Marko, koridori lõpus on su ex-naine. Teised ei näinud veel. Mis sa teed?"*
-
-See on **draama mootor**: info-asümmeetria ongi Werewolf'i / Mafia / mõrva-
-müsteeriumite magnet. Iga laua-arutelu muutub huvitavaks kui keegi *teab midagi*
-mida teised ei tea. See on V2 tõeline diferentseerija.
+Every design decision follows from this. Solo play, kids' variant, mobile-single-player —
+separate projects, not this one.
 
 ---
 
-## Mis V1-st säilib
+## Current state
 
-- Turn loop baasstruktuur
-- Sequel-mehaanika (lugude jätkumine)
-- **Parameeter-süsteem** — jääb kui **mängu mehaaniline süda**. Ilma selleta
-  pole mehaanilist pinget. Ressursid, ohud, parameetrid = *avalik kaotuse-hirm*
-  mida kõik näevad. V2-s täienevad (vt järgmine sektsioon), ei kao.
-- Erivõimed — ühekordne kasutus säilib
-- Pass-the-phone muster
-- ET + EN i18n
-- Provider-agnostic proxy (lisan ainult Claude caching + tool use)
-
-### Keelte kvaliteet
-
-Nii Claude kui Gemini on inglise-natiivsed — koolitatud hiiglaslikel
-ingliskeelsetel korpustel. Eesti keel töötab hästi (grammatika, sisu, järjepidevus),
-aga *huumor, sõnamäng, loomulik toon* on inglise keeles **märgatavalt teravamad**.
-Kui mängitakse segakeelse või välismaa grupiga, inglise režiim võib isegi parem
-kogemus olla. **Eesti on primaarne fookus**, inglise "lisaboonus".
-
-## Mis muutub / kaob
-
-- ~~"Lemmik-žanr" localStorage toggle~~ — zombi/maailmalõpp on vaikimisi, teised
-  valikud jäävad aga pole rõhutatud
-- ~~Inline onclick="selectStory(${index})"~~ — React komponendid
-- ~~Monoliitne app.js~~ — moodulid, tüübid, testid kus mõtekas
-- ~~Abstraktsed parameetrid~~ — parameetrid jäävad, aga muutuvad **spetsiifilisemateks
-  ja põhjendatuks**. V1: "Moraal -1" ilma põhjuseta. V2: tool use kaudu AI kutsub
-  `update_parameter("bensiin paagis", -1, reason="linna läbimine võttis palju")` —
-  põhjus on logitud, lugeja saab dramatiseerida, parameetri nimed on story-spetsiifilised
-
-## V2 draama kolm kihti
-
-V1 pinge oli ühedimensiooniline (ainult grupi parameetrid). V2-s kolm kihti
-üksteise peal:
-
-1. **Grupi ressursid** (parameetrid) — avalik, jagatud risk, mehaaniline
-   kaotuse-surve
-2. **Karakterite saladused / suhted** — privaatne info, info-asümmeetria,
-   draama-mootor
-3. **Erivõimed** — ühekordne, dramaatiline, seltskonna-arutelu tekitav
-
-Iga kiht töötab iseseisvalt, koos loovad mitmedimensioonilise pinge.
+- Stack: React 19 + Vite + TypeScript + Zustand, Tailwind with Fraunces / Inter typography
+- Design: "Séance" — dark background, violet accent, ambient breathing glow. Pass-the-phone
+  party game, not a solo app
+- AI: Claude Sonnet 4.6 for scenes + story generation (prompt caching via
+  `cache_control: ephemeral`); Gemini 2.5 Flash as fallback and Estonian editor pass
+- Narrative: 5 phases (setup → inciting → rising → climax → resolution) scale with game
+  length. One parameter at worst state = narrative phase transition (AI narrates the
+  consequence and the game continues); two or more at worst = AI writes the ending in
+  its own words. No hardcoded end template unless the AI call fails
+- Proxy: Node.js Express. Schema allowlist + Origin check + real per-visitor rate
+  limit. Estonian editor pass cleans Claude-generated prose before returning it to the
+  client
+- Infra: GitHub Actions runner auto-deploys on push; Cloudflare tunnel publishes the
+  site; API keys live only in the VM's `.env`
 
 ---
 
-## V2 disaini invariandid
+## Three core design pillars
 
-Need on **mittekaubanduslikud reeglid** kogu V2-le. Iga faas peab neid
-järgima — kui disaini-otsus rikub invarianti, otsus muutub, mitte invariant.
+### 1. Context-aware narrator
 
-1. **Keegi ei istu pealt.** Kui karakter "sureb" narratiivselt, mängija jätkab
-   uues rollis: **haavatud** (vähendatud agentsus, erivõime kadunud) või
-   **vaim/nõuandja** (eksklusiivsed whisperid — "sa näed rohkem kui elusad").
-   Surm muudab **osaluse-modelli**, mitte ei eemalda mängijat laualt. 20-30min
-   mäng kus keegi 5. käigul kaotab kohti = seltskond ei taha enam mängida.
-   *(Zombi/poole-vahetuse staatus kaalutud — nihutatud V3-sse, vt "V3 suunad".)*
+Setup asks for *optional* extra input before the game starts:
+- **Where are you physically?** (bus, kitchen, office, beach house…)
+- **Who's in the room?** (names, relationships, ages, roles)
+- **Vibe?** (light & absurd / tense / dark)
+- **Something that happened today?** (inside joke, event of the day)
 
-2. **Fast-path on pühak.** Setup ei tohi kesta üle 60 sekundi kui kasutaja
-   tahab mängida *nüüd*. Kõik advanced-väljad (kontekst, vibe, inside joke)
-   on optional. 1-click start peab tegema mängitava mängu targade defaultidega.
+The AI weaves these into the scenario. Bus → the driver disappears from behind the
+wheel. Office → the coffee runs out, the wall caves in. Family home → someone appears
+at the door you haven't seen in 20 years.
 
-3. **Lugeja juhib tempot.** UI ei võta lugejalt dramaatilist pausi. Ei
-   auto-advance, ei timer. "Valmis?" nupp lugeja käes.
+**Fast-path is mandatory**: 1-click start skips the context fields, AI picks sensible
+defaults (zombie genre, 4 players, "group discusses"). Setup takes ~60s when people
+want to play *now*.
 
-4. **Pass-the-phone ritual.** Saladused jõuavad õige mängijani turvaliselt:
-   **hold-to-reveal** UI fundament, mitte gimmick. Vabastamine = tekst kaob
-   kohe. Kõrvaltvaatajal pole akna.
+### 2. AI quality
 
----
+Scenes are written by Claude Sonnet 4.6 with a style anchor (Estonian few-shot example
+in the system prompt) and a Gemini Flash editor pass for Estonian cleanup. Result:
+fewer hallucinated words, natural verb register, no English calques leaking through.
 
-## Tehniline stack
+- Prompt caching (system prompt cached ephemerally) brings cost down ~50% on longer games
+- Story generation and turns both use Claude; Gemini is fallback + editor
+- Local models (Ollama) stay out for now — tool-use reliability and latency don't hit
+  the bar yet. Adapter architecture is in place; 2-3 days of work to plug a local model
+  in when a GPU lands
 
-- **Frontend**: React + Vite + TypeScript
-- **Stiil**: Tailwind CSS + shadcn/ui baas, custom typography peal — *peab
-  lugema nagu raamat*, mitte "äppi"
-- **Animatsioonid**: Framer Motion (stseenide üleminekud, parameetri-muutused,
-  saladuste dramaatiline ilmumine)
-- **Typography**: Fraunces või Spectral narratiivi jaoks (serif, raamatulik),
-  Inter UI chrome'i jaoks (sans-serif). Google Fonts self-hosted.
-- **State**: Zustand (kerge, tüübid, ei ole Redux overhead)
-- **Proxy**: olemasolev provider-agnostic proxy (`khe-homelab/services/apps/games/adventure-proxy/`)
-  laiendatud Claude prompt caching'i + tool use'iga
-- **Persistens**: V2-s mitte. V2.5-s Postgres (Docker volume), võimaldab "jaga
-  linki sõbrale" ja "jätka hiljem"
-- **Deploy**: sama GitHub Actions runner → `/srv/data/games/adventure/app/`
-- **URL strateegia**: vana app elab `/adventure/` all kuni V2 valmis. Uus arendus
-  `/adventure-v2/` staging'us. Lülitus kui on stabiilne.
+### 3. Secrets / private information
 
----
+The game currently shows 100% public information to everyone. The next phase (3) adds a
+`whisper_to(player)` tool: the AI privately messages one player mid-scene. The phone
+moves to them quietly, they read, hand it back, and the story continues.
 
-## Disain — kuidas see PÄRISELT ilus välja näeb
+> *"Marko, your ex-wife is at the end of the corridor. The others haven't seen her yet.
+> What do you do?"*
 
-V1 on inetu sest seal polnud ühtegi disaini-mõtet. V2-s peab iga ekraan
-tundama nagu **raamatuleheküljel**, mitte veebivormil.
-
-### Põhiprintsiibid
-
-1. **Typography-first** — see on LUGEMIS-mäng. Tekst *on* kogemus.
-   - Narrative: serif font (Fraunces), 18-22px, line-height 1.7, mõõde 65-75 char rea kohta
-   - UI chrome: sans-serif (Inter), väiksem, diskreetne
-   - Drop cap stseeni alguses? Peatüki-stiilis üleminekud.
-
-2. **Žanripõhine atmosfäär** — iga žanr on *oma raamat* oma värvipaleti,
-   tekstuuri, tüpograafilise häälestusega. Žanr = teema:
-   - **Zombie/maailmalõpp**: summuda hall, roostepunane aktsent, distressed textuur (CSS noise), tume, saastunud tunne
-   - **Fantaasia**: süvavärvid (veini-punane, metsa-roheline), kuld-aktsent, ornaamentilised piirid
-   - **Sci-fi**: puhas must/valge, tsüaan-magenta aktsent, monospaced font status-UI-s
-   - **Põnevik**: noir must-valge, neoon-aktsent, dramaatilised varjud
-   - CSS muutujate kaudu, lülitub setup'is
-
-3. **Lugeja-optimeeritud reading view** — üks stseen korraga, ei midagi muud.
-   - Suur tekst, palju ruumi. Lugeja saab vaikselt dramatiseerida.
-   - Stseenil võib olla "peatüki pealkiri" ("III peatükk: Garaaž") — visuaalne progress.
-   - Valikud ERALDI tekstist, kaardi-stiilis, ei ole inline.
-
-4. **Parameetrid kui armatuurlaud, mitte tekst** — mitte "Moraal: Hea", vaid:
-   - Visuaalne gauge / riba, värvikoodiga (roheline → kollane → oranž → punane)
-   - Spetsiifilise ikooniga (bensiin = pumbaikoon, tervis = süda)
-   - **Animatsioon muutusel**: "moraal -1" = riba tõmbub dramaatiliselt kokku, värv käib läbi punase-sähvatuse. Lugeja *näeb* et midagi olulist juhtus, saab dramatiseerida.
-
-5. **Kinematograafilised hetked** — mitte lihtsalt teksti vahetus:
-   - Stseenide üleminekud: fade + subtle slide (Framer Motion)
-   - Saladus-ilmumine: envelope-ikoon alustab kõikumist, "anna telefon Markole" täisekraan-ülekate
-   - Game over: parameetrite viimane klikk dramaatiliselt punaseks, "Lõpp" raamatulik tiitel
-
-6. **Karakteri-kaardid isikupäraga** — iga roll on *kaart*:
-   - Nimi (mängija poolt muudetav), lühike kirjeldus
-   - Erivõime selgelt näha (kasutatud = kaart muutub halliks, grafisti-märgistusega)
-   - Staatus-animatsioonid: **alive → wounded → ghost** (V2 mitte-elimineerimise
-     invariant; zombie-staatus on V3, kuni UX on läbi disainitud). Iga staatus
-     visuaalselt eristuv:
-     - *wounded* — kaart saab kriimu / sidemete tekstuuri, nimi kaldkirjas
-     - *ghost* — kaart muutub läbipaistvaks, väike halo ikoon, "vaim" silt
-   - Kas sellel mängijal on saladus (📬 ikoon)
-   - Placeholder-portree (V3-s AI-genereeritud, V2-s geomeetriline abstraktsioon žanri-teemas)
-
-7. **Mobile-first** — see on pass-the-phone mäng:
-   - Kõrge aspekt, peapöial-friendly, suured tap-sihikud
-   - Ei mingit landscape-assumpt'i
-   - Dark-mode vaikimisi (alkohol-õhtud vähese valgusega)
-
-8. **Progress-visuaal** — mitte "Käik 7/15" tekstiga, vaid:
-   - Rada / joon mis täitub loo edenedes
-   - Näitab kus oleme loo kaares (keskpaik, klimaks, lõpp lähedal)
-   - Dramaatiline "viimased käigud" visuaal (raamat läheb paksuks)
-
-### Inspiratsioon (need on *vibe*, mitte copy)
-
-- **Reigns** (mobile) — minimalistlik kaardi-disain, atmosfääri üks ekraan
-- **80 Days / Sorcery!** (Inkle) — literaarne UI, päris raamatu-tunne
-- **Her Story** — täisekraaniline kinematograafiline tekst
-- **Sunless Sea / Sunless Skies** (Failbetter) — tume atmosfäärne UI, tekst on *kunst*
-
-### Konkreetne komponendi-pesa
-
-Faas 0-s ehitame baasi, hilisemates faasides täiendame:
-- `SceneView` — narratiivi täisekraan-vaade, serif typography
-- `ChoiceCards` — valikud kaartidena stseeni all: **2-3 AI-genereeritud nuppu
-  primary + väike link "Või kirjutage oma valik →"**, mis avab tekstivälja.
-  Hübriid-mudel: kiirus default, loovus 1-tap kaugusel (mitte 3 samaväärset valikut)
-- `ParameterDashboard` — horisontaalne riba ülaosas, animeeritavad gauge'id
-- `CharacterCard` — rollide vaade, saab välja-libistada sidepaneelist,
-  staatus-animatsioonid (alive/wounded/ghost — zombie V3)
-- `WhisperOverlay` (Faas 3) — saladuse täisekraan-ülekate, **hold-to-reveal**
-  mehaanikaga: blur'itud tekst keskel, "[Marko], vajuta ja hoia et lugeda",
-  tekst ilmub hoides, vabastades kaob kohe. Lühikesed whispered (max 3-4 rida),
-  pika teksti korral jaotatakse tükkideks ("1/3 — hoia edasi")
-- `GhostView` (Faas 3) — surnud/vaim-mängija vaade. Visuaalselt eristuv
-  (hämar ümbris, läbipaistev stiil). Näeb eksklusiivseid whispereid mida
-  elusad ei saa. Valikud piiratud: "sosista elusatele" tüüpi tegevused.
-- `PhaseIndicator` (Faas 2) — diskreetne progress-visuaal ülaosas mis
-  väljendab loo kaare faasi (setup / tõus / midpoint / climax / resolutsioon),
-  mitte "Käik 7/15" numbri-tekst. Lugeja näeb *kus loos oleme*.
-- `GenreTheme` — CSS-muutujate provider, lülitab värvid/tekstuurid
-
-Kõik shadcn-primitive'ide peal, mitte nullist. Tailwind + CSS-muutujad per-žanr.
-
-### Mida disain **ei** tee V2-s
-
-- Pole 3D-efekte, parallaxe, liigseid animatsioone — see on rahulik lugemine, mitte mäng-ärritus
-- Pole AI-genereeritud pilte (V3)
-- Pole videot / muusikat default'is (V2.5 optional)
-- Pole "splash screen" / laadiekraani — kohe kasutusel
+This is **the drama engine**: information asymmetry is what Werewolf / Mafia / murder
+mystery stories are built on. Every table discussion becomes interesting when one person
+*knows something* the others don't.
 
 ---
 
-## Faasid
+## Core mechanics
 
-Iga faas = eraldi PR, eraldi deploy, mängitav. Pärast iga faasi **edukriteeriumi
-test** sõpradega, õpid, järgmine faas või iteratsioon. *Ei mingit 3-kuu closed
-beta'd.*
+Three layers of tension stacked on top of each other:
 
-**Ajalised hinnangud on sessiooni-tunnid, mitte kalendripäevad.** 1 sessioon =
-~2-3h tööd.
+1. **Group resources** (parameters) — public, shared risk, mechanical pressure toward
+   loss. Three parameters per game; each a distinct archetype:
+   - RESOURCE (depletes with action, rarely restored)
+   - BOND (swings from social/moral choices)
+   - PRESSURE (rises from events in the story; all changes visible via choice costs, no
+     hidden auto-degradation)
+   Together they form a trilemma: no single choice can improve all three. Every
+   meaningful decision trades one against another.
 
----
+2. **Character secrets / relationships** — private information, information asymmetry,
+   the drama engine (phase 3)
 
-### ✅ Faas 0 — Skeleton
-React+Vite+TS scaffold, Tailwind, Zustand, kõik 5 ekraani, deploy pipeline `/adventure-v2/`.
+3. **Special abilities** — one-shot, dramatic, group-discussion-generating. Offered only
+   in rising or climax phases, when narratively earned.
 
-### ✅ Faas 1 — Kontekst-teadlik setup + hübriid-valikud
-Setup paneel (kus/kes/vibe/inside joke), hübriid-valikud (AI nupud + "kirjuta oma"), free-text guardrail.
-
-### ✅ Prompt Overhaul (enne F2 arhitektuuri)
-Tehtud 2026-04-19. Suurim kvaliteedimuutus ilma F2 arhitektuurita:
-- `getStoryPhase(turn, maxTurns)` — 5 narratiivset faasi skaleeruvad mängu pikkusega
-- `turnPrompt()` → `{ system, user }` — staatiline kontekst system promptis (cachitud), dünaamiline käik user promptis
-- Prompt caching (`cache_control: ephemeral`) süsteemipromptile
-- Story gen → alati Gemini Flash (kiire, tasuta); käigud → Claude Sonnet 4.6
-- Turn history: viimased 2 scene'i user promptis (loo järjepidevus)
-- Eestikeelne few-shot stiilimall süsteemipromptis (Opus kirjutas)
-- Scene-length varieerimine; setup = 2 käiku pikemas mängus
-- Language reminder iga käigu user promptis
-
-**Edukriteerium:** Kaido mängib ühe täismängu ja ütleb et lood on huvitavad.
+Each layer works on its own; together they create multi-dimensional pressure.
 
 ---
 
-### ✅ Faas 2 — Séance redesign + UI/UX ergonoomia
-Tehtud 2026-04-20. Opus auditeeris algse disaini (soojad toonid, raamatumuster) — tuvastas
-et see on **soolo-mängija UI, mitte pass-the-phone seltskonnamäng**. Täielik ümberkujundamine
-"Séance" kontseptsiooni järgi.
+## Design invariants
 
-**Disain (Séance):**
-- `#0a0913` taust, `#a78bfa` violett aktsent, `#f5f3ff` tekst (17.8:1 kontrast)
-- **Fraunces** variable serif (`opsz,wght`) narratiivile ja valikutele — literaarne tunne, kõrge loetavus
-- **Inter** UI chrome'ile
-- `body::before` ambient hingav kuma (8s tsükkel, `prefers-reduced-motion` respekteeritud)
-- Täielik CSS custom properties design system (`src/index.css`)
+Non-negotiable rules. If a design decision violates one of these, the decision changes,
+not the invariant.
 
-**Ergonoomia-muutused:**
-- Valikute numbritega eesliide (`01 / 02 / 03`) — lugeja küsib "üks, kaks või kolm?"
-- "The Circle" — 140px žanri-ring koos violett beam'iga, 6 žanri-punktiga; genre-nimi all
-- Players: `[3] [4] [5] [6]` Fraunces numbritega segmented buttons (min=3, max=6)
-- Duration: sõnanupp-read `·` eraldajatega (mitte `<select>`)
-- Provider → Advanced sektsiooni (tavakasutaja ei näe)
-- Vibe: sõnanupud dropdown asemel
-- Context: `input-page` stiil (underline-only, mitte dark box)
-- Role assignment: `◈` erivõime sümbol, `01 / 02` numbrid aktsendivärvis
-- GameOver: Fraunces serif `.scene-prose` lõpptekstile
+1. **Nobody sits out.** If a character "dies" narratively, the player continues in a
+   new role: **wounded** (reduced agency, ability gone) or **ghost/advisor** (exclusive
+   whispers — "you see more than the living"). Death changes the *participation model*,
+   it doesn't remove the player from the table. A 20-30 minute game where someone loses
+   their seat at turn 5 means the group doesn't want to play again.
 
-**Cutover:** `/adventure-v2/` staging liideti `/adventure/`-ga — React app on nüüd
-live peaapp'ina. V1 vanilla kood arhiivitud `legacy/v1/`. README.md kirjutatud (2026-04-20).
+2. **Fast-path is sacred.** Setup must not take longer than 60 seconds when the user
+   wants to play *now*. All advanced fields (context, vibe, inside joke) are optional.
+   1-click start must produce a playable game with smart defaults.
 
-**Järelejäänud väikesed asjad (järgmine sessioon):**
-- `window.scrollTo({ top: 0 })` pärast iga käiku
-- "Näita kogu lugu" collapsible GameOver ekraanil + export clipboard
-- "Kasuta Mängija 1, 2, 3…" kiirklõps RoleAssignment'is
+3. **The reader sets the pace.** The UI never takes the dramatic pause away from the
+   reader. No auto-advance, no timer. "Ready?" button is in the reader's hand.
+
+4. **Pass-the-phone ritual.** Secrets reach the right player safely: **hold-to-reveal**
+   is the UI foundation, not a gimmick. Release = text disappears immediately. No view
+   for bystanders.
 
 ---
 
-### ⏳ Faas 3 — Saladused + wounded + ghost (~3-5 sessiooni)
-- Tool: `whisper_to_player(playerIndex, message)` — privaatne info ühele
-- Tool: `transition_player_state(playerIndex, "wounded"|"ghost")`
-- **Hold-to-reveal UX** (`WhisperOverlay`): blur'd tekst + hoia et lugeda, vabastades kaob
-- **GhostView**: eksklusiivsed whisperid, piiratud valikud ("sosista elusatele")
-- *Wounded*: erivõime kadunud, osalus säilib
-- **Zombi/poole-vahetus → V3** (ühe seadmega lahendamata disainprobleem)
-- **Edukriteerium**: whisper-saladused tekitavad arutelu; surm ei eemalda mängijat
+## Technical stack
 
-### ⏳ Faas 4 — Tool use arhitektuur (~2-3 sessiooni)
-*(Opus hinnang: tool use on arhitektuuriline cleanup, mitte narratiivikvaliteedi
-eeldus. Teha pärast F2+F3, kui mäng on muidu hea.)*
-- `update_parameter(name, change, reason)` — reason kuvatakse UI-s (dramaatiline kontekst)
-- `introduce_npc`, `raise_stakes` tool'id
-- Gemini fallback: baastool'id töötavad mõlemal provideril
-- Proxy laiendus Claude tool-use jaoks
-- **Edukriteerium**: parameter muutusel kuvatakse põhjus; narratiiv järjepidevam
+- **Frontend**: React 19 + Vite + TypeScript
+- **Styling**: Tailwind CSS v4 + hand-written design system in `src/index.css` — must
+  *read like a book*, not "like an app"
+- **Animations**: Framer Motion (scene transitions, parameter changes, dramatic secret reveals)
+- **Typography**: Fraunces for narrative (serif, literary), Inter for UI chrome
+- **State**: Zustand (lightweight, typed, no Redux overhead)
+- **Proxy**: the existing provider-agnostic Node proxy (`adventure-proxy/` in the homelab repo)
+- **Persistence**: none for now. Comes with Phase 6 (Postgres Docker volume)
+- **Deploy**: GitHub Actions self-hosted runner → `/srv/data/games/adventure/app/`
 
-### ⏳ Faas 5 — Design polish (~2-3 sessiooni)
-*(Séance redesign (F2) täitis suure osa F5 algsest eesmärgist — Fraunces, design system,
-The Circle, violett atmosfäär. Järelejäänud F5 on animatsioonid + per-žanr teemad.)*
-- Parameetri muutuste animatsioon (Framer Motion — "moraal kukub")
-- `PhaseIndicator` — progress-visuaal loo kaarele (mitte turn-number tekst)
-- Žanripõhine teemastamine (`GenreTheme` — värvid/tekstuurid/fondid per žanr)
-- Staatuse-animatsioonid karakteri-kaartidel (wounded/ghost üleminekud)
-- Optional TTS: ElevenLabs eesti hääl
-- **Edukriteerium**: iga žanr tunneb erinev; parameetri muutus on visuaalselt dramaatiline
+---
 
-### ⏳ Faas 6 — Persistens (~2-3 sessiooni, hilisem)
+## Design philosophy — how it looks
+
+This is a reading game. Text *is* the experience.
+
+1. **Typography-first**. Narrative: Fraunces serif, 18-22px, line-height 1.7, 65-75
+   characters per line. UI chrome: Inter, smaller, discreet.
+
+2. **Genre-based atmosphere** — each genre is its own book with its own palette,
+   texture, typographic tuning:
+   - Zombie / apocalypse: muted grays, rust accent, distressed texture, dark tone
+   - Fantasy: deep reds and greens, gold accent, ornamental borders
+   - Sci-fi: clean black/white, cyan-magenta accent, monospaced for status UI
+   - Thriller: noir black/white, neon accent, dramatic shadows
+   - Switched via CSS variables in setup
+
+3. **Reader-optimized reading view** — one scene at a time, nothing else.
+   - Large text, lots of whitespace. The reader can dramatize silently.
+   - Each scene may carry a chapter title ("Chapter III: The Garage") — visual progress.
+   - Choices sit as cards below the text, not inline.
+
+4. **Parameters as a dashboard, not text** — not "Morale: Good", but:
+   - Visual gauge / bar with color coding (green → yellow → orange → red)
+   - Specific icon (fuel = pump, health = heart)
+   - **Animation on change**: "morale -1" = the bar snaps down, color flashes red. The
+     reader *sees* something significant happened and can dramatize it.
+
+5. **Cinematic moments** — transitions, not just text swaps:
+   - Scene transitions: fade + subtle slide (Framer Motion)
+   - Secret reveal: envelope icon starts shaking, "pass the phone to Marko" full-screen overlay
+   - Game over: parameters dramatically snap red, "The End" book-style title
+
+6. **Character cards with personality** — each role is a card:
+   - Name (editable), short description
+   - Ability clearly visible (used = card grays out with a crossed-out mark)
+   - Status animations: **alive → wounded → ghost** (zombie status is a later direction
+     once UX is designed). Each status visually distinct:
+     - *wounded* — card gets a scratch / bandage texture, name in italics
+     - *ghost* — card turns translucent, small halo icon, "spirit" label
+   - Whether this player has a secret (📬 icon)
+   - Placeholder portrait (AI-generated later, geometric abstraction in genre theme for now)
+
+7. **Mobile-first** — this is a pass-the-phone game:
+   - Tall aspect, thumb-friendly, large tap targets
+   - No landscape assumptions
+   - Dark mode by default (late-evening low-light settings)
+
+8. **Progress visual** — not "Turn 7/15" text, but:
+   - A path / line that fills as the story advances
+   - Shows where we are in the story arc (middle, climax, end approaching)
+   - Dramatic "final turns" visual (the book thickens)
+
+### Inspiration (vibe, not copy)
+
+- **Reigns** (mobile) — minimalist card design, atmosphere from one screen
+- **80 Days / Sorcery!** (Inkle) — literary UI, genuine book feel
+- **Her Story** — full-screen cinematic text
+- **Sunless Sea / Sunless Skies** (Failbetter) — dark atmospheric UI, text as art
+
+### What the design does *not* do
+
+- No 3D effects, parallax, excessive animations — this is calm reading, not game-flash
+- No AI-generated images (later)
+- No video / music by default (optional later)
+- No splash screen / loading screen — ready to use immediately
+
+---
+
+## Phases
+
+Each phase = one PR, one deploy, playable. After each phase, **success criterion test**
+with friends, learn, next phase or iteration. *No 3-month closed beta.* Time estimates
+are session-hours (~2-3h), not calendar days.
+
+### ⏳ Phase 3 — Secrets + wounded + ghost (~3-5 sessions)
+
+- Tool: `whisper_to_player(playerIndex, message)` — private info to one player
+- Tool: `transition_player_state(playerIndex, "wounded" | "ghost")`
+- **Hold-to-reveal UX** (`WhisperOverlay`): blurred text, hold to read, release to hide
+- **GhostView**: exclusive whispers, limited choices ("whisper to the living")
+- *Wounded*: ability gone, participation preserved
+- Zombie / side-switching stays later (unsolved single-device design problem)
+- **Success criterion**: whispered secrets generate discussion; death does not remove
+  a player from the game
+
+### ⏳ Phase 4 — Tool-use architecture (~2-3 sessions)
+
+*(Architectural cleanup, not a narrative-quality prerequisite. Do after 3, when the game
+is otherwise good.)*
+
+- `update_parameter(name, change, reason)` — reason shown in UI as dramatic context
+- `introduce_npc`, `raise_stakes` tools
+- Gemini fallback: base tools work on both providers
+- Proxy extension for Claude tool-use
+- **Success criterion**: parameter changes show a reason; narrative is more consistent
+
+### ⏳ Phase 5 — Design polish (~2-3 sessions)
+
+- Parameter-change animations (Framer Motion — "morale drops")
+- `PhaseIndicator` — story-arc progress visual (not "Turn N/M" text)
+- Per-genre theming (`GenreTheme` — colors / textures / fonts per genre)
+- Character-card status animations (wounded / ghost transitions)
+- Optional TTS: ElevenLabs Estonian voice
+- **Success criterion**: each genre feels different; a parameter change is visually dramatic
+
+### ⏳ Phase 6 — Persistence (~2-3 sessions, later)
+
 - Postgres (Docker volume)
-- Mängu salvestus + resume hiljem
-- Jaga-link: "vaata mida me eile mängisime"
-- **Edukriteerium**: sulge brauser → ava URL → mäng jätkub samast kohast
+- Save game + resume later
+- Share link: "see what we played last night"
+- **Success criterion**: close browser → reopen URL → game continues from the same point
 
 ---
 
-## Hinnang kuludele
+## Cost estimate
 
-Üks ~20-käiguline mäng Sonnet 4.6-ga:
+One ~20-turn game with Sonnet 4.6:
 
-**Cache-hit realistlik 50-70%**, mitte 90%. Põhjused:
-- Phase-aware pacing vahetab süsteem-prompti 5-6 korda mängus (faasipiirid) → cache break
-- Turn-history kasvab iga käigul, cache boundary nihkub
-- Parameetrite state muutub tool call'ide tulemusena
+Cache hit is realistically 50-70%, not 90%. Reasons:
+- Phase-aware pacing rotates the system prompt 5-6 times per game (phase boundaries) → cache break
+- Turn history grows each turn, cache boundary shifts
+- Parameter state changes between turns
 
-Hinnaarvutus:
-- **Ilma caching'uta**: ~$0.12 / mäng
-- **Caching'uga (50-70% hit)**: ~$0.06-0.09 / mäng
+Math:
+- **Without caching**: ~$0.12 / game
+- **With caching (50-70% hit)**: ~$0.06-0.09 / game
 
-50 mängu kuus = **$3-5/kuu**. Kuni GPU tuleb, see on OK. Tulevikus võib proovida
-agressivamat caching-strategy'it (phase-info turn-variable osasse, süsteem-prompt
-täiesti stabiilne) aga see on optimiseering, mitte V2 baas.
-
----
-
-## Mis V2 *ei tee*
-
-- ❌ Solo-mäng / single-player flow (eraldi kasutuskoge, teine disain)
-- ❌ Mobiil-single-device-app (praegu webapp jääb)
-- ❌ Live multiplayer (mitu seadet korraga) — pass-the-phone jääb
-- ❌ Pildid / TTS vaikimisi (need on polish / V3 territooriumis)
-- ❌ Kompleksne kampaania-süsteem (pikad, mitu-sessioonilised mängud)
-
-**Laste-režiim**: V2 ei lisa spetsiaalseid filtreid / kohandatud žanre laste
-jaoks, aga *midagi ei takista* mängida kergemat zombi-lugu perega. Kui tuleb
-eraldi laste-fookusega vajadus — see on V2.5+ laiendus, mitte keelatud.
+50 games a month = **$3-5/month**. Acceptable until a GPU shows up. A more aggressive
+caching strategy (phase info in the turn-variable portion, system prompt fully stable)
+is available later as an optimization, not a necessity.
 
 ---
 
-## V3 suunad (mitte V2)
+## Out of scope
 
-Need on **kaalutud aga V2-st välja jäetud** — põhjustega.
+- Solo play / single-player flow (different use case, different design)
+- Mobile single-device app (web app stays)
+- Live multiplayer (multiple devices at once) — pass-the-phone stays
+- Images / TTS by default (polish, later)
+- Complex campaign system (long, multi-session games)
 
-- **Zombi/poole-vahetus mehaanika**: kaalutud V2 Faas 3-s, nihutatud V3-sse
-  sest ühe seadmega draama — "sa salaja kutsud horde aga lauas kõrvuti istuvad
-  teised näevad su ekraani" — ei ole lahendatud disaini-probleem. Võib-olla
-  nõuab periodilist pass-the-phone rütmi zombile või lausa teist seadet.
-  Enne proovimist on vaja UX-prototüüp. V2 hoiab *wounded + ghost* — need
-  töötavad ühe seadmega puhtalt.
-- **Lokaalne mudel (Ollama)**: 16GB GPU-ga qwen2.5:14b või gemma3:12b mahub.
-  V2-st välja sest (a) tool-use töökindlus kohalikel mudelitel on praegu 5-10%
-  malformatsioon → iga Faas 2/3 tööriist muutub ebausaldusväärseks, (b) latents
-  10-15 sek/turn vs Claude Sonnet 2-3 sek cache'itud — rütm kukub, (c) eesti
-  keele loominguline kvaliteet jääb märgatavalt alla. **Adapter-arhitektuur
-  proxies juba olemas** — GPU tulekul ja tingimuste paranedes 2-3 päeva töö
-  plugida sisse. Ei ole planeeritud faas, vaid opportunistlik lisa.
-- **Pildid**: nano-banana / Flux per-stseen, ~$0.003/pilt. Atmosfääri hüpe,
-  aga paneb rütmi lõksu (genereerimine 5-10 sek). Optional V3.
-- **TTS laiemalt**: ElevenLabs eesti hääl kõigile mängijatele mitte ainult
-  lugejale. Kallis ($3/mäng), latents lõhub tempot. Ainult kui inimlik
-  lugeja ei saa.
-- **NPC agendid**: iga oluline tegelane = mini-agent oma mäluga (tool use +
-  persistence state). Vajab Faas 5 persistents kihti eelduseks.
-- **Kampaania**: mitu seostatud sessiooni, mäng kestab mitu õhtut. Vajab
-  persistens + jaga-linki + tegelaste-läbivust. Suurim nishi laiendus.
-- **Laste variant**: eraldi projekt, filtreeritud teemad, lühemad kestused,
-  kohandatud žanrid.
+**Kids' mode**: no special filters or customized genres for kids in scope. Nothing stops
+playing a lighter zombie story with family. If a dedicated kids' focus emerges — it's
+its own project, not forbidden.
 
 ---
 
-## Järgmine samm
+## Later directions
 
-**Faas 0 — skeleton**. Alustame kui Kaido annab OK.
+Considered but currently out of scope — with reasons.
+
+- **Zombie / side-switching mechanic**: single-device drama — "you secretly summon the
+  horde while the others sitting next to you can see your screen" — is an unsolved
+  design problem. May need periodic pass-the-phone rhythm to the zombie, or a second
+  device. Needs a UX prototype first. Phase 3 holds *wounded + ghost* — those work
+  cleanly on one device.
+- **Local model (Ollama)**: a 16GB GPU fits qwen2.5:14b or gemma3:12b. Out for now
+  because (a) tool-use reliability on local models is 5-10% malformed → phase 3+ tools
+  become unreliable, (b) latency 10-15 s/turn vs Claude Sonnet 2-3 s cached — rhythm
+  breaks, (c) Estonian creative quality is visibly worse. Adapter architecture is in
+  the proxy already — 2-3 days to plug in when a GPU arrives and conditions improve.
+  Opportunistic addition, not a planned phase.
+- **Images**: nano-banana / Flux per scene, ~$0.003/image. Atmosphere boost, but traps
+  the pacing (generation takes 5-10 s). Optional later.
+- **Full TTS**: ElevenLabs Estonian voice for all players, not just the reader. Expensive
+  ($3/game), latency breaks the tempo. Only if a human reader isn't available.
+- **NPC agents**: each important character = mini-agent with its own memory (tool use +
+  persistence). Requires the Phase 6 persistence layer first.
+- **Campaigns**: multiple linked sessions, game runs across several evenings. Requires
+  persistence + share-link + character continuity. Largest niche extension.
+- **Kids' variant**: separate project, filtered themes, shorter durations, custom genres.
+
+---
+
+## Next step
+
+**Phase 3 — secrets + wounded + ghost.** Information asymmetry is the biggest
+differentiator the game doesn't yet offer.
