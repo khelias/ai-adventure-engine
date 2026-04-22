@@ -21,9 +21,15 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Deploy
+      - name: Deploy frontend
         run: |
           mkdir -p /srv/data/games/adventure/app
           rm -rf /srv/data/games/adventure/app/*
           cp -r dist/* /srv/data/games/adventure/app/
-          echo "Deployed at $(date)"
+          echo "Frontend deployed at $(date)"
+
+      # Build the proxy image locally on the VM. The khe-homelab compose
+      # references `games-adventure-proxy:latest` without a build context, so
+      # the tag is set here and picked up on next `docker compose up -d`.
+      - name: Build proxy image
+        run: docker build -t games-adventure-proxy:latest ./proxy

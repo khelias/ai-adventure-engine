@@ -1,0 +1,14 @@
+{
+  "name": "adventure-proxy",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Provider-agnostic AI proxy for ai-adventure-engine (Claude + Gemini adapters)",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
+    "express": "5.2.1"
+  }
+}

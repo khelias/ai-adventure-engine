@@ -1,0 +1,374 @@
+const express = require('express');
+const Anthropic = require('@anthropic-ai/sdk');
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
+const DEFAULT_PROVIDER = process.env.DEFAULT_PROVIDER || 'claude';
+const PORT = Number(process.env.PORT) || 3000;
+const UPSTREAM_TIMEOUT_MS = 115_000; // slightly under nginx proxy_read_timeout (120s)
+
+if (!GEMINI_API_KEY && !ANTHROPIC_API_KEY) {
+  console.error('FATAL: at least one of GEMINI_API_KEY or ANTHROPIC_API_KEY must be set');
+  process.exit(1);
+}
+
+const anthropic = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
+const geminiUrl = (model) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+
+const app = express();
+app.use(express.json({ limit: '1mb', type: '*/*' }));
+
+// ---- Abuse protections ----
+//
+// 1. Schema allowlist: reject requests whose JSON Schema does not match one of
+//    the four known game shapes. Without this, the proxy is a free generic
+//    Claude/Gemini API for whoever finds the URL.
+// 2. Origin check: require Origin or Referer to match an allowed origin.
+//    Filters casual curl abuse; real attackers can spoof but then they still
+//    hit the schema allowlist + per-IP rate limit in nginx.
+// 3. Rate limit: enforced by nginx (see nginx.conf) using CF-Connecting-IP.
+//
+// Shapes are identified by the sorted top-level keys of schema.properties.
+// When adding a new schema in prompts.ts, add its fingerprint here too.
+const ALLOWED_SCHEMA_SHAPES = new Set([
+  'stories',                                         // storyGenerationSchema
+  'parameters,roles',                                // customStorySchema
+  'newAbilities,newParameters',                      // sequelSchema
+  'choices,gameOver,gameOverText,parameters,scene',  // turnSchema
+]);
+
+function schemaFingerprint(schema) {
+  if (!schema || typeof schema !== 'object' || !schema.properties || typeof schema.properties !== 'object') {
+    return null;
+  }
+  return Object.keys(schema.properties).sort().join(',');
+}
+
+function isKnownSchema(schema) {
+  const fp = schemaFingerprint(schema);
+  return fp != null && ALLOWED_SCHEMA_SHAPES.has(fp);
+}
+
+// Allowed origins for the game UI. Localhost entries let `npm run dev`
+// and `npm run preview` hit the proxy during development.
+const ALLOWED_ORIGIN_PREFIXES = [
+  'https://games.khe.ee',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
+];
+
+function isAllowedOrigin(req) {
+  const origin = req.get('origin') || '';
+  if (origin && ALLOWED_ORIGIN_PREFIXES.some((a) => origin === a)) return true;
+  const referer = req.get('referer') || '';
+  if (referer && ALLOWED_ORIGIN_PREFIXES.some((a) => referer.startsWith(a + '/'))) return true;
+  return false;
+}
+
+app.get('/healthz', (_req, res) => res.status(200).send('ok'));
+
+// Legacy endpoint used by older cached frontends. Forwards a Gemini-shaped
+// request body straight through to Google and returns Gemini's raw response.
+// Keep until old `app.js` bundles have aged out of browser/CDN caches.
+app.post('/gemini', async (req, res) => {
+  if (!GEMINI_API_KEY) {
+    return res.status(503).json({ error: 'Gemini not configured on this proxy' });
+  }
+  if (!isAllowedOrigin(req)) {
+    return res.status(403).json({ error: 'Origin not allowed' });
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+  try {
+    const upstream = await fetch(geminiUrl(GEMINI_MODEL), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body),
+      signal: controller.signal,
+    });
+    const data = await upstream.json();
+    if (!upstream.ok) {
+      return res.status(upstream.status).json({
+        error: data?.error?.message || 'Gemini upstream error',
+      });
+    }
+    res.json(data);
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      return res.status(504).json({ error: 'Upstream timeout' });
+    }
+    console.error('proxy legacy /gemini:', err.message || err);
+    res.status(500).json({ error: err.message || 'Proxy error' });
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
+app.post('/generate', async (req, res) => {
+  if (!isAllowedOrigin(req)) {
+    return res.status(403).json({ error: 'Origin not allowed' });
+  }
+  const { prompt, schema, provider = DEFAULT_PROVIDER, systemPrompt, language } = req.body || {};
+  if (typeof prompt !== 'string' || !prompt || typeof schema !== 'object' || !schema) {
+    return res.status(400).json({ error: 'prompt (string) and schema (object) are required' });
+  }
+  if (!isKnownSchema(schema)) {
+    return res.status(400).json({ error: 'schema shape is not in the allowlist' });
+  }
+  if (provider !== 'claude' && provider !== 'gemini') {
+    return res.status(400).json({ error: `unknown provider: ${provider}` });
+  }
+  const t0 = Date.now();
+  try {
+    const result = provider === 'claude'
+      ? await callClaude({ prompt, schema, systemPrompt })
+      : await callGemini({ prompt, schema, systemPrompt });
+
+    // Turn responses have { scene, choices, parameters, gameOver }. For those:
+    //   1) Validate choice costs: reject silently by logging, caller trusts AI.
+    //   2) If language is Estonian, run scene + gameOverText through Gemini editor.
+    const isTurnShape = result?.data && typeof result.data.scene === 'string' && Array.isArray(result.data.choices);
+    let editorMs = 0;
+    let editorApplied = false;
+    if (isTurnShape) {
+      logChoiceCostViolations(result.data, provider);
+      if (language === 'et' && GEMINI_API_KEY) {
+        const te = Date.now();
+        try {
+          await estonianEditorPass(result.data);
+          editorApplied = true;
+        } catch (e) {
+          console.warn(`editor-pass failed (continuing with unedited): ${e.message || e}`);
+        }
+        editorMs = Date.now() - te;
+      }
+    }
+
+    const ms = Date.now() - t0;
+    const cacheHit = result.cacheHit;
+    console.log(
+      `proxy ok: provider=${provider} model=${result.model} ms=${ms}${cacheHit != null ? ` cache=${cacheHit}` : ''}${editorApplied ? ` editor=${editorMs}ms` : ''}`,
+    );
+    res.json({ provider, model: result.model, data: result.data });
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      console.error(`proxy (${provider}): upstream timeout`);
+      return res.status(504).json({ error: 'Upstream timeout' });
+    }
+    const status = err.status || 500;
+    console.error(`proxy (${provider}):`, status, err.message || err);
+    res.status(status).json({ error: err.message || 'Proxy error' });
+  }
+});
+
+// Warn in logs if any choice has no cost (all expectedChanges zero/positive)
+// or if a choice is missing expectedChanges entirely. Does not block — the AI
+// self-check is primary; this is telemetry so we can spot drift.
+function logChoiceCostViolations(turn, provider) {
+  if (!Array.isArray(turn.choices)) return;
+  const violations = [];
+  turn.choices.forEach((c, i) => {
+    const changes = Array.isArray(c.expectedChanges) ? c.expectedChanges : [];
+    if (changes.length === 0) { violations.push(`choice[${i}] has no expectedChanges`); return; }
+    const hasNegative = changes.some((ch) => typeof ch.change === 'number' && ch.change < 0);
+    if (!hasNegative) violations.push(`choice[${i}] has no negative cost: ${JSON.stringify(changes)}`);
+  });
+  if (violations.length > 0) {
+    console.warn(`choice-cost violations (provider=${provider}): ${violations.join(' | ')}`);
+  }
+}
+
+// Estonian editor pass: send the scene (and optional gameOverText) through
+// Gemini Flash with a strict editorial prompt. Fixes invented words, wrong
+// word register, and non-native sentence structure while preserving facts.
+// Mutates `turn.scene` and `turn.gameOverText` in place.
+const EDITOR_SYSTEM = `Sa oled eesti kirjanduse toimetaja. Saad ilukirjandusliku lõigu ja parandad eesti keele vigu.
+
+PARANDA:
+- Sõnad, mida eesti keeles ei ole (hallutsinatsioonid, valed liitsõnad)
+- Sõnad, mis on valel registril (loomahääl masina kohta, murdesõna proosa sees)
+- Otsetõlked inglise keelest (calque'd), kohmakad lauseehitused
+- Ebaühtlane ajavorm ühe lõigu sees
+- Valed sõnajärjed ("Pinged all pinna" → "Pinged pinna all")
+
+ÄRA MUUDA:
+- Fakte, tegelaste nimesid, sündmuste sisu
+- Atmosfääri ega tooni
+- Pikkust olulisel määral — paranda sõnu, mitte kompositsiooni
+
+Vasta AINULT parandatud tekstiga, ilma selgituseta. Kui tekstis pole vigu, vasta täpselt sama tekstiga.`;
+
+const EDITOR_SCHEMA = {
+  type: 'OBJECT',
+  properties: { corrected: { type: 'STRING' } },
+  required: ['corrected'],
+};
+
+// Global budget for the entire editor pass (both scene + gameOverText together).
+// nginx proxy_read_timeout is 120s; upstream AI call can use up to 115s; we
+// keep editor-pass well under the remaining margin so the total stays ≤ 120s.
+const EDITOR_TOTAL_BUDGET_MS = 25_000;
+
+async function estonianEditorPass(turnData) {
+  const tasks = [];
+  if (turnData.scene && typeof turnData.scene === 'string' && turnData.scene.trim().length > 10) {
+    tasks.push(['scene', turnData.scene]);
+  }
+  if (turnData.gameOverText && typeof turnData.gameOverText === 'string' && turnData.gameOverText.trim().length > 20) {
+    tasks.push(['gameOverText', turnData.gameOverText]);
+  }
+  if (tasks.length === 0) return;
+
+  const sharedController = new AbortController();
+  const budgetTimer = setTimeout(() => sharedController.abort(), EDITOR_TOTAL_BUDGET_MS);
+
+  try {
+    const results = await Promise.all(tasks.map(async ([key, text]) => {
+      try {
+        const edited = await editorCall(text, sharedController.signal);
+        return [key, edited];
+      } catch (e) {
+        // Per-task failure: log and leave field unedited. Don't fail the whole pass.
+        console.warn(`editor-pass ${key} failed: ${e.message || e}`);
+        return [key, null];
+      }
+    }));
+    for (const [key, edited] of results) {
+      if (edited && edited.length > 0) turnData[key] = edited;
+    }
+  } finally {
+    clearTimeout(budgetTimer);
+  }
+}
+
+async function editorCall(text, externalSignal) {
+  const body = {
+    contents: [{ role: 'user', parts: [{ text }] }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseSchema: EDITOR_SCHEMA,
+      temperature: 0.2,
+    },
+    systemInstruction: { parts: [{ text: EDITOR_SYSTEM }] },
+  };
+  const res = await fetch(geminiUrl(GEMINI_MODEL), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: externalSignal,
+  });
+  if (!res.ok) throw new Error(`editor HTTP ${res.status}`);
+  const raw = await res.json();
+  const responseText = raw?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!responseText) throw new Error('editor returned empty response');
+  const parsed = JSON.parse(responseText);
+  return typeof parsed.corrected === 'string' ? parsed.corrected : null;
+}
+
+// Game schemas were written for Gemini's responseSchema, which accepts
+// uppercase type names ("OBJECT", "STRING", ...). JSON Schema (and thus
+// Claude's tool input_schema) requires lowercase. Walk the schema tree and
+// lowercase any `type` string values before handing to Claude.
+function normalizeSchemaForClaude(node) {
+  if (Array.isArray(node)) {
+    return node.map(normalizeSchemaForClaude);
+  }
+  if (node !== null && typeof node === 'object') {
+    const out = {};
+    for (const [key, value] of Object.entries(node)) {
+      if (key === 'type' && typeof value === 'string') {
+        out[key] = value.toLowerCase();
+      } else {
+        out[key] = normalizeSchemaForClaude(value);
+      }
+    }
+    return out;
+  }
+  return node;
+}
+
+async function callClaude({ prompt, schema, systemPrompt }) {
+  if (!anthropic) {
+    const err = new Error('Claude not configured on this proxy');
+    err.status = 503;
+    throw err;
+  }
+  const createParams = {
+    model: CLAUDE_MODEL,
+    max_tokens: 16000,
+    tools: [
+      {
+        name: 'respond',
+        description: 'Submit the structured response that matches the requested schema.',
+        input_schema: normalizeSchemaForClaude(schema),
+      },
+    ],
+    tool_choice: { type: 'tool', name: 'respond' },
+    messages: [{ role: 'user', content: prompt }],
+  };
+  if (systemPrompt) {
+    createParams.system = [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }];
+  }
+  const message = await anthropic.messages.create(createParams, { timeout: UPSTREAM_TIMEOUT_MS });
+
+  const toolUse = message.content.find((b) => b.type === 'tool_use');
+  if (!toolUse || typeof toolUse.input !== 'object') {
+    throw new Error('Claude did not emit a structured tool_use block');
+  }
+  const usage = message.usage;
+  const cacheHit = usage?.cache_read_input_tokens > 0 ? `${usage.cache_read_input_tokens}tok` : 'miss';
+  return { model: CLAUDE_MODEL, data: toolUse.input, cacheHit };
+}
+
+async function callGemini({ prompt, schema, systemPrompt }) {
+  if (!GEMINI_API_KEY) {
+    const err = new Error('Gemini not configured on this proxy');
+    err.status = 503;
+    throw err;
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+  try {
+    const geminiBody = {
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: schema,
+        temperature: 0.8,
+      },
+    };
+    if (systemPrompt) geminiBody.systemInstruction = { parts: [{ text: systemPrompt }] };
+    const upstream = await fetch(geminiUrl(GEMINI_MODEL), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(geminiBody),
+      signal: controller.signal,
+    });
+    const body = await upstream.json();
+    if (!upstream.ok) {
+      const err = new Error(body?.error?.message || 'Gemini upstream error');
+      err.status = upstream.status;
+      throw err;
+    }
+    const text = body?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) {
+      throw new Error('Gemini returned an empty response');
+    }
+    return { model: GEMINI_MODEL, data: JSON.parse(text) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+app.listen(PORT, () => {
+  const claudeInfo = anthropic ? CLAUDE_MODEL : 'disabled';
+  const geminiInfo = GEMINI_API_KEY ? GEMINI_MODEL : 'disabled';
+  console.log(
+    `adventure-proxy listening on :${PORT} | default=${DEFAULT_PROVIDER} | claude=${claudeInfo} | gemini=${geminiInfo}`,
+  );
+});
