@@ -30,6 +30,10 @@ jobs:
 
       # Build the proxy image locally on the VM. The khe-homelab compose
       # references `games-adventure-proxy:latest` without a build context, so
-      # the tag is set here and picked up on next `docker compose up -d`.
+      # the tag is set here and the container is recreated against the fresh
+      # image in the next step.
       - name: Build proxy image
         run: docker build -t games-adventure-proxy:latest ./proxy
+
+      - name: Restart proxy container
+        run: cd /home/khe/homelab/services/apps/games && docker compose up -d --force-recreate adventure-proxy
