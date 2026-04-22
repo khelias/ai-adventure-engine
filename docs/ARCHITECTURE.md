@@ -202,7 +202,7 @@ API keys live only in the VM's `.env` file, never in the repo or git history.
 
 ## 7. Deployment
 
-Two repos, deployed from two places:
+Both frontend and proxy ship from this repo. `khe-homelab` only owns the compose orchestration (nginx config, container wiring, env).
 
 ```mermaid
 flowchart LR
@@ -214,22 +214,20 @@ flowchart LR
 
     Dev -->|"push to main"| AERepo
     Dev -->|"push to main"| HLRepo
-    AERepo -->|"webhook → build React + deploy to bind mount"| GHA
-    GHA -->|"writes to /srv/data/games/adventure/app/"| VM
+    AERepo -->|"webhook → build React + build proxy image + restart container"| GHA
+    GHA -->|"dist → /srv/data/games/adventure/app/<br/>docker build games-adventure-proxy:latest<br/>docker compose up -d --force-recreate"| VM
     HLRepo -.->|"manual: ssh + git pull + docker compose up"| VM
 ```
 
-- **Frontend** (`ai-adventure-engine`): every push to `main` triggers a GitHub Actions runner on the VM. It builds the Vite bundle and writes to `/srv/data/games/adventure/app/` (bind-mounted into the games nginx container). No container restart needed — nginx serves the new files immediately. Old browser tabs get a `Cache-Control: no-cache` on HTML so they fetch the new bundle next navigation.
+- **Frontend + proxy** (`ai-adventure-engine`): every push to `main` triggers a GitHub Actions runner on the VM. The workflow (a) builds the Vite bundle and writes to `/srv/data/games/adventure/app/` (bind-mounted into the games nginx container — no restart needed), and (b) runs `docker build` on `proxy/` to produce `games-adventure-proxy:latest`, then `docker compose up -d --force-recreate adventure-proxy` to swap the container onto the new image. End-to-end push-to-live is ~20s.
 
-- **Proxy** (`khe-homelab/services/apps/games/adventure-proxy/`): manual deploy. After pushing changes, SSH to the VM, pull, and `docker compose up -d --build adventure-proxy`. Because Docker's build cache sometimes masks `COPY server.js` changes, use `--no-cache` or `--force-recreate` when the code change isn't picked up.
+- **Compose orchestration** (`khe-homelab`): manual deploy. `services/apps/games/docker-compose.yml` references `games-adventure-proxy:latest` by tag (no build context). Changes to nginx config, env vars, or network wiring still require `ssh + git pull + docker compose up -d` on the VM.
 
 ### Coupling note
 
-The frontend and proxy must stay in sync on two things:
-- **Schema shapes**: adding or changing a schema in `src/game/prompts.ts` requires updating `ALLOWED_SCHEMA_SHAPES` in the proxy. Forgetting this breaks the feature silently (the proxy returns 400).
+Frontend and proxy now live in the same repo, so schema/contract changes go in one commit:
+- **Schema shapes**: adding or changing a schema in `src/game/prompts.ts` requires updating `ALLOWED_SCHEMA_SHAPES` in `proxy/server.js`. Forgetting this breaks the feature silently (the proxy returns 400).
 - **Request body contract**: adding a new field that the proxy should respect (e.g. `language`) requires matching changes in `src/api/adventure.ts`.
-
-Long-term: move the proxy into the `ai-adventure-engine` repo as a `proxy/` folder, build a Docker image via GitHub Actions, and have the homelab pull by tag. See the trade-off discussion in CLAUDE.md's adventure section.
 
 ## 8. Where to look for what
 
@@ -238,7 +236,7 @@ Long-term: move the proxy into the `ai-adventure-engine` repo as a `proxy/` fold
 | Game rules / prompt authoring | `src/game/prompts.ts` |
 | Parameter mechanics, gameOver detection | `src/game/engine.ts` |
 | Turn orchestration, error handling | `src/game/actions.ts` |
-| Proxy routing + editor pass + security | `khe-homelab/services/apps/games/adventure-proxy/server.js` |
+| Proxy routing + editor pass + security | `proxy/server.js` |
 | nginx rate limit + reverse proxy | `khe-homelab/services/apps/games/nginx.conf` |
 | Full-game smoke test | `scripts/playtest.ts` — see [`scripts/README.md`](../scripts/README.md) |
 | Design principles / invariants, roadmap | [`ROADMAP.md`](../ROADMAP.md) |

@@ -60,7 +60,7 @@ npm install
 npm run dev
 ```
 
-The dev build proxies `/adventure/api/` to the production endpoint at `games.khe.ee` by default. To run a local proxy, see the [`adventure-proxy/`](https://github.com/khelias/khe-homelab/tree/main/services/apps/games/adventure-proxy) directory in the homelab repo.
+The dev build proxies `/adventure/api/` to the production endpoint at `games.khe.ee` by default. To run a local proxy, see the [`proxy/`](./proxy) directory in this repo.
 
 ## What's next
 

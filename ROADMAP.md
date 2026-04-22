@@ -139,7 +139,7 @@ not the invariant.
 - **Animations**: Framer Motion (scene transitions, parameter changes, dramatic secret reveals)
 - **Typography**: Fraunces for narrative (serif, literary), Inter for UI chrome
 - **State**: Zustand (lightweight, typed, no Redux overhead)
-- **Proxy**: the existing provider-agnostic Node proxy (`adventure-proxy/` in the homelab repo)
+- **Proxy**: provider-agnostic Node proxy in `proxy/` (Claude + Gemini adapters, schema allowlist, Estonian editor pass)
 - **Persistence**: none for now. Comes with Phase 6 (Postgres Docker volume)
 - **Deploy**: GitHub Actions self-hosted runner → `/srv/data/games/adventure/app/`
 
