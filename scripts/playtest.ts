@@ -264,8 +264,9 @@ async function main() {
       const cost = (c.expectedChanges ?? [])
         .map((ec) => `${ec.name}:${ec.change >= 0 ? '+' : ''}${ec.change}`)
         .join(', ') || '_none declared_'
-      const ability = c.isAbility ? ` **[ABILITY roleIndex=${c.roleIndex}]**` : ''
-      log(`- ${i + 1}. ${c.text}${ability}  _(cost: ${cost})_`)
+      const actorLabel = c.actor !== undefined ? ` _[actor=${c.actor}]_` : ''
+      const ability = c.isAbility ? ` **[ABILITY]**` : ''
+      log(`- ${i + 1}.${actorLabel} ${c.text}${ability}  _(cost: ${cost})_`)
     }
     log('')
 
@@ -333,8 +334,8 @@ async function main() {
     }
 
     const picked = pickChoice(r.choices, parameters, strategy)
-    if (picked.isAbility && typeof picked.roleIndex === 'number') {
-      roles = roles.map((role) => (role.id === picked.roleIndex ? { ...role, used: true } : role))
+    if (picked.isAbility && typeof picked.actor === 'number') {
+      roles = roles.map((role) => (role.id === picked.actor ? { ...role, used: true } : role))
     }
     nextChoice = picked.text
     log(`**→ Strategy "${strategy}" picks:** ${picked.text}`)

@@ -41,7 +41,14 @@ export interface ParameterCost {
 export interface Choice {
   text: string
   isAbility: boolean
-  roleIndex?: number
+  // Who performs this action. Role index (0-based). For ability choices this
+  // is also the ability owner. Optional for backward compat, but prompts now
+  // require it — UI falls back silently if a model omits it.
+  actor?: number
+  // Who concretely pays / is affected (if the action targets a specific person
+  // other than the actor). Example: "Mari jätab Jaane maja ette" → actor=Mari,
+  // target=Jaan. Omitted when the cost is shared or unnamed.
+  target?: number
   expectedChanges?: ParameterCost[]
 }
 

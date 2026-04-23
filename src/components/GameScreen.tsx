@@ -26,8 +26,8 @@ export function GameScreen() {
   const onChoice = (choice: Choice) => {
     setShowCustomInput(false)
     setCustomText('')
-    if (choice.isAbility && choice.roleIndex !== undefined) {
-      const role = roles[choice.roleIndex]
+    if (choice.isAbility && choice.actor !== undefined) {
+      const role = roles[choice.actor]
       if (!role || role.used) return
       const abilityText =
         language === 'et'
@@ -100,12 +100,9 @@ export function GameScreen() {
 
               <div>
                 {choices.map((choice, i) => {
-                  const abilityRole =
-                    choice.isAbility && choice.roleIndex !== undefined
-                      ? roles[choice.roleIndex]
-                      : null
-                  const isUsed = abilityRole ? abilityRole.used : false
-                  const costs = choice.expectedChanges?.filter((c) => c.change !== 0) ?? []
+                  const actorRole =
+                    choice.actor !== undefined ? roles[choice.actor] : null
+                  const isUsed = choice.isAbility && actorRole ? actorRole.used : false
                   return (
                     <button
                       key={i}
@@ -115,21 +112,12 @@ export function GameScreen() {
                     >
                       <span className="choice__num">{String(i + 1).padStart(2, '0')}</span>
                       <span className="choice__body">
+                        {actorRole && (
+                          <span className="choice__actor">{actorRole.name}</span>
+                        )}
                         <span className="choice__text">
                           {choice.text}{isUsed ? ` — ${strings.usedLabel}` : ''}
                         </span>
-                        {costs.length > 0 && (
-                          <span className="choice__costs">
-                            {costs.map((c) => (
-                              <span
-                                key={c.name}
-                                className={`choice__cost${c.change > 0 ? ' choice__cost--up' : ' choice__cost--down'}`}
-                              >
-                                {c.change > 0 ? '+' : ''}{c.change} {c.name}
-                              </span>
-                            ))}
-                          </span>
-                        )}
                       </span>
                     </button>
                   )

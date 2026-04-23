@@ -585,23 +585,20 @@ body {
   color: var(--text-dim);
   transition: color 0.2s;
 }
-.choice__costs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem 0.6rem;
-}
-.choice__cost {
-  font: 500 0.575rem/1 'Inter', system-ui;
-  letter-spacing: 0.06em;
+.choice__actor {
+  font: 600 0.625rem/1 'Inter', system-ui;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  opacity: 0.7;
+  color: var(--text-muted);
+  margin-bottom: -0.05rem;
+  transition: color 0.2s;
 }
-.choice__cost--up   { color: var(--state-vital); }
-.choice__cost--down { color: var(--state-failing); }
 .choice:hover .choice__num,
 .choice:focus-visible .choice__num { color: var(--accent); }
 .choice:hover .choice__text,
 .choice:focus-visible .choice__text { color: var(--text); }
+.choice:hover .choice__actor,
+.choice:focus-visible .choice__actor { color: var(--accent); }
 
 /* ════════════════════════════════════════════
    SHARED UI

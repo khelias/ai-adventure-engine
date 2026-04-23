@@ -7,12 +7,13 @@ function langInstruction(lang: Language): string {
   if (lang === 'et') {
     return `LANGUAGE: Write all player-facing text in natural, native-level Estonian (eesti keel).
 - Think and write in Estonian. Do NOT translate from English. Avoid anglicised sentence structure.
-- Choices MUST be in meie-vormi imperatiiv (we-form): "Avame ukse." / "Ootame varjus." NOT "Te avate ukse."
+- Choices MUST be in kolmandas isikus — name the acting character as the grammatical subject: "Mari avab ukse vaikselt." / "Jaan kustutab lambi ja ootab." / "Karin koputab uksele." NEVER meie-vorm ("Avame ukse"), NEVER teie-vorm ("Te avate ukse"), NEVER abstract "Grupp otsustab".
 - Parameter names: 1-3 words, noun/noun phrase. States: 2-4 words each, no full sentences.
 - Character names (role.name) MUST be proper Estonian first names (e.g. Mari, Jaan, Karin, Mattis) — NOT job titles. Put the profession/role in role.description.
 - Prefer simple, common words over rare compounds. If unsure whether a compound exists, use two separate words instead.`
   }
-  return 'LANGUAGE: Write all player-facing text in English.'
+  return `LANGUAGE: Write all player-facing text in English.
+- Choices MUST be in third person with the acting character as the subject: "Mari opens the door." / "Jaan kills the light and waits." NEVER "We open the door." NEVER "The group decides".`
 }
 
 function buildContextBlock(ctx: ContextInput): string {
@@ -245,7 +246,8 @@ export const turnSchema: JsonSchema = {
         properties: {
           text: { type: 'STRING' },
           isAbility: { type: 'BOOLEAN' },
-          roleIndex: { type: 'INTEGER' },
+          actor: { type: 'INTEGER' },
+          target: { type: 'INTEGER' },
           expectedChanges: {
             type: 'ARRAY',
             items: {
@@ -258,7 +260,7 @@ export const turnSchema: JsonSchema = {
             },
           },
         },
-        required: ['text', 'isAbility', 'expectedChanges'],
+        required: ['text', 'isAbility', 'actor', 'expectedChanges'],
       },
     },
     gameOver: { type: 'BOOLEAN' },
@@ -267,17 +269,20 @@ export const turnSchema: JsonSchema = {
   required: ['scene', 'parameters', 'choices', 'gameOver'],
 }
 
-const ESTONIAN_EXAMPLE = `EXAMPLE OF A GOOD TURN (match this style — especially scene length and sentence rhythm):
+const ESTONIAN_EXAMPLE = `EXAMPLE OF A GOOD TURN (match this style — especially scene length, sentence rhythm, and how each choice names a specific character as actor):
 
 Scene:
 "Koridor lõpeb raudukse ees. Midagi kriibib seina taga metalli vastu — aeglaselt, nagu küüned, kes otsivad pragu. Mari taskulamp väriseb; ta hoiab seda kahe käega, aga käed ise ei pea."
 
-Choices:
-- "Avame ukse vaikselt." — (cost: Kütus:-1, Zombide surve:+0)
-- "Kustutame lambi ja ootame." — (cost: Grupi side:-1, Zombide surve:+1)
-- "Mari koputab uksele ja räägib sellega — äkki vastab keegi." — (cost: Grupi side:+1, Zombide surve:-1)
+Choices (assume roles: 0=Mari, 1=Jaan, 2=Karin):
+- { text: "Mari avab ukse vaikselt ja astub esimesena ette.", actor: 0, expectedChanges: [{name:"Grupi side", change:+1}, {name:"Zombide surve", change:-1}] }
+  → courage axis: Mari takes the risk herself, shielding the others.
+- { text: "Jaan kustutab lambi ja jätab Mari pimedusse ukse ette.", actor: 1, target: 0, expectedChanges: [{name:"Grupi side", change:-1}, {name:"Zombide surve", change:+1}] }
+  → loyalty axis: Jaan sacrifices Mari's position for the group's concealment. Target is Mari.
+- { text: "Karin tunnistab kõigile, et kuulis seda häält juba pool tundi tagasi.", actor: 2, expectedChanges: [{name:"Grupi side", change:-1}, {name:"Kütus", change:+0}, {name:"Zombide surve", change:-1}] }
+  → truth axis: Karin reveals withheld information — group trust drops, but the threat is newly understood.
 
-Note: 3 sentences total in the scene. Each choice is short and states its cost. Choices touch different parameter combinations.`
+Note: 3 sentences total in the scene. Each choice names one character as grammatical subject AND sets actor. The three choices test three different moral axes (courage / loyalty / truth), not three variants of the same question. Numeric costs stay in expectedChanges — the choice TEXT does not spell numbers, but the action implies the cost clearly.`
 
 export function turnPrompt(args: {
   currentTurn: number
@@ -303,7 +308,7 @@ export function turnPrompt(args: {
   const contextBlock = buildContextBlock(context)
 
   const rolesBlock = roles
-    .map((r) => `- ${r.name}: ${r.description}. Special ability (one-time): ${r.ability}${r.used ? ' [USED]' : ''}`)
+    .map((r) => `- [roleIndex ${r.id}] ${r.name}: ${r.description}. Special ability (one-time): ${r.ability}${r.used ? ' [USED]' : ''}`)
     .join('\n')
 
   const parametersBlock = parameters
@@ -331,22 +336,26 @@ CORE RULES:
 
 2. PARAMETERS AS SENSORY DETAIL. Each scene must surface ≥1 parameter state as something a character sees/hears/feels. Do NOT write them as narrator metadata ("Pinge tõuseb"). Show them ("Kütusenäidik jõuab punasesse; Mari käsi väriseb rooli peal").
 
-3. CHOICES MUST DECLARE THEIR COST. Each choice is a TRADE — write the cost into the choice text itself AND fill expectedChanges to match. The text and expectedChanges MUST agree in sign: if the text says "kulutame X", then X's expectedChange must be negative. NEVER output a choice whose expectedChanges are all zero or all positive — there must be at least one negative cost.
+3. CHOICES BELONG TO CHARACTERS, NOT THE GROUP. Every choice is ONE named person's move. Set actor = their roleIndex (0-based). The choice text MUST name that person as the grammatical subject — third person, never "meie"/"we". Goal: before the group decides, they ARGUE: "aga Mari kardab pimedat, saadame hoopis Jaanu". A choice that says "Grupp avab ukse" is a design failure — rewrite as "Mari avab ukse". The actor may differ between the 3 choices (different people stepping forward) or repeat (same person, different approaches) — but one of the 3 choices offering the SAME person in multiple variants is usually lazy; prefer distributing agency across the group when plausible. If the action concretely costs a DIFFERENT person (the actor leaves them behind / puts them in danger / exposes their secret), set target = that person's roleIndex. Otherwise omit target.
 
-4. TRILEMMA. The 3 choices must each affect a DIFFERENT combination of parameters. Two choices that move the same two parameters (even with opposite signs) are a design failure — rewrite one to touch a third parameter.
+4. CHOICES DECLARE THEIR COST. Each choice is a TRADE — write the cost into the choice text itself AND fill expectedChanges to match. The text and expectedChanges MUST agree in sign: if the text implies spending X, then X's expectedChange must be negative. NEVER output a choice whose expectedChanges are all zero or all positive — there must be at least one negative cost. The UI no longer shows numeric costs to players — the TEXT must carry the implication ("Mari avab ukse valjult" → pressure clearly rises; "Jaan sõidab tagasi bensiinijaama" → fuel clearly drops). Do not spell the numeric cost in prose ("kulutame 2 kütust") — let the action speak.
 
-5. NO HIDDEN RULES. All parameter changes you apply must come from the chosen action's consequences that are visible to the player in the scene and choices. Do NOT auto-degrade any parameter "because time passed". If pressure should rise, write it into the scene's narrated events or the choice costs — never as silent drift.
+5. TRILEMMA — three orthogonal moral axes, not three flavours of one question. The 3 choices must each test a DIFFERENT kind of decision. Think of the axes as: (a) courage vs. caution (who takes the risk), (b) loyalty vs. pragmatism (is someone sacrificed so others survive), (c) truth vs. concealment (is a secret revealed or hidden). At least two of the three axes must appear across the three choices. Two choices that test the same axis (even via different actions) are a design failure — rewrite one to test a different axis. They must also touch a DIFFERENT combination of parameters.
 
-6. parameter.change semantics: +1 = better (index toward best), -1 = worse (index toward worst). Use ±2 ONLY at climax or when a choice is explicitly extreme ("riskime kõigega"). Never ±2 in setup or inciting.
+6. NO HIDDEN RULES. All parameter changes you apply must come from the chosen action's consequences that are visible to the player in the scene and choices. Do NOT auto-degrade any parameter "because time passed". If pressure should rise, write it into the scene's narrated events or the choice costs — never as silent drift.
 
-7. JUST-BROKE DRAMATIZATION: If CURRENT PARAMETER STATES marks a parameter "⚠ JUST HIT WORST", open the scene with the immediate narrative consequence of that collapse — the group lives through the disaster (supplies run out, trust collapses, pressure overwhelms). Do NOT set gameOver from this alone — dramatize it. New choices should reflect the changed situation.
+7. parameter.change semantics: +1 = better (index toward best), -1 = worse (index toward worst). Use ±2 ONLY at climax or when a choice is explicitly extreme ("riskime kõigega"). Never ±2 in setup or inciting.
 
-8. ABILITIES: offer only in rising or climax, when dramatically earned. isAbility: true + roleIndex (0-based). Never in setup, inciting, resolution.
+8. JUST-BROKE DRAMATIZATION: If CURRENT PARAMETER STATES marks a parameter "⚠ JUST HIT WORST", open the scene with the immediate narrative consequence of that collapse — the group lives through the disaster (supplies run out, trust collapses, pressure overwhelms). Do NOT set gameOver from this alone — dramatize it. New choices should reflect the changed situation.
 
-9. FINAL TURN at maxTurns: set gameOver: true. gameOverText names the parameters that held and those that broke, the choices that mattered, what each character became.
+9. ABILITIES: offer only in rising or climax, when dramatically earned. isAbility: true + actor = the ability owner's roleIndex. Never in setup, inciting, resolution.
+
+10. FINAL TURN at maxTurns: set gameOver: true. gameOverText names the parameters that held and those that broke, the choices that mattered, what each character became.
 
 SELF-CHECK before responding:
 - Scene length: count sentences. Under limit? If not, DELETE until it is.
+- Every choice has an actor set, and its text names that actor as the grammatical subject? If any choice says "meie"/"we"/"grupp" — rewrite.
+- Do the 3 choices test at least 2 different moral axes (courage/loyalty/truth), or are they three flavours of the same question?
 - Each choice has ≥1 negative expectedChange? If any choice is "free", rewrite it.
 - Choices cover 3 different parameter combinations?
 - Every choice text matches its expectedChanges in sign?
@@ -366,7 +375,7 @@ SELF-CHECK before responding:
 
   const availableAbilities = roles.filter((r) => !r.used)
   const abilitiesLine = availableAbilities.length > 0
-    ? `AVAILABLE ABILITIES:\n${availableAbilities.map((r) => `- ${r.name} (roleIndex: ${r.id}): ${r.ability}`).join('\n')}`
+    ? `AVAILABLE ABILITIES:\n${availableAbilities.map((r) => `- ${r.name} (actor: ${r.id}): ${r.ability}`).join('\n')}`
     : 'All special abilities have been used.'
 
   const choiceLine = currentTurn === 1
