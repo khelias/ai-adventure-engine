@@ -88,20 +88,22 @@ export function storyGenerationPrompt(args: {
 Generate 1 adventure story for ${players} players in the ${genre} genre, suitable for a ${duration} duration game. Provide a compelling title, a vivid summary (2-3 sentences), and exactly ${players} unique roles.
 
 ROLES:
-- role.name: a PROPER FIRST NAME (e.g. "Mari", "Karin", "Mattis") — NOT a job title, NOT a description. Just a single first name.
+- role.name: a PROPER FIRST NAME appropriate to the target language — NOT a job title, NOT a description. Just a single first name.
 - role.description: one sentence describing who this person is and their relevant skill/background.
 - role.ability: a single powerful one-time-use special ability. Clearly name the ability and what it does.
 
-Design EXACTLY THREE parameters — the mechanical spine of this story. Each MUST be a DIFFERENT archetype. **Players care about names, not meters — so EVERY parameter name must anchor to a named person, a named pair, or a specific named threat. No abstract qualities ("Moraal", "Usaldus", "Oht").**
+Design EXACTLY THREE parameters — the mechanical spine of this story. Each MUST be a DIFFERENT archetype. **Players care about names, not meters — so EVERY parameter name must anchor to a named person, a named pair, or a specific named threat. No abstract qualities (Morale, Trust, Danger).**
 
-1. RESOURCE (depletes with action, rarely restored) — tie to a person whose body/state is at stake where plausible: "Mari jõud", "Kalev kaine", "Sireti haav". Group-wide resources are OK if the ownership feels concrete: "Grupi toit" (not "Toit"), "Auto kütus" (not "Kütus"). Starts full, ends empty. Players spend it to act.
-2. BOND (shifts both ways from social/moral choices) — MUST name at least one pair or specific relation: "Mari ja Jaan usaldus", "Ema ja poja side", "Abielu sõlm". Can improve from sacrifice, collapse from betrayal. Never "Grupi side" or "Koostöö" alone — too abstract. Use gender-neutral framing when the relationship is generic.
-3. PRESSURE (escalates from events in the story) — an external threat, but made specific: "Zombide surve" (not "Oht"), "Haiguse levik" (not "Risk"), "Küla lähenemine". Only the AI's choice costs determine when this changes — there is no hidden per-turn automatic worsening.
+Output-language examples below are shown in English; translate naturally into the target language while keeping the same anchoring pattern (specific person / pair / threat).
+
+1. RESOURCE (depletes with action, rarely restored) — tie to a person whose body/state is at stake where plausible: "Mari's strength", "Kalev's sobriety", "Siret's wound". Group-wide resources are OK if the ownership feels concrete: "The group's food" (not "Food"), "The car's fuel" (not "Fuel"). Starts full, ends empty. Players spend it to act.
+2. BOND (shifts both ways from social/moral choices) — MUST name at least one pair or specific relation: "Mari & Jaan's trust", "Mother & son's bond", "The marriage". Can improve from sacrifice, collapse from betrayal. Never bare "Trust" or "Cooperation" — too abstract. Use gender-neutral framing when the relationship is generic.
+3. PRESSURE (escalates from events in the story) — an external threat, but made specific: "The zombie wave" (not "Danger"), "The infection's spread" (not "Risk"), "The village closing in". Only the AI's choice costs determine when this changes — there is no hidden per-turn automatic worsening.
 
 PARAMETER FORMAT:
-- name: 1-4 words, SPECIFIC. Must include a person's name, a pair, or a named external threat. "Mari jõud" ✓ · "Jõud" ✗ · "Mari ja Jaan usaldus" ✓ · "Usaldus" ✗ · "Zombide surve" ✓ · "Oht" ✗.
-- states: exactly 4 short phrases (2-4 words each), best → worst. Each state must be OBSERVABLE — something a character would SEE or FEEL. Good: "Paak täis", "Paak pooleldi". Bad: "Hea", "Halvasti".
-- Double-check word order of every state phrase — in Estonian "Pinged pinna all" is correct, "Pinged all pinna" is wrong.
+- name: 1-4 words, SPECIFIC. Must include a person's name, a pair, or a named external threat. "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓ · "Trust" ✗ · "The zombie wave" ✓ · "Danger" ✗.
+- states: exactly 4 short phrases (2-4 words each), best → worst. Each state must be OBSERVABLE — something a character would SEE or FEEL. Good: "Tank full", "Tank half". Bad: "Good", "Bad".
+- In Estonian, double-check word order of every state phrase — "Pinged pinna all" is correct, "Pinged all pinna" is wrong. Apply equivalent care in other languages.
 
 The three parameters must create a TRILEMMA: no single choice can improve all three. Every meaningful decision trades one against another.${contextBlock}`
 }
@@ -147,8 +149,8 @@ export function customStoryPrompt(args: {
   const { storyText, players, genre, language } = args
   return `Based on this custom story idea: "${storyText}", generate ${players} thematically appropriate roles and 3 unique parameters for a ${genre} game. Each role needs a PROPER FIRST NAME (not a title), description, and a one-time-use ability.
 
-Parameter format:
-- name: 1-4 words, must anchor to a named person, pair, or specific threat — never abstract qualities. "Mari jõud" ✓ · "Jõud" ✗ · "Mari ja Jaan usaldus" ✓ · "Usaldus" ✗ · "Zombide surve" ✓ · "Oht" ✗.
+Parameter format (examples shown in English; translate naturally into the target language while keeping the same anchoring pattern):
+- name: 1-4 words, must anchor to a named person, pair, or specific threat — never abstract qualities. "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓ · "Trust" ✗ · "The zombie wave" ✓ · "Danger" ✗.
 - One parameter is a RESOURCE (depletes, tied to a person or concrete group possession), one is a BOND (names a pair or relation), one is a PRESSURE (specific external threat).
 - states: 4 short phrases (2-4 words each) from best to worst — no full sentences.
 
@@ -182,7 +184,7 @@ export function sequelPrompt(args: {
   language: Language
 }): string {
   const { sequelText, oldRoles, language } = args
-  return `This is a sequel to a previous adventure. The story continues from this summary: "${sequelText}". The returning characters are: ${JSON.stringify(oldRoles)}. Please generate: 1. A new, unique, one-time-use special ability for EACH of the returning characters. The list of abilities must be in the same order as the characters. 2. Three completely new, unique parameters suitable for this sequel story. Parameter names MUST anchor to a named person from the returning cast, a named pair from them, or a specific named external threat — never abstract qualities. "Mari jõud" ✓ · "Jõud" ✗ · "Mari ja Jaan usaldus" ✓. Each parameter needs a name and 4 states from best to worst. Output language must be ${langLabel(language)}.`
+  return `This is a sequel to a previous adventure. The story continues from this summary: "${sequelText}". The returning characters are: ${JSON.stringify(oldRoles)}. Please generate: 1. A new, unique, one-time-use special ability for EACH of the returning characters. The list of abilities must be in the same order as the characters. 2. Three completely new, unique parameters suitable for this sequel story. Parameter names MUST anchor to a named person from the returning cast, a named pair from them, or a specific named external threat — never abstract qualities. Examples in English (translate naturally into target language): "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓. Each parameter needs a name and 4 states from best to worst. Output language must be ${langLabel(language)}.`
 }
 
 // ----- Story phase pacing -----
@@ -341,21 +343,21 @@ CORE RULES:
 
 1. SCENE LENGTH IS LAW. Write 2-3 sentences per scene in setup/inciting/rising, 3-4 at climax, 4-5 at resolution. Count them. HARD MAX: 60 words per scene in non-climax turns. Groups read aloud — dense prose loses the room.
 
-2. PARAMETERS AS SENSORY DETAIL. Each scene must surface ≥1 parameter state as something a character sees/hears/feels. Do NOT write them as narrator metadata ("Pinge tõuseb"). Show them ("Kütusenäidik jõuab punasesse; Mari käsi väriseb rooli peal").
+2. PARAMETERS AS SENSORY DETAIL. Each scene must surface ≥1 parameter state as something a character sees/hears/feels. Do NOT write them as narrator metadata ("The pressure rises"). Show them ("The fuel gauge touches red; Mari's hand trembles on the wheel").
 
-3. AFTERMATH OPENING (from turn 2 onwards). The previous choice named an acting character (and sometimes a target). THIS scene MUST open with that person visible in the FIRST beat — through a single present-tense sensory detail: trembling hand, held breath, blood on a sleeve, silent stare, a half-finished word. Never retrospective summary ("Mari sai haavata eelmises stseenis"). Never neutral narrator exposition before the aftermath line. One line of living residue, then the new situation beat. The consequence compounds over turns: a limp from turn 3 still shows in turn 7. Turn 1 has no prior choice — skip this rule only for the opening scene.
+3. AFTERMATH OPENING (from turn 2 onwards). The previous choice named an acting character (and sometimes a target). THIS scene MUST open with that person visible in the FIRST beat — through a single present-tense sensory detail: trembling hand, held breath, blood on a sleeve, silent stare, a half-finished word. Never retrospective summary ("Mari was wounded in the previous scene"). Never neutral narrator exposition before the aftermath line. One line of living residue, then the new situation beat. The consequence compounds over turns: a limp from turn 3 still shows in turn 7. Turn 1 has no prior choice — skip this rule only for the opening scene.
 
-4. DIRECT DIALOGUE — use it. At least one scene out of every 2-3 turns must contain a direct spoken fragment from a character. Half a sentence muttered in the action is better than a speech — "'Ma ei saa enam ülesse,' sosistab Liis" is alive; "Liis tunneb end halvasti" is dead. When two characters visibly disagree within a scene, at least one of them SAYS something out loud. Dialogue turns narration into performance — the reader can dramatize a voice, not a statement.
+4. DIRECT DIALOGUE — use it. At least one scene out of every 2-3 turns must contain a direct spoken fragment from a character. Half a sentence muttered in the action is better than a speech — e.g. "'I can't get up anymore,' Liis whispers" is alive; "Liis is feeling unwell" is dead. When two characters visibly disagree within a scene, at least one of them SAYS something out loud. Dialogue turns narration into performance — the reader can dramatize a voice, not a statement.
 
-5. CHOICES BELONG TO CHARACTERS, NOT THE GROUP. Every choice is ONE named person's move. Set actor = their roleIndex (0-based). The choice text MUST name that person as the grammatical subject — third person, never "meie"/"we". Goal: before the group decides, they ARGUE: "aga Mari kardab pimedat, saadame hoopis Jaanu". A choice that says "Grupp avab ukse" is a design failure — rewrite as "Mari avab ukse". The actor may differ between the 3 choices (different people stepping forward) or repeat (same person, different approaches) — but one of the 3 choices offering the SAME person in multiple variants is usually lazy; prefer distributing agency across the group when plausible. If the action concretely costs a DIFFERENT person (the actor leaves them behind / puts them in danger / exposes their secret), set target = that person's roleIndex. Otherwise omit target.
+5. CHOICES BELONG TO CHARACTERS, NOT THE GROUP. Every choice is ONE named person's move. Set actor = their roleIndex (0-based). The choice text MUST name that person as the grammatical subject — third person, never "we". Goal: before the group decides, they ARGUE: "but Mari's afraid of the dark, let's send Jaan instead". A choice that says "The group opens the door" is a design failure — rewrite as "Mari opens the door". The actor may differ between the 3 choices (different people stepping forward) or repeat (same person, different approaches) — but one of the 3 choices offering the SAME person in multiple variants is usually lazy; prefer distributing agency across the group when plausible. If the action concretely costs a DIFFERENT person (the actor leaves them behind / puts them in danger / exposes their secret), set target = that person's roleIndex. Otherwise omit target.
 
-6. CHOICES DECLARE THEIR COST. Each choice is a TRADE — write the cost into the choice text itself AND fill expectedChanges to match. The text and expectedChanges MUST agree in sign: if the text implies spending X, then X's expectedChange must be negative. NEVER output a choice whose expectedChanges are all zero or all positive — there must be at least one negative cost. The UI no longer shows numeric costs to players — the TEXT must carry the implication ("Mari avab ukse valjult" → pressure clearly rises; "Jaan sõidab tagasi bensiinijaama" → fuel clearly drops). Do not spell the numeric cost in prose ("kulutame 2 kütust") — let the action speak.
+6. CHOICES DECLARE THEIR COST. Each choice is a TRADE — write the cost into the choice text itself AND fill expectedChanges to match. The text and expectedChanges MUST agree in sign: if the text implies spending X, then X's expectedChange must be negative. NEVER output a choice whose expectedChanges are all zero or all positive — there must be at least one negative cost. The UI no longer shows numeric costs to players — the TEXT must carry the implication ("Mari opens the door loudly" → pressure clearly rises; "Jaan drives back to the gas station" → fuel clearly drops). Do not spell the numeric cost in prose ("we spend 2 fuel") — let the action speak.
 
 7. TRILEMMA — three orthogonal moral axes, not three flavours of one question. The 3 choices must each test a DIFFERENT kind of decision. Think of the axes as: (a) courage vs. caution (who takes the risk), (b) loyalty vs. pragmatism (is someone sacrificed so others survive), (c) truth vs. concealment (is a secret revealed or hidden). At least two of the three axes must appear across the three choices. Two choices that test the same axis (even via different actions) are a design failure — rewrite one to test a different axis. They must also touch a DIFFERENT combination of parameters.
 
 8. NO HIDDEN RULES. All parameter changes you apply must come from the chosen action's consequences that are visible to the player in the scene and choices. Do NOT auto-degrade any parameter "because time passed". If pressure should rise, write it into the scene's narrated events or the choice costs — never as silent drift.
 
-9. parameter.change semantics: +1 = better (index toward best), -1 = worse (index toward worst). Use ±2 ONLY at climax or when a choice is explicitly extreme ("riskime kõigega"). Never ±2 in setup or inciting.
+9. parameter.change semantics: +1 = better (index toward best), -1 = worse (index toward worst). Use ±2 ONLY at climax or when a choice is explicitly extreme (all-or-nothing). Never ±2 in setup or inciting.
 
 10. JUST-BROKE DRAMATIZATION: If CURRENT PARAMETER STATES marks a parameter "⚠ JUST HIT WORST", open the scene with the immediate narrative consequence of that collapse — the group lives through the disaster (supplies run out, trust collapses, pressure overwhelms). This takes precedence over rule 3 when both apply — the break IS the aftermath. Do NOT set gameOver from this alone — dramatize it. New choices should reflect the changed situation.
 
@@ -367,7 +369,7 @@ SELF-CHECK before responding:
 - Scene length: count sentences. Under limit? If not, DELETE until it is.
 - If this is turn 2+, does the scene OPEN with the previous choice's actor/target through a present-tense sensory detail? If not, rewrite the first line.
 - Has a direct spoken line appeared in the last 2-3 turns? If not, slip one short fragment into THIS scene.
-- Every choice has an actor set, and its text names that actor as the grammatical subject? If any choice says "meie"/"we"/"grupp" — rewrite.
+- Every choice has an actor set, and its text names that actor as the grammatical subject? If any choice uses a plural "we" / "the group" (in any language) — rewrite.
 - Do the 3 choices test at least 2 different moral axes (courage/loyalty/truth), or are they three flavours of the same question?
 - Each choice has ≥1 negative expectedChange? If any choice is "free", rewrite it.
 - Choices cover 3 different parameter combinations?
