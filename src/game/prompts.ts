@@ -92,14 +92,14 @@ ROLES:
 - role.description: one sentence describing who this person is and their relevant skill/background.
 - role.ability: a single powerful one-time-use special ability. Clearly name the ability and what it does.
 
-Design EXACTLY THREE parameters — the mechanical spine of this story. Each MUST be a DIFFERENT archetype:
+Design EXACTLY THREE parameters — the mechanical spine of this story. Each MUST be a DIFFERENT archetype. **Players care about names, not meters — so EVERY parameter name must anchor to a named person, a named pair, or a specific named threat. No abstract qualities ("Moraal", "Usaldus", "Oht").**
 
-1. RESOURCE (depletes with action, rarely restored): e.g. "Kütus", "Laskemoon", "Toit", "Aku". Starts full, ends empty. Players spend it to act.
-2. BOND (shifts both ways from social/moral choices): e.g. "Usaldus", "Grupi side", "Koostöö". Can improve from sacrifice, collapse from betrayal. Use gender-neutral framing ("Grupi side" not "Meeste side").
-3. PRESSURE (escalates from events in the story): e.g. "Zombide surve", "Ohu lähedus", "Infektsioon". Only the AI's choice costs determine when this changes — there is no hidden per-turn automatic worsening.
+1. RESOURCE (depletes with action, rarely restored) — tie to a person whose body/state is at stake where plausible: "Mari jõud", "Kalev kaine", "Sireti haav". Group-wide resources are OK if the ownership feels concrete: "Grupi toit" (not "Toit"), "Auto kütus" (not "Kütus"). Starts full, ends empty. Players spend it to act.
+2. BOND (shifts both ways from social/moral choices) — MUST name at least one pair or specific relation: "Mari ja Jaan usaldus", "Ema ja poja side", "Abielu sõlm". Can improve from sacrifice, collapse from betrayal. Never "Grupi side" or "Koostöö" alone — too abstract. Use gender-neutral framing when the relationship is generic.
+3. PRESSURE (escalates from events in the story) — an external threat, but made specific: "Zombide surve" (not "Oht"), "Haiguse levik" (not "Risk"), "Küla lähenemine". Only the AI's choice costs determine when this changes — there is no hidden per-turn automatic worsening.
 
 PARAMETER FORMAT:
-- name: 1-3 word concrete noun, genre-specific (NOT abstract like "Moraal" alone — use "Grupi moraal")
+- name: 1-4 words, SPECIFIC. Must include a person's name, a pair, or a named external threat. "Mari jõud" ✓ · "Jõud" ✗ · "Mari ja Jaan usaldus" ✓ · "Usaldus" ✗ · "Zombide surve" ✓ · "Oht" ✗.
 - states: exactly 4 short phrases (2-4 words each), best → worst. Each state must be OBSERVABLE — something a character would SEE or FEEL. Good: "Paak täis", "Paak pooleldi". Bad: "Hea", "Halvasti".
 - Double-check word order of every state phrase — in Estonian "Pinged pinna all" is correct, "Pinged all pinna" is wrong.
 
@@ -145,7 +145,14 @@ export function customStoryPrompt(args: {
   language: Language
 }): string {
   const { storyText, players, genre, language } = args
-  return `Based on this custom story idea: "${storyText}", generate ${players} thematically appropriate roles and 3 unique parameters for a ${genre} game. Each role needs a PROPER FIRST NAME (not a title), description, and a one-time-use ability. Parameter format: name = 1-3 word noun; states = 4 short phrases (2-4 words each) from best to worst — no full sentences. Output language must be ${langLabel(language)}.`
+  return `Based on this custom story idea: "${storyText}", generate ${players} thematically appropriate roles and 3 unique parameters for a ${genre} game. Each role needs a PROPER FIRST NAME (not a title), description, and a one-time-use ability.
+
+Parameter format:
+- name: 1-4 words, must anchor to a named person, pair, or specific threat — never abstract qualities. "Mari jõud" ✓ · "Jõud" ✗ · "Mari ja Jaan usaldus" ✓ · "Usaldus" ✗ · "Zombide surve" ✓ · "Oht" ✗.
+- One parameter is a RESOURCE (depletes, tied to a person or concrete group possession), one is a BOND (names a pair or relation), one is a PRESSURE (specific external threat).
+- states: 4 short phrases (2-4 words each) from best to worst — no full sentences.
+
+Output language must be ${langLabel(language)}.`
 }
 
 // ----- Sequel generation -----
@@ -175,7 +182,7 @@ export function sequelPrompt(args: {
   language: Language
 }): string {
   const { sequelText, oldRoles, language } = args
-  return `This is a sequel to a previous adventure. The story continues from this summary: "${sequelText}". The returning characters are: ${JSON.stringify(oldRoles)}. Please generate: 1. A new, unique, one-time-use special ability for EACH of the returning characters. The list of abilities must be in the same order as the characters. 2. Three completely new, unique parameters suitable for this sequel story. Each parameter needs a name and 4 states from best to worst. Output language must be ${langLabel(language)}.`
+  return `This is a sequel to a previous adventure. The story continues from this summary: "${sequelText}". The returning characters are: ${JSON.stringify(oldRoles)}. Please generate: 1. A new, unique, one-time-use special ability for EACH of the returning characters. The list of abilities must be in the same order as the characters. 2. Three completely new, unique parameters suitable for this sequel story. Parameter names MUST anchor to a named person from the returning cast, a named pair from them, or a specific named external threat — never abstract qualities. "Mari jõud" ✓ · "Jõud" ✗ · "Mari ja Jaan usaldus" ✓. Each parameter needs a name and 4 states from best to worst. Output language must be ${langLabel(language)}.`
 }
 
 // ----- Story phase pacing -----
@@ -274,15 +281,15 @@ const ESTONIAN_EXAMPLE = `EXAMPLE OF A GOOD TURN (match this style — especiall
 Scene:
 "Koridor lõpeb raudukse ees. Midagi kriibib seina taga metalli vastu — aeglaselt, nagu küüned, kes otsivad pragu. Mari taskulamp väriseb; ta hoiab seda kahe käega, aga käed ise ei pea."
 
-Choices (assume roles: 0=Mari, 1=Jaan, 2=Karin):
-- { text: "Mari avab ukse vaikselt ja astub esimesena ette.", actor: 0, expectedChanges: [{name:"Grupi side", change:+1}, {name:"Zombide surve", change:-1}] }
+Choices (assume roles: 0=Mari, 1=Jaan, 2=Karin; parameters: "Mari jõud", "Mari ja Jaan usaldus", "Zombide surve"):
+- { text: "Mari avab ukse vaikselt ja astub esimesena ette.", actor: 0, expectedChanges: [{name:"Mari ja Jaan usaldus", change:+1}, {name:"Zombide surve", change:-1}] }
   → courage axis: Mari takes the risk herself, shielding the others.
-- { text: "Jaan kustutab lambi ja jätab Mari pimedusse ukse ette.", actor: 1, target: 0, expectedChanges: [{name:"Grupi side", change:-1}, {name:"Zombide surve", change:+1}] }
+- { text: "Jaan kustutab lambi ja jätab Mari pimedusse ukse ette.", actor: 1, target: 0, expectedChanges: [{name:"Mari ja Jaan usaldus", change:-1}, {name:"Zombide surve", change:+1}] }
   → loyalty axis: Jaan sacrifices Mari's position for the group's concealment. Target is Mari.
-- { text: "Karin tunnistab kõigile, et kuulis seda häält juba pool tundi tagasi.", actor: 2, expectedChanges: [{name:"Grupi side", change:-1}, {name:"Kütus", change:+0}, {name:"Zombide surve", change:-1}] }
-  → truth axis: Karin reveals withheld information — group trust drops, but the threat is newly understood.
+- { text: "Karin tunnistab kõigile, et kuulis seda häält juba pool tundi tagasi.", actor: 2, expectedChanges: [{name:"Mari ja Jaan usaldus", change:-1}, {name:"Mari jõud", change:+0}, {name:"Zombide surve", change:-1}] }
+  → truth axis: Karin reveals withheld information — pair trust drops, but the threat is newly understood.
 
-Note: 3 sentences total in the scene. Each choice names one character as grammatical subject AND sets actor. The three choices test three different moral axes (courage / loyalty / truth), not three variants of the same question. Numeric costs stay in expectedChanges — the choice TEXT does not spell numbers, but the action implies the cost clearly.`
+Note: 3 sentences total in the scene. Each choice names one character as grammatical subject AND sets actor. The three choices test three different moral axes (courage / loyalty / truth), not three variants of the same question. Parameter names anchor to named people ("Mari jõud", "Mari ja Jaan usaldus") or a specific threat ("Zombide surve") — never abstract ("Jõud", "Usaldus"). Numeric costs stay in expectedChanges; the choice TEXT does not spell numbers, but the action implies the cost clearly.`
 
 export function turnPrompt(args: {
   currentTurn: number
