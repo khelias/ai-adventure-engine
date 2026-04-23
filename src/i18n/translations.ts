@@ -4,6 +4,8 @@ interface StringTable {
   appTitle: string
   playerCountLabel: string
   advancedToggle: string
+  groupSectionHeader: string
+  groupSectionHint: string
   locationLabel: string
   locationPlaceholder: string
   playersDescLabel: string
@@ -76,7 +78,9 @@ export const translations: Record<Language, StringTable> = {
   et: {
     appTitle: 'AI Seiklusmootor',
     playerCountLabel: 'Mängijate arv:',
-    advancedToggle: 'Kontekst (valikuline)',
+    advancedToggle: 'Muud seaded (valikuline)',
+    groupSectionHeader: 'Sinu grupp',
+    groupSectionHint: 'Ütle kes täna mängib — kirjutame loo teie enda jaoks, mitte võõrastest.',
     locationLabel: 'Kus te praegu olete?',
     locationPlaceholder: 'nt buss, köök, rannakuur, kontor...',
     playersDescLabel: 'Kes on ruumis?',
@@ -149,7 +153,9 @@ export const translations: Record<Language, StringTable> = {
   en: {
     appTitle: 'AI Adventure Engine',
     playerCountLabel: 'Number of players:',
-    advancedToggle: 'Context (optional)',
+    advancedToggle: 'Other settings (optional)',
+    groupSectionHeader: 'Your group',
+    groupSectionHint: "Tell us who's playing tonight — we'll write the story for you, not for strangers.",
     locationLabel: 'Where are you right now?',
     locationPlaceholder: 'e.g. bus, kitchen, beach house, office...',
     playersDescLabel: 'Who is in the room?',

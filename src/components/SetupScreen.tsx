@@ -202,6 +202,56 @@ export function SetupScreen() {
         </div>
       </div>
 
+      {/* Tone / vibe — primary setting, not hidden behind advanced */}
+      <div className="setup-section">
+        <span className="setup-label">{strings.vibeLabel}</span>
+        <div className="ctx-vibe-btns">
+          {(
+            [
+              { value: '' as Vibe, label: language === 'et' ? 'vaba' : 'any' },
+              { value: 'light' as Vibe, label: language === 'et' ? 'kerge' : 'light' },
+              { value: 'tense' as Vibe, label: language === 'et' ? 'pingeline' : 'tense' },
+              { value: 'dark' as Vibe, label: language === 'et' ? 'tume' : 'dark' },
+            ] as const
+          ).map((v) => (
+            <button
+              key={v.value}
+              type="button"
+              className={`ctx-vibe-btn${ctx.vibe === v.value ? ' active' : ''}`}
+              onClick={() => setCtx({ vibe: v.value })}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Group — primary section that makes the story personal */}
+      <div className="setup-section setup-section--group">
+        <span className="setup-label">{strings.groupSectionHeader}</span>
+        <p className="setup-hint">{strings.groupSectionHint}</p>
+        <div className="ctx-field">
+          <span className="ctx-label">{strings.locationLabel}</span>
+          <input
+            type="text"
+            value={ctx.location}
+            placeholder={strings.locationPlaceholder}
+            onChange={(e) => setCtx({ location: e.target.value })}
+            className="input-page"
+          />
+        </div>
+        <div className="ctx-field">
+          <span className="ctx-label">{strings.playersDescLabel}</span>
+          <input
+            type="text"
+            value={ctx.playersDesc}
+            placeholder={strings.playersDescPlaceholder}
+            onChange={(e) => setCtx({ playersDesc: e.target.value })}
+            className="input-page"
+          />
+        </div>
+      </div>
+
       {/* CTA */}
       <button
         className={`btn-begin${!isLoading ? ' ready' : ''}`}
@@ -211,7 +261,7 @@ export function SetupScreen() {
         {isLoading ? strings.loading : strings.generateStoryBtn}
       </button>
 
-      {/* Advanced */}
+      {/* Advanced — inside joke + provider only */}
       <button
         type="button"
         className="setup-advanced-toggle"
@@ -222,54 +272,6 @@ export function SetupScreen() {
 
       {showAdvanced && (
         <div className="ctx-section">
-          {/* Location */}
-          <div className="ctx-field">
-            <span className="ctx-label">{strings.locationLabel}</span>
-            <input
-              type="text"
-              value={ctx.location}
-              placeholder={strings.locationPlaceholder}
-              onChange={(e) => setCtx({ location: e.target.value })}
-              className="input-page"
-            />
-          </div>
-
-          {/* Players description */}
-          <div className="ctx-field">
-            <span className="ctx-label">{strings.playersDescLabel}</span>
-            <input
-              type="text"
-              value={ctx.playersDesc}
-              placeholder={strings.playersDescPlaceholder}
-              onChange={(e) => setCtx({ playersDesc: e.target.value })}
-              className="input-page"
-            />
-          </div>
-
-          {/* Vibe — word buttons instead of select */}
-          <div className="ctx-field">
-            <span className="ctx-label">{strings.vibeLabel}</span>
-            <div className="ctx-vibe-btns">
-              {(
-                [
-                  { value: '' as Vibe, label: language === 'et' ? 'vaba' : 'any' },
-                  { value: 'light' as Vibe, label: language === 'et' ? 'kerge' : 'light' },
-                  { value: 'tense' as Vibe, label: language === 'et' ? 'pingeline' : 'tense' },
-                  { value: 'dark' as Vibe, label: language === 'et' ? 'tume' : 'dark' },
-                ] as const
-              ).map((v) => (
-                <button
-                  key={v.value}
-                  type="button"
-                  className={`ctx-vibe-btn${ctx.vibe === v.value ? ' active' : ''}`}
-                  onClick={() => setCtx({ vibe: v.value })}
-                >
-                  {v.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Inside joke */}
           <div className="ctx-field">
             <span className="ctx-label">{strings.insideJokeLabel}</span>
