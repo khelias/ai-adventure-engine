@@ -6,7 +6,7 @@ ENV NODE_ENV=production
 COPY package.json ./
 RUN npm install --omit=dev --no-package-lock && npm cache clean --force
 
-COPY server.js ./
+COPY server.js et-style-guide.js ./
 
 USER node
 EXPOSE 3000

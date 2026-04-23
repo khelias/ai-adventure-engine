@@ -1,5 +1,6 @@
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
+const { ET_STYLE_GUIDE } = require('./et-style-guide');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
@@ -125,9 +126,16 @@ app.post('/generate', async (req, res) => {
   }
   const t0 = Date.now();
   try {
+    // When the request language is Estonian, prepend the style guide to the
+    // system prompt so the generator has it in its working context. Cheaper
+    // and more reliable than only fixing mistakes downstream in the editor.
+    const effectiveSystemPrompt = language === 'et'
+      ? (systemPrompt ? `${ET_STYLE_GUIDE}\n\n---\n\n${systemPrompt}` : ET_STYLE_GUIDE)
+      : systemPrompt;
+
     const result = provider === 'claude'
-      ? await callClaude({ prompt, schema, systemPrompt })
-      : await callGemini({ prompt, schema, systemPrompt });
+      ? await callClaude({ prompt, schema, systemPrompt: effectiveSystemPrompt })
+      : await callGemini({ prompt, schema, systemPrompt: effectiveSystemPrompt });
 
     // Turn responses have { scene, choices, parameters, gameOver }. For those:
     //   1) Validate choice costs: reject silently by logging, caller trusts AI.
@@ -187,21 +195,25 @@ function logChoiceCostViolations(turn, provider) {
 // Gemini Flash with a strict editorial prompt. Fixes invented words, wrong
 // word register, and non-native sentence structure while preserving facts.
 // Mutates `turn.scene` and `turn.gameOverText` in place.
-const EDITOR_SYSTEM = `Sa oled eesti kirjanduse toimetaja. Saad ilukirjandusliku lõigu ja parandad eesti keele vigu.
+const EDITOR_SYSTEM = `Sa oled eesti kirjanduse toimetaja. Saad ilukirjandusliku lõigu ja parandad eesti keele vigu — kasuta allpool olevat sõnajärje ja grammatika reeglistikku kontrolljuhisena.
 
 PARANDA:
-- Sõnad, mida eesti keeles ei ole (hallutsinatsioonid, valed liitsõnad)
+- Sõnad, mida eesti keeles ei ole (hallutsinatsioonid, valed liitsõnad, otsetõlked inglise keelest — nt "dešifreerib" kui mõeldakse "avab jõuga")
 - Sõnad, mis on valel registril (loomahääl masina kohta, murdesõna proosa sees)
-- Otsetõlked inglise keelest (calque'd), kohmakad lauseehitused
+- Kalque'd ja kohmakad lauseehitused (inglise-mõõtkavaline struktuur)
 - Ebaühtlane ajavorm ühe lõigu sees
-- Valed sõnajärjed ("Pinged all pinna" → "Pinged pinna all")
+- Sõnajärje vead vastavalt allolevale reeglistikule — eelkõige V2-reegli rikkumised, eituspartikli "ei" lahutamine verbist, rõhumäärsõnade ("ka", "just", "isegi") vale asend
 
 ÄRA MUUDA:
 - Fakte, tegelaste nimesid, sündmuste sisu
 - Atmosfääri ega tooni
-- Pikkust olulisel määral — paranda sõnu, mitte kompositsiooni
+- Pikkust olulisel määral — paranda sõnu ja sõnajärge, mitte kompositsiooni ega stseeni mahtu
 
-Vasta AINULT parandatud tekstiga, ilma selgituseta. Kui tekstis pole vigu, vasta täpselt sama tekstiga.`;
+Vasta AINULT parandatud tekstiga, ilma selgituseta. Kui tekstis pole vigu, vasta täpselt sama tekstiga.
+
+---
+
+${ET_STYLE_GUIDE}`;
 
 const EDITOR_SCHEMA = {
   type: 'OBJECT',
