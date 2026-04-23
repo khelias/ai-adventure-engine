@@ -1,6 +1,7 @@
 import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { startGameAndFirstTurn } from '../game/actions'
+import { LoadingDots } from './LoadingDots'
 
 export function RoleAssignmentScreen() {
   const language = useGameStore((s) => s.settings.language)
@@ -116,8 +117,13 @@ export function RoleAssignmentScreen() {
         ))}
       </div>
 
-      <button onClick={startGameAndFirstTurn} disabled={isLoading} className="w-full btn-primary py-3">
-        {isLoading ? strings.loading : strings.startGameBtn}
+      <button
+        onClick={startGameAndFirstTurn}
+        disabled={isLoading}
+        className="w-full btn-primary py-3"
+        aria-label={isLoading ? strings.loading : strings.startGameBtn}
+      >
+        {isLoading ? <LoadingDots /> : strings.startGameBtn}
       </button>
 
       {error ? (

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { generateSequel } from '../game/actions'
+import { LoadingDots } from './LoadingDots'
 
 export function GameOverScreen() {
   const language = useGameStore((s) => s.settings.language)
@@ -124,8 +125,9 @@ export function GameOverScreen() {
             onClick={() => generateSequel(sequelText)}
             disabled={isLoading || !sequelText.trim()}
             className="btn-primary"
+            aria-label={isLoading ? strings.loading : strings.continueSequelBtn}
           >
-            {isLoading ? strings.loading : strings.continueSequelBtn}
+            {isLoading ? <LoadingDots /> : strings.continueSequelBtn}
           </button>
         </div>
       ) : null}

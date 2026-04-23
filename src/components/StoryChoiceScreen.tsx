@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { generateStories, generateCustomStory } from '../game/actions'
+import { LoadingDots } from './LoadingDots'
 
 export function StoryChoiceScreen() {
   const language = useGameStore((s) => s.settings.language)
@@ -114,8 +115,9 @@ export function StoryChoiceScreen() {
                 onClick={() => generateCustomStory(customText)}
                 disabled={isLoading || !customText.trim()}
                 className="btn-primary text-xs py-1.5 px-4"
+                aria-label={isLoading ? strings.loading : strings.useCustomStoryBtn}
               >
-                {isLoading ? strings.loading : strings.useCustomStoryBtn}
+                {isLoading ? <LoadingDots /> : strings.useCustomStoryBtn}
               </button>
               <button
                 onClick={() => { setShowCustom(false); setCustomText('') }}

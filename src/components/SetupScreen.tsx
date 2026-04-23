@@ -4,6 +4,7 @@ import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { generateStories } from '../game/actions'
 import type { Duration, Genre, Vibe } from '../game/types'
+import { LoadingDots } from './LoadingDots'
 
 interface GenreOption {
   value: Genre
@@ -257,8 +258,9 @@ export function SetupScreen() {
         className={`btn-begin${!isLoading ? ' ready' : ''}`}
         onClick={() => generateStories()}
         disabled={isLoading}
+        aria-label={isLoading ? strings.loading : strings.generateStoryBtn}
       >
-        {isLoading ? strings.loading : strings.generateStoryBtn}
+        {isLoading ? <LoadingDots /> : strings.generateStoryBtn}
       </button>
 
       {/* Advanced — inside joke + provider only */}

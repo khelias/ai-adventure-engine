@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { handlePlayerChoice } from '../game/actions'
 import type { Choice, Parameter } from '../game/types'
+import { LoadingDots } from './LoadingDots'
 
 export function GameScreen() {
   const language = useGameStore((s) => s.settings.language)
@@ -219,12 +220,3 @@ function ParamPill({ param }: { param: Parameter }) {
   )
 }
 
-function LoadingDots() {
-  return (
-    <span className="loading-dots">
-      <span />
-      <span />
-      <span />
-    </span>
-  )
-}
