@@ -103,7 +103,7 @@ Output-language examples below are shown in English; translate naturally into th
 PARAMETER FORMAT:
 - name: 1-4 words, SPECIFIC. Must include a person's name, a pair, or a named external threat. "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓ · "Trust" ✗ · "The zombie wave" ✓ · "Danger" ✗.
 - states: exactly 4 short phrases (2-4 words each), best → worst. Each state must be OBSERVABLE — something a character would SEE or FEEL. Good: "Tank full", "Tank half". Bad: "Good", "Bad".
-- In Estonian, double-check word order of every state phrase — "Pinged pinna all" is correct, "Pinged all pinna" is wrong. Apply equivalent care in other languages.
+- Double-check that each state phrase is grammatical and idiomatic in the target language.
 
 The three parameters must create a TRILEMMA: no single choice can improve all three. Every meaningful decision trades one against another.${contextBlock}`
 }
