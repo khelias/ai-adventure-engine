@@ -49,6 +49,7 @@ interface StringTable {
   choiceTitle: string
   summaryTitle: string
   sequelLabel: string
+  sequelHint: string
   restartBtn: string
   continueSequelBtn: string
   abilityLabel: string
@@ -124,7 +125,8 @@ export const translations: Record<Language, StringTable> = {
     sceneTitle: 'Praegune olukord',
     choiceTitle: 'Mida te teete?',
     summaryTitle: 'Kokkuvõte:',
-    sequelLabel: 'Järjeloo tekst (kopeeri see uue mängu alustamiseks):',
+    sequelLabel: 'Järjenda lugu',
+    sequelHint: 'Muuda järgmise seikluse lähtekohta või jätka nii nagu on.',
     restartBtn: 'Alusta uuesti',
     continueSequelBtn: 'Jätka järjelooga',
     abilityLabel: 'Erioskus',
@@ -199,7 +201,8 @@ export const translations: Record<Language, StringTable> = {
     sceneTitle: 'Current Situation',
     choiceTitle: 'What do you do?',
     summaryTitle: 'Summary:',
-    sequelLabel: 'Sequel text (copy this to start a new game):',
+    sequelLabel: 'Continue the story',
+    sequelHint: 'Edit the starting point for the next adventure, or leave it as is.',
     restartBtn: 'Restart',
     continueSequelBtn: 'Continue with a sequel',
     abilityLabel: 'Special ability',

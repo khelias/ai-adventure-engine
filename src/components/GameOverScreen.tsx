@@ -114,15 +114,17 @@ export function GameOverScreen() {
       {/* Sequel */}
       {kind === 'narrative' ? (
         <div className="space-y-3 text-left" style={{ borderTop: '1px solid var(--line)', paddingTop: '1.25rem' }}>
-          <label className="type-caps" style={{ display: 'block' }}>{strings.sequelLabel}</label>
+          <label className="type-caps" style={{ display: 'block' }} htmlFor="sequel-input">{strings.sequelLabel}</label>
+          <p className="setup-hint" style={{ margin: '0 0 0.5rem 0' }}>{strings.sequelHint}</p>
           <textarea
+            id="sequel-input"
             value={sequelText}
             onChange={(e) => setSequelText(e.target.value)}
             rows={4}
             className="input-page resize-none"
           />
           <button
-            onClick={() => generateSequel(sequelText)}
+            onClick={() => void generateSequel(sequelText)}
             disabled={isLoading || !sequelText.trim()}
             className="btn-primary"
             aria-label={isLoading ? strings.loading : strings.continueSequelBtn}

@@ -127,6 +127,8 @@ export function SetupScreen() {
   const playersLabel = language === 'et' ? 'Mängijad' : 'Players'
   const durationLabel = language === 'et' ? 'Kestvus' : 'Duration'
 
+  const hasPersonalContext = !!(ctx.vibe || ctx.location.trim() || ctx.playersDesc.trim())
+
   // First word of duration label (strips the parenthetical)
   const getDurationWord = (labelKey: keyof typeof translations.et) =>
     (strings[labelKey] as string).split(' ')[0]
@@ -254,8 +256,13 @@ export function SetupScreen() {
       </div>
 
       {/* CTA */}
+      {/* The "ready" (filled violet) state triggers once the user has made a
+          personal choice — any vibe, location text, or players description.
+          Empty defaults keep the button in ghost state as a subtle nudge that
+          more context makes a better story. Fast-path still works — ghost
+          button is still clickable and produces a playable game. */}
       <button
-        className={`btn-begin${!isLoading ? ' ready' : ''}`}
+        className={`btn-begin${hasPersonalContext && !isLoading ? ' ready' : ''}`}
         onClick={() => generateStories()}
         disabled={isLoading}
         aria-label={isLoading ? strings.loading : strings.generateStoryBtn}

@@ -30,7 +30,7 @@ export default function App() {
         >
           ← Games
         </a>
-        <LangToggle />
+        {screen === 'setup' && <LangToggle />}
       </header>
 
       <main className="flex-1 flex justify-center px-4 sm:px-5 py-6 sm:py-8">

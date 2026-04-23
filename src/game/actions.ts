@@ -49,7 +49,7 @@ export async function generateStories(): Promise<void> {
     )
     store.setAvailableStories(stories)
   } catch (err) {
-    store.setError(errorMessage(err))
+    store.setError(t().errorStart(errorMessage(err)))
   } finally {
     store.setLoading(false)
   }
