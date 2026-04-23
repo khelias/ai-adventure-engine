@@ -227,12 +227,34 @@ const EDITOR_SCHEMA = {
 const EDITOR_TOTAL_BUDGET_MS = 25_000;
 
 async function estonianEditorPass(turnData) {
+  // Each task: { label, text, apply }. `apply(corrected)` writes the edited
+  // text back to its home in turnData. Choice tasks carry their index so the
+  // right element is updated.
   const tasks = [];
   if (turnData.scene && typeof turnData.scene === 'string' && turnData.scene.trim().length > 10) {
-    tasks.push(['scene', turnData.scene]);
+    tasks.push({
+      label: 'scene',
+      text: turnData.scene,
+      apply: (c) => { turnData.scene = c; },
+    });
   }
   if (turnData.gameOverText && typeof turnData.gameOverText === 'string' && turnData.gameOverText.trim().length > 20) {
-    tasks.push(['gameOverText', turnData.gameOverText]);
+    tasks.push({
+      label: 'gameOverText',
+      text: turnData.gameOverText,
+      apply: (c) => { turnData.gameOverText = c; },
+    });
+  }
+  if (Array.isArray(turnData.choices)) {
+    turnData.choices.forEach((choice, idx) => {
+      if (choice && typeof choice.text === 'string' && choice.text.trim().length > 5) {
+        tasks.push({
+          label: `choice[${idx}]`,
+          text: choice.text,
+          apply: (c) => { turnData.choices[idx].text = c; },
+        });
+      }
+    });
   }
   if (tasks.length === 0) return;
 
@@ -240,18 +262,18 @@ async function estonianEditorPass(turnData) {
   const budgetTimer = setTimeout(() => sharedController.abort(), EDITOR_TOTAL_BUDGET_MS);
 
   try {
-    const results = await Promise.all(tasks.map(async ([key, text]) => {
+    const results = await Promise.all(tasks.map(async (task) => {
       try {
-        const edited = await editorCall(text, sharedController.signal);
-        return [key, edited];
+        const edited = await editorCall(task.text, sharedController.signal);
+        return { task, edited };
       } catch (e) {
         // Per-task failure: log and leave field unedited. Don't fail the whole pass.
-        console.warn(`editor-pass ${key} failed: ${e.message || e}`);
-        return [key, null];
+        console.warn(`editor-pass ${task.label} failed: ${e.message || e}`);
+        return { task, edited: null };
       }
     }));
-    for (const [key, edited] of results) {
-      if (edited && edited.length > 0) turnData[key] = edited;
+    for (const { task, edited } of results) {
+      if (edited && edited.length > 0) task.apply(edited);
     }
   } finally {
     clearTimeout(budgetTimer);
