@@ -12,6 +12,7 @@ import {
   turnSchema,
   type TurnResponse,
 } from './prompts'
+import { LANG_PACKS } from '../i18n/lang-packs'
 import {
   applyParameterChanges,
   findBrokenParameters,
@@ -104,7 +105,7 @@ export async function generateSequel(sequelText: string): Promise<void> {
       'gemini',
     )
     state.initStory({
-      title: settings.language === 'et' ? 'Järjelugu' : 'Sequel',
+      title: LANG_PACKS[settings.language].sequelTitle,
       summary: sequelText,
       roles: oldRoles.map((role, index) => ({
         name: role.name,
@@ -124,7 +125,7 @@ export async function startGameAndFirstTurn(): Promise<void> {
   const store = useGameStore.getState()
   store.setError(null)
   store.startGame()
-  const firstChoice = store.settings.language === 'et' ? 'Mäng algab.' : 'The game begins.'
+  const firstChoice = LANG_PACKS[store.settings.language].gameStartChoice
   await handlePlayerChoice(firstChoice, { isFirstTurn: true })
 }
 

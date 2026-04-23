@@ -30,6 +30,7 @@ import {
   isUnrecoverable,
   durationToMaxTurns,
 } from '../src/game/engine'
+import { LANG_PACKS } from '../src/i18n/lang-packs'
 import type {
   Choice,
   ContextInput,
@@ -214,7 +215,7 @@ async function main() {
   let roles: Role[] = story.roles.map((r, i) => ({ ...r, id: i, used: false }))
   let parameters: Parameter[] = story.parameters.map((p) => ({ ...p, currentStateIndex: 0 }))
   const recentScenes: string[] = []
-  let nextChoice = language === 'et' ? 'Mäng algab.' : 'The game begins.'
+  let nextChoice = LANG_PACKS[language].gameStartChoice
   let endReason: 'narrative' | 'parametric' | 'maxTurns' | 'api-error' = 'maxTurns'
 
   // ---- Turn loop ----

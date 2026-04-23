@@ -1,20 +1,6 @@
 import type { Choice, ContextInput, Language, Parameter, Role } from './types'
 import type { JsonSchema } from '../api/adventure'
-
-const langLabel = (lang: Language) => (lang === 'et' ? 'Estonian' : 'English')
-
-function langInstruction(lang: Language): string {
-  if (lang === 'et') {
-    return `LANGUAGE: Write all player-facing text in natural, native-level Estonian (eesti keel).
-- Think and write in Estonian. Do NOT translate from English. Avoid anglicised sentence structure.
-- Choices MUST be in kolmandas isikus — name the acting character as the grammatical subject: "Mari avab ukse vaikselt." / "Jaan kustutab lambi ja ootab." / "Karin koputab uksele." NEVER meie-vorm ("Avame ukse"), NEVER teie-vorm ("Te avate ukse"), NEVER abstract "Grupp otsustab".
-- Parameter names: 1-3 words, noun/noun phrase. States: 2-4 words each, no full sentences.
-- Character names (role.name) MUST be proper Estonian first names (e.g. Mari, Jaan, Karin, Mattis) — NOT job titles. Put the profession/role in role.description.
-- Prefer simple, common words over rare compounds. If unsure whether a compound exists, use two separate words instead.`
-  }
-  return `LANGUAGE: Write all player-facing text in English.
-- Choices MUST be in third person with the acting character as the subject: "Mari opens the door." / "Jaan kills the light and waits." NEVER "We open the door." NEVER "The group decides".`
-}
+import { LANG_PACKS } from '../i18n/lang-packs'
 
 function buildContextBlock(ctx: ContextInput): string {
   const parts: string[] = []
@@ -83,7 +69,7 @@ export function storyGenerationPrompt(args: {
 }): string {
   const { players, genre, duration, language, context } = args
   const contextBlock = buildContextBlock(context)
-  return `${langInstruction(language)}
+  return `${LANG_PACKS[language].instruction}
 
 Generate 1 adventure story for ${players} players in the ${genre} genre, suitable for a ${duration} duration game. Provide a compelling title, a vivid summary (2-3 sentences), and exactly ${players} unique roles.
 
@@ -154,7 +140,7 @@ Parameter format (examples shown in English; translate naturally into the target
 - One parameter is a RESOURCE (depletes, tied to a person or concrete group possession), one is a BOND (names a pair or relation), one is a PRESSURE (specific external threat).
 - states: 4 short phrases (2-4 words each) from best to worst — no full sentences.
 
-Output language must be ${langLabel(language)}.`
+Output language must be ${LANG_PACKS[language].label}.`
 }
 
 // ----- Sequel generation -----
@@ -184,7 +170,7 @@ export function sequelPrompt(args: {
   language: Language
 }): string {
   const { sequelText, oldRoles, language } = args
-  return `This is a sequel to a previous adventure. The story continues from this summary: "${sequelText}". The returning characters are: ${JSON.stringify(oldRoles)}. Please generate: 1. A new, unique, one-time-use special ability for EACH of the returning characters. The list of abilities must be in the same order as the characters. 2. Three completely new, unique parameters suitable for this sequel story. Parameter names MUST anchor to a named person from the returning cast, a named pair from them, or a specific named external threat — never abstract qualities. Examples in English (translate naturally into target language): "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓. Each parameter needs a name and 4 states from best to worst. Output language must be ${langLabel(language)}.`
+  return `This is a sequel to a previous adventure. The story continues from this summary: "${sequelText}". The returning characters are: ${JSON.stringify(oldRoles)}. Please generate: 1. A new, unique, one-time-use special ability for EACH of the returning characters. The list of abilities must be in the same order as the characters. 2. Three completely new, unique parameters suitable for this sequel story. Parameter names MUST anchor to a named person from the returning cast, a named pair from them, or a specific named external threat — never abstract qualities. Examples in English (translate naturally into target language): "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓. Each parameter needs a name and 4 states from best to worst. Output language must be ${LANG_PACKS[language].label}.`
 }
 
 // ----- Story phase pacing -----
@@ -278,21 +264,6 @@ export const turnSchema: JsonSchema = {
   required: ['scene', 'parameters', 'choices', 'gameOver'],
 }
 
-const ESTONIAN_EXAMPLE = `EXAMPLE OF A GOOD TURN (match this style — especially scene length, sentence rhythm, and how each choice names a specific character as actor):
-
-Scene:
-"Koridor lõpeb raudukse ees. Midagi kriibib seina taga metalli vastu — aeglaselt, nagu küüned, kes otsivad pragu. Mari taskulamp väriseb; ta hoiab seda kahe käega, aga käed ise ei pea."
-
-Choices (assume roles: 0=Mari, 1=Jaan, 2=Karin; parameters: "Mari jõud", "Mari ja Jaan usaldus", "Zombide laine"):
-- { text: "Mari avab ukse vaikselt ja astub esimesena ette.", actor: 0, expectedChanges: [{name:"Mari ja Jaan usaldus", change:+1}, {name:"Zombide laine", change:-1}] }
-  → courage axis: Mari takes the risk herself, shielding the others.
-- { text: "Jaan kustutab lambi ja jätab Mari pimedusse ukse ette.", actor: 1, target: 0, expectedChanges: [{name:"Mari ja Jaan usaldus", change:-1}, {name:"Zombide laine", change:+1}] }
-  → loyalty axis: Jaan sacrifices Mari's position for the group's concealment. Target is Mari.
-- { text: "Karin tunnistab kõigile, et kuulis seda häält juba pool tundi tagasi.", actor: 2, expectedChanges: [{name:"Mari ja Jaan usaldus", change:-1}, {name:"Zombide laine", change:-1}] }
-  → truth axis: Karin reveals withheld information — pair trust drops, but the threat is newly understood.
-
-Note: 3 sentences total in the scene. Each choice names one character as grammatical subject AND sets actor. The three choices test three different moral axes (courage / loyalty / truth), not three variants of the same question. Parameter names anchor to named people ("Mari jõud", "Mari ja Jaan usaldus") or a specific threat ("Zombide laine") — never abstract ("Jõud", "Usaldus"). expectedChanges lists ONLY the parameters that actually move this turn — never include a zero-change entry. The choice TEXT does not spell numbers; the action implies the cost clearly.`
-
 export function turnPrompt(args: {
   currentTurn: number
   maxTurns: number
@@ -324,9 +295,10 @@ export function turnPrompt(args: {
     .map((p) => `- ${p.name}: ${p.states.join(' → ')}`)
     .join('\n')
 
-  const exampleBlock = language === 'et' ? `\n${ESTONIAN_EXAMPLE}\n` : ''
+  const pack = LANG_PACKS[language]
+  const exampleBlock = pack.fewShotExample ? `\n${pack.fewShotExample}\n` : ''
 
-  const system = `${langInstruction(language)}
+  const system = `${pack.instruction}
 
 You are the narrator for an interactive group storytelling adventure played aloud by a group of friends. Players collectively make choices; you narrate the consequences. Your goal: create a genuinely thrilling story where every choice matters.
 
@@ -411,9 +383,7 @@ SELF-CHECK before responding:
     ? '\nNOTE: Players typed a custom action. Interpret it within the current phase. If the action would abruptly end the story, offer dramatic in-story consequences instead.'
     : ''
 
-  const langReminder = language === 'et'
-    ? 'LANGUAGE REMINDER: Scene and all choices MUST be written in Estonian (eesti keel). Natural, vivid, colloquial — not translated from English.\n\n'
-    : ''
+  const langReminder = pack.turnReminder
 
   const recentScenesBlock = recentScenes.length > 0
     ? `STORY SO FAR (recent scenes — maintain continuity, reference past events):\n${recentScenes.map((s, i) => `[Scene ${currentTurn - recentScenes.length + i}] ${s}`).join('\n\n')}\n\n`
