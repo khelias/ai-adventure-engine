@@ -260,14 +260,23 @@ async function main() {
     const deltas = Array.isArray(r.parameters) ? r.parameters : []
     log(`**Param deltas**: ${deltas.map((p) => `${p.name}:${p.change >= 0 ? '+' : ''}${p.change}`).join(', ') || '(none)'}`)
     log('')
+    const choices = Array.isArray(r.choices) ? r.choices : []
+    if (!Array.isArray(r.choices)) {
+      log(`> ⚠ _Model returned non-array \`choices\` (type=${typeof r.choices}) — treated as empty._`)
+      log('')
+    }
     log(`**Choices:**`)
-    for (const [i, c] of r.choices.entries()) {
-      const cost = (c.expectedChanges ?? [])
-        .map((ec) => `${ec.name}:${ec.change >= 0 ? '+' : ''}${ec.change}`)
-        .join(', ') || '_none declared_'
-      const actorLabel = c.actor !== undefined ? ` _[actor=${c.actor}]_` : ''
-      const ability = c.isAbility ? ` **[ABILITY]**` : ''
-      log(`- ${i + 1}.${actorLabel} ${c.text}${ability}  _(cost: ${cost})_`)
+    if (choices.length === 0) {
+      log('_(none)_')
+    } else {
+      for (const [i, c] of choices.entries()) {
+        const cost = (c.expectedChanges ?? [])
+          .map((ec) => `${ec.name}:${ec.change >= 0 ? '+' : ''}${ec.change}`)
+          .join(', ') || '_none declared_'
+        const actorLabel = c.actor !== undefined ? ` _[actor=${c.actor}]_` : ''
+        const ability = c.isAbility ? ` **[ABILITY]**` : ''
+        log(`- ${i + 1}.${actorLabel} ${c.text}${ability}  _(cost: ${cost})_`)
+      }
     }
     log('')
 
@@ -306,7 +315,7 @@ async function main() {
         parameters,
         roles,
         recentScenes,
-        choiceText: pickChoice(r.choices, parameters, strategy).text,
+        choiceText: choices.length > 0 ? pickChoice(choices, parameters, strategy).text : 'Mäng jätkub.',
         language,
         context: ctx,
         forceEnd: 'unrecoverable',
@@ -334,7 +343,13 @@ async function main() {
       log('')
     }
 
-    const picked = pickChoice(r.choices, parameters, strategy)
+    if (choices.length === 0) {
+      log(`> ⚠ _No choices returned and gameOver not set — ending playtest here._`)
+      log('')
+      endReason = 'api-error'
+      break
+    }
+    const picked = pickChoice(choices, parameters, strategy)
     if (picked.isAbility && typeof picked.actor === 'number') {
       roles = roles.map((role) => (role.id === picked.actor ? { ...role, used: true } : role))
     }

@@ -140,6 +140,15 @@ app.post('/generate', async (req, res) => {
     // Turn responses have { scene, choices, parameters, gameOver }. For those:
     //   1) Validate choice costs: reject silently by logging, caller trusts AI.
     //   2) If language is Estonian, run scene + gameOverText through Gemini editor.
+    // A turn-shaped response may arrive with a malformed `choices` field
+    // (object, null, or even a string) if the model drifts off-schema at
+    // climax / gameOver moments. Normalise here so frontend `.map()` and
+    // playtest `.entries()` don't crash — an empty array renders cleanly
+    // (GameScreen shows the no-choices fallback; playtest logs nothing).
+    if (result?.data && typeof result.data.scene === 'string' && !Array.isArray(result.data.choices)) {
+      console.warn(`turn response has non-array choices (type=${typeof result.data.choices}, provider=${provider}); coerced to []`);
+      result.data.choices = [];
+    }
     const isTurnShape = result?.data && typeof result.data.scene === 'string' && Array.isArray(result.data.choices);
     let editorMs = 0;
     let editorApplied = false;
