@@ -1,4 +1,4 @@
-import type { Choice, ContextInput, Language, Parameter, Role } from './types'
+import type { Choice, ContextInput, Language, Parameter, Role, Vibe } from './types'
 import type { JsonSchema } from '../api/adventure'
 import { LANG_PACKS } from '../i18n/lang-packs'
 
@@ -6,15 +6,29 @@ function buildContextBlock(ctx: ContextInput): string {
   const parts: string[] = []
   if (ctx.location) parts.push(`Physical setting: "${ctx.location}"`)
   if (ctx.playersDesc) parts.push(`People in the group: "${ctx.playersDesc}"`)
-  const vibeMap: Record<string, string> = {
-    light: 'light & humorous',
-    tense: 'tense & serious',
-    dark: 'dark & atmospheric',
-  }
-  if (ctx.vibe) parts.push(`Desired tone: ${vibeMap[ctx.vibe]}`)
   if (ctx.insideJoke) parts.push(`Something that happened today (weave in naturally): "${ctx.insideJoke}"`)
   if (!parts.length) return ''
   return `\nGroup context (weave subtly and naturally into the story — the setting, the people, the mood):\n${parts.map((p) => `- ${p}`).join('\n')}`
+}
+
+// Tone is promoted to a first-class signal: not a throwaway line in context,
+// but a dedicated block with concrete behavioural directives. A tense scene
+// in a 'light' game is a design failure. An 'empty' vibe skips the block
+// entirely, letting the AI pick a register that fits the genre.
+const TONE_BLOCKS: Record<Exclude<Vibe, ''>, string> = {
+  light: `TONE — LIGHT & HUMOROUS (this is the register, not a garnish):
+Every scene must include ONE human absurdity. The threat is real, but the characters are ridiculous about it — they trip, misspeak, argue over stupid things at dangerous moments, act tough when no one's watching and cowardly when someone is. Dialogue can be awkward, interrupting, wrong-word, oversharing. A scene may end on a cringe beat ("Liis thought that was cool; the others winced."). Parameter state phrases can lean comedic as long as they're still observable. Choice texts may state absurd motivations ("Mari volunteers for the cellar because she's too proud to ask where the bathroom is."). The reader should smirk; the group should laugh between scenes. Do NOT undercut the threat — the horror or pressure is still real. The comedy is in HOW the characters respond, never in minimizing the danger itself.`,
+
+  tense: `TONE — TENSE & SERIOUS (straight-faced prestige register):
+Measured, cinematic, no camp and no winking. Dialogue is terse and functional; silences carry weight. The threat is credible; consequences stick. Characters are competent under pressure but not invincible. Scenes build pressure through specific sensory details — a sound placed precisely, a gesture unfinished. No jokes, no melodrama, no fourth-wall nods. The reader should be leaning in; the room should be quiet.`,
+
+  dark: `TONE — DARK & ATMOSPHERIC (body horror, slow dread):
+Every scene lingers on physical discomfort — wet noises, cold sweat, things just out of sight, the wrong detail repeated. Dialogue is sparse and unsettling; characters say strange things, repeat themselves, go quiet in bad places. The unknown is always bigger than the known — a scene may end on unresolved dread rather than a clean moment. Wounds don't heal cleanly; they infect, twist, reveal something underneath. No comic relief, no heroic speeches. The reader should be uncomfortable; the group should want the lights on afterwards. This is heavier than 'tense' — tense is a thriller, dark is folk horror.`,
+}
+
+function buildToneBlock(vibe: Vibe): string {
+  if (!vibe) return ''
+  return `\n${TONE_BLOCKS[vibe]}\n`
 }
 
 // ----- Story generation (setup → 1 story) -----
@@ -69,9 +83,10 @@ export function storyGenerationPrompt(args: {
 }): string {
   const { players, genre, duration, language, context } = args
   const contextBlock = buildContextBlock(context)
+  const toneBlock = buildToneBlock(context.vibe)
   return `${LANG_PACKS[language].instruction}
-
-Generate 1 adventure story for ${players} players in the ${genre} genre, suitable for a ${duration} duration game. Provide a compelling title, a vivid summary (2-3 sentences), and exactly ${players} unique roles.
+${toneBlock}
+Generate 1 adventure story for ${players} players in the ${genre} genre, suitable for a ${duration} duration game. The summary and the initial scene MUST already embody the TONE above — a 'light' story opens with a ridiculous human detail, a 'dark' story opens with dread, a 'tense' story opens with measured pressure. Provide a compelling title, a vivid summary (2-3 sentences), and exactly ${players} unique roles.
 
 ROLES:
 - role.name: a PROPER FIRST NAME appropriate to the target language — NOT a job title, NOT a description. Just a single first name.
@@ -286,6 +301,7 @@ export function turnPrompt(args: {
 
   const phase = getStoryPhase(currentTurn, maxTurns)
   const contextBlock = buildContextBlock(context)
+  const toneBlock = buildToneBlock(context.vibe)
 
   const rolesBlock = roles
     .map((r) => `- [roleIndex ${r.id}] ${r.name}: ${r.description}. Special ability (one-time): ${r.ability}${r.used ? ' [USED]' : ''}`)
@@ -299,7 +315,7 @@ export function turnPrompt(args: {
   const exampleBlock = pack.fewShotExample ? `\n${pack.fewShotExample}\n` : ''
 
   const system = `${pack.instruction}
-
+${toneBlock}
 You are the narrator for an interactive group storytelling adventure played aloud by a group of friends. Players collectively make choices; you narrate the consequences. Your goal: create a genuinely thrilling story where every choice matters.
 
 STORY: "${title}"
@@ -356,7 +372,8 @@ SELF-CHECK before responding:
 - Every choice text matches its expectedChanges in sign?
 - Scene surfaces ≥1 parameter as sensory detail (not metadata)?
 - Rule 8 check: did every parameter delta come from the narrated action? Any "because time passed" auto-degradation — remove it.
-- Rule 9 check: is this setup or inciting? Then cap all parameter changes at ±1 — no ±2 before rising.`
+- Rule 9 check: is this setup or inciting? Then cap all parameter changes at ±1 — no ±2 before rising.
+- TONE check: if a TONE block was provided above, does THIS scene actually embody it? light → one human absurdity visible; dark → one lingering physical discomfort or unresolved dread; tense → straight-faced, no jokes, no camp. Tone mismatch is a design failure — rewrite the scene.`
 
   const currentStates = parameters
     .map((p) => {
