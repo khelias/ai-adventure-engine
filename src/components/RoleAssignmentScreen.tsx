@@ -70,7 +70,8 @@ export function RoleAssignmentScreen() {
           >
             <div className="space-y-3">
               <div className="flex items-baseline gap-3">
-                <span
+                <label
+                  htmlFor={`role-name-${role.id}`}
                   style={{
                     color: 'var(--accent)',
                     fontSize: '0.875rem',
@@ -81,8 +82,10 @@ export function RoleAssignmentScreen() {
                   }}
                 >
                   {String(index + 1).padStart(2, '0')}
-                </span>
+                  <span className="sr-only"> — {strings.playerName} {index + 1}</span>
+                </label>
                 <input
+                  id={`role-name-${role.id}`}
                   type="text"
                   value={role.name}
                   placeholder={strings.playerNamePlaceholder}

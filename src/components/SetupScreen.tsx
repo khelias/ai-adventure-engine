@@ -135,7 +135,7 @@ export function SetupScreen() {
 
   return (
     <section className="setup-wrap">
-      <span className="setup-eyebrow">adventure</span>
+      <span className="setup-eyebrow">{language === 'et' ? 'seiklus' : 'adventure'}</span>
 
       {/* The Circle */}
       <div
@@ -177,6 +177,7 @@ export function SetupScreen() {
               className={`player-btn${players === n ? ' active' : ''}`}
               onClick={() => setSetting('players', n)}
               aria-pressed={players === n}
+              aria-label={language === 'et' ? `${n} mängijat` : `${n} players`}
             >
               <span className="player-btn__num">{n}</span>
               <span className="player-btn__dot" />

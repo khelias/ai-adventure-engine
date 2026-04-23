@@ -442,6 +442,19 @@ body {
 .btn-ghost:hover { color: var(--text-muted); }
 .btn-ghost:focus-visible { outline: none; color: var(--text-dim); }
 
+/* Visually-hidden text for screen readers. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .ctx-provider {
   padding-top: 0.75rem;
   border-top: 1px solid var(--line);

@@ -95,7 +95,7 @@ export function GameScreen() {
             </div>
           ) : (
             <>
-              <div className="ornament-rule type-caps mb-4" style={{ fontSize: '0.6rem' }}>
+              <div className="ornament-rule type-caps mb-4" style={{ fontSize: '0.6875rem' }}>
                 {strings.choiceTitle}
               </div>
 
