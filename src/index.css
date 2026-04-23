@@ -125,13 +125,13 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 2.25rem;
+  margin-bottom: 1.5rem;
   touch-action: pan-y;
 }
 
 .circle-beam {
   width: 1px;
-  height: 64px;
+  height: 36px;
   background: linear-gradient(to bottom, transparent, var(--accent));
   opacity: 0.2;
   margin-bottom: 0;
@@ -139,14 +139,14 @@ body {
 }
 .circle-beam.active {
   opacity: 0.75;
-  height: 88px;
+  height: 52px;
   filter: blur(0.5px);
   animation: beam-pulse 3s ease-in-out infinite;
 }
 
 .circle {
-  width: 140px;
-  height: 140px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
   position: relative;
   background:
@@ -253,6 +253,29 @@ body {
   gap: 1rem;
 }
 .setup-section--group .ctx-field { margin-top: 0.25rem; }
+
+/* "Tell us about tonight" — warmer heading than the uppercase setup-label.
+   Italic Fraunces reads as an invitation rather than a form-field label. */
+.setup-section--tell {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+.setup-tell-header {
+  font-family: 'Fraunces', Georgia, serif;
+  font-variation-settings: 'opsz' 32, 'SOFT' 50;
+  font-size: 1.125rem;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text-dim);
+  margin: 0;
+  letter-spacing: 0;
+}
+.setup-section--tell .setup-hint {
+  margin: -0.75rem 0 0.5rem 0;
+}
+.setup-section--tell .ctx-field { margin-top: 0.25rem; }
 
 /* Player count — big Fraunces numbers */
 .player-btns {

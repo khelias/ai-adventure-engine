@@ -124,8 +124,8 @@ export function SetupScreen() {
   const duration = settings.duration
 
   const genreOption = GENRES.find((g) => g.value === genre) ?? GENRES[0]
-  const playersLabel = language === 'et' ? 'Mängijad' : 'Players'
-  const durationLabel = language === 'et' ? 'Kestvus' : 'Duration'
+  const playersLabel = language === 'et' ? 'Mitu mängijat' : 'How many players'
+  const durationLabel = language === 'et' ? 'Kui kaua' : 'How long'
 
   const hasPersonalContext = !!(ctx.vibe || ctx.location.trim() || ctx.playersDesc.trim())
 
@@ -206,34 +206,13 @@ export function SetupScreen() {
         </div>
       </div>
 
-      {/* Tone / vibe — primary setting, not hidden behind advanced */}
-      <div className="setup-section">
-        <span className="setup-label">{strings.vibeLabel}</span>
-        <div className="ctx-vibe-btns">
-          {(
-            [
-              { value: '' as Vibe, label: language === 'et' ? 'vaba' : 'any' },
-              { value: 'light' as Vibe, label: language === 'et' ? 'kerge' : 'light' },
-              { value: 'tense' as Vibe, label: language === 'et' ? 'pingeline' : 'tense' },
-              { value: 'dark' as Vibe, label: language === 'et' ? 'tume' : 'dark' },
-            ] as const
-          ).map((v) => (
-            <button
-              key={v.value}
-              type="button"
-              className={`ctx-vibe-btn${ctx.vibe === v.value ? ' active' : ''}`}
-              onClick={() => setCtx({ vibe: v.value })}
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Group — primary section that makes the story personal */}
-      <div className="setup-section setup-section--group">
-        <span className="setup-label">{strings.groupSectionHeader}</span>
+      {/* Personal context — merged section (vibe + location + players) that
+          makes the story feel like theirs. Formal uppercase label replaced
+          with an italic Fraunces header — reads as an invitation, not a form. */}
+      <div className="setup-section setup-section--tell">
+        <h3 className="setup-tell-header">{strings.groupSectionHeader}</h3>
         <p className="setup-hint">{strings.groupSectionHint}</p>
+
         <div className="ctx-field">
           <span className="ctx-label">{strings.locationLabel}</span>
           <input
@@ -253,6 +232,28 @@ export function SetupScreen() {
             onChange={(e) => setCtx({ playersDesc: e.target.value })}
             className="input-page"
           />
+        </div>
+        <div className="ctx-field">
+          <span className="ctx-label">{strings.vibeLabel}</span>
+          <div className="ctx-vibe-btns">
+            {(
+              [
+                { value: '' as Vibe, label: language === 'et' ? 'vaba' : 'any' },
+                { value: 'light' as Vibe, label: language === 'et' ? 'kerge' : 'light' },
+                { value: 'tense' as Vibe, label: language === 'et' ? 'pingeline' : 'tense' },
+                { value: 'dark' as Vibe, label: language === 'et' ? 'tume' : 'dark' },
+              ] as const
+            ).map((v) => (
+              <button
+                key={v.value}
+                type="button"
+                className={`ctx-vibe-btn${ctx.vibe === v.value ? ' active' : ''}`}
+                onClick={() => setCtx({ vibe: v.value })}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -282,19 +283,7 @@ export function SetupScreen() {
 
       {showAdvanced && (
         <div className="ctx-section">
-          {/* Inside joke */}
-          <div className="ctx-field">
-            <span className="ctx-label">{strings.insideJokeLabel}</span>
-            <input
-              type="text"
-              value={ctx.insideJoke}
-              placeholder={strings.insideJokePlaceholder}
-              onChange={(e) => setCtx({ insideJoke: e.target.value })}
-              className="input-page"
-            />
-          </div>
-
-          {/* Provider — technical, at the bottom */}
+          {/* Provider — technical, just here for debugging a stuck game */}
           <div className="ctx-provider">
             <span className="ctx-label">{strings.providerLabel}</span>
             <div style={{ display: 'flex', gap: '1rem' }}>
