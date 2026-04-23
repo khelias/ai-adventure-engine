@@ -283,15 +283,15 @@ const ESTONIAN_EXAMPLE = `EXAMPLE OF A GOOD TURN (match this style — especiall
 Scene:
 "Koridor lõpeb raudukse ees. Midagi kriibib seina taga metalli vastu — aeglaselt, nagu küüned, kes otsivad pragu. Mari taskulamp väriseb; ta hoiab seda kahe käega, aga käed ise ei pea."
 
-Choices (assume roles: 0=Mari, 1=Jaan, 2=Karin; parameters: "Mari jõud", "Mari ja Jaan usaldus", "Zombide surve"):
-- { text: "Mari avab ukse vaikselt ja astub esimesena ette.", actor: 0, expectedChanges: [{name:"Mari ja Jaan usaldus", change:+1}, {name:"Zombide surve", change:-1}] }
+Choices (assume roles: 0=Mari, 1=Jaan, 2=Karin; parameters: "Mari jõud", "Mari ja Jaan usaldus", "Zombide laine"):
+- { text: "Mari avab ukse vaikselt ja astub esimesena ette.", actor: 0, expectedChanges: [{name:"Mari ja Jaan usaldus", change:+1}, {name:"Zombide laine", change:-1}] }
   → courage axis: Mari takes the risk herself, shielding the others.
-- { text: "Jaan kustutab lambi ja jätab Mari pimedusse ukse ette.", actor: 1, target: 0, expectedChanges: [{name:"Mari ja Jaan usaldus", change:-1}, {name:"Zombide surve", change:+1}] }
+- { text: "Jaan kustutab lambi ja jätab Mari pimedusse ukse ette.", actor: 1, target: 0, expectedChanges: [{name:"Mari ja Jaan usaldus", change:-1}, {name:"Zombide laine", change:+1}] }
   → loyalty axis: Jaan sacrifices Mari's position for the group's concealment. Target is Mari.
-- { text: "Karin tunnistab kõigile, et kuulis seda häält juba pool tundi tagasi.", actor: 2, expectedChanges: [{name:"Mari ja Jaan usaldus", change:-1}, {name:"Mari jõud", change:+0}, {name:"Zombide surve", change:-1}] }
+- { text: "Karin tunnistab kõigile, et kuulis seda häält juba pool tundi tagasi.", actor: 2, expectedChanges: [{name:"Mari ja Jaan usaldus", change:-1}, {name:"Zombide laine", change:-1}] }
   → truth axis: Karin reveals withheld information — pair trust drops, but the threat is newly understood.
 
-Note: 3 sentences total in the scene. Each choice names one character as grammatical subject AND sets actor. The three choices test three different moral axes (courage / loyalty / truth), not three variants of the same question. Parameter names anchor to named people ("Mari jõud", "Mari ja Jaan usaldus") or a specific threat ("Zombide surve") — never abstract ("Jõud", "Usaldus"). Numeric costs stay in expectedChanges; the choice TEXT does not spell numbers, but the action implies the cost clearly.`
+Note: 3 sentences total in the scene. Each choice names one character as grammatical subject AND sets actor. The three choices test three different moral axes (courage / loyalty / truth), not three variants of the same question. Parameter names anchor to named people ("Mari jõud", "Mari ja Jaan usaldus") or a specific threat ("Zombide laine") — never abstract ("Jõud", "Usaldus"). expectedChanges lists ONLY the parameters that actually move this turn — never include a zero-change entry. The choice TEXT does not spell numbers; the action implies the cost clearly.`
 
 export function turnPrompt(args: {
   currentTurn: number
@@ -349,7 +349,14 @@ CORE RULES:
 
 4. DIRECT DIALOGUE — use it. At least one scene out of every 2-3 turns must contain a direct spoken fragment from a character. Half a sentence muttered in the action is better than a speech — e.g. "'I can't get up anymore,' Liis whispers" is alive; "Liis is feeling unwell" is dead. When two characters visibly disagree within a scene, at least one of them SAYS something out loud. Dialogue turns narration into performance — the reader can dramatize a voice, not a statement.
 
-5. CHOICES BELONG TO CHARACTERS, NOT THE GROUP. Every choice is ONE named person's move. Set actor = their roleIndex (0-based). The choice text MUST name that person as the grammatical subject — third person, never "we". Goal: before the group decides, they ARGUE: "but Mari's afraid of the dark, let's send Jaan instead". A choice that says "The group opens the door" is a design failure — rewrite as "Mari opens the door". The actor may differ between the 3 choices (different people stepping forward) or repeat (same person, different approaches) — but one of the 3 choices offering the SAME person in multiple variants is usually lazy; prefer distributing agency across the group when plausible. If the action concretely costs a DIFFERENT person (the actor leaves them behind / puts them in danger / exposes their secret), set target = that person's roleIndex. Otherwise omit target.
+5. CHOICES BELONG TO CHARACTERS, NOT THE GROUP. Every choice is ONE named person's move. Set actor = their roleIndex (0-based). The choice text MUST name that person as the grammatical subject — third person, never "we". Goal: before the group decides, they ARGUE: "but Mari's afraid of the dark, let's send Jaan instead". A choice that says "The group opens the door" is a design failure — rewrite as "Mari opens the door". The actor may differ between the 3 choices (different people stepping forward) or repeat (same person, different approaches) — but one of the 3 choices offering the SAME person in multiple variants is usually lazy; prefer distributing agency across the group when plausible.
+
+TARGET — set actively, not as an afterthought. Whenever the action concretely puts ONE OTHER named person at cost, you MUST set target = that person's roleIndex. Specifically:
+- Leaving someone behind, ahead, or alone: "Jaan kills the light and leaves Mari at the door" → actor=Jaan, target=Mari
+- Sending someone forward into danger: "Mari sends Kalev to check the basement" → actor=Mari, target=Kalev
+- Exposing someone's secret or weakness: "Karin tells the group that Jaan was drinking all morning" → actor=Karin, target=Jaan
+- Protecting one by risking another: "Mari pulls Liis behind the car, leaving Kalev in the open" → actor=Mari, target=Kalev
+Only omit target when the cost is genuinely collective or falls on the actor themselves. "If in doubt, name the target" — it's the field the game's drama engine reads. A turn with 3 choices and zero targets is almost always a missed opportunity; aim for at least one target per turn in rising/climax phases.
 
 6. CHOICES DECLARE THEIR COST. Each choice is a TRADE — write the cost into the choice text itself AND fill expectedChanges to match. The text and expectedChanges MUST agree in sign: if the text implies spending X, then X's expectedChange must be negative. NEVER output a choice whose expectedChanges are all zero or all positive — there must be at least one negative cost. The UI no longer shows numeric costs to players — the TEXT must carry the implication ("Mari opens the door loudly" → pressure clearly rises; "Jaan drives back to the gas station" → fuel clearly drops). Do not spell the numeric cost in prose ("we spend 2 fuel") — let the action speak.
 
@@ -370,18 +377,21 @@ SELF-CHECK before responding:
 - If this is turn 2+, does the scene OPEN with the previous choice's actor/target through a present-tense sensory detail? If not, rewrite the first line.
 - Has a direct spoken line appeared in the last 2-3 turns? If not, slip one short fragment into THIS scene.
 - Every choice has an actor set, and its text names that actor as the grammatical subject? If any choice uses a plural "we" / "the group" (in any language) — rewrite.
+- Does any choice leave someone behind / send someone forward into danger / expose someone's secret / sacrifice one to protect another? If yes, target MUST be set on that choice. Zero-target turn in rising/climax is a design failure.
 - Do the 3 choices test at least 2 different moral axes (courage/loyalty/truth), or are they three flavours of the same question?
-- Each choice has ≥1 negative expectedChange? If any choice is "free", rewrite it.
+- Each choice has ≥1 negative expectedChange? If any choice is "free", rewrite it. No zero-change entries inside expectedChanges — list only parameters that actually move.
 - Choices cover 3 different parameter combinations?
 - Every choice text matches its expectedChanges in sign?
-- Scene surfaces ≥1 parameter as sensory detail (not metadata)?`
+- Scene surfaces ≥1 parameter as sensory detail (not metadata)?
+- Rule 8 check: did every parameter delta come from the narrated action? Any "because time passed" auto-degradation — remove it.
+- Rule 9 check: is this setup or inciting? Then cap all parameter changes at ±1 — no ±2 before rising.`
 
   const currentStates = parameters
     .map((p) => {
       const stateName = p.states[p.currentStateIndex]
       const step = `${p.currentStateIndex + 1}/${p.states.length}`
       let marker = ''
-      if (p.justBroke) marker = ' ⚠ JUST HIT WORST — open next scene with the consequence of this collapse'
+      if (p.justBroke) marker = ' ⚠ JUST HIT WORST — open THIS scene (the one you are writing now) with the consequence of this collapse'
       else if (p.currentStateIndex >= p.states.length - 1) marker = ' (still at worst state)'
       else if (p.currentStateIndex === p.states.length - 2) marker = ' (near worst — one step from collapse)'
       return `- ${p.name}: "${stateName}" (step ${step})${marker}`

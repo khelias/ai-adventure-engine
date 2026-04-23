@@ -42,14 +42,13 @@ export interface Choice {
   text: string
   isAbility: boolean
   // Who performs this action. Role index (0-based). For ability choices this
-  // is also the ability owner. Optional for backward compat, but prompts now
-  // require it — UI falls back silently if a model omits it.
-  actor?: number
+  // is also the ability owner. Schema-required — Claude must emit it.
+  actor: number
   // Who concretely pays / is affected (if the action targets a specific person
   // other than the actor). Example: "Mari jätab Jaane maja ette" → actor=Mari,
-  // target=Jaan. Omitted when the cost is shared or unnamed.
+  // target=Jaan. Omitted when the cost is shared or falls on the actor.
   target?: number
-  expectedChanges?: ParameterCost[]
+  expectedChanges: ParameterCost[]
 }
 
 export interface Story {

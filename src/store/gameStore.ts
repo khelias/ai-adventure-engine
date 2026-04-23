@@ -132,7 +132,7 @@ export const useGameStore = create<GameState & GameActions>()((set) => ({
       })),
       parameters: story.parameters.map((p) => ({
         ...p,
-        currentStateIndex: 1,
+        currentStateIndex: 0,
       })),
       screen: 'roleAssignment',
     }),
@@ -156,7 +156,7 @@ export const useGameStore = create<GameState & GameActions>()((set) => ({
       parameters,
       roles,
       currentTurn,
-      recentScenes: [...state.recentScenes, sceneText].slice(-2),
+      recentScenes: [...state.recentScenes, sceneText].slice(-3),
       allScenes: [...state.allScenes, sceneText],
     })),
 
