@@ -63,10 +63,8 @@ export function GameOverScreen() {
             <button
               type="button"
               onClick={() => setShowFullStory((v) => !v)}
-              className="type-caps"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.15s' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-dim)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '')}
+              className="btn-ghost type-caps"
+              style={{ fontStyle: 'normal', fontSize: '0.6875rem' }}
             >
               {showFullStory ? strings.hideFullStoryBtn : strings.showFullStoryBtn}
             </button>
@@ -74,14 +72,8 @@ export function GameOverScreen() {
             <button
               type="button"
               onClick={copyToClipboard}
-              className="type-caps"
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: copied ? 'var(--accent)' : 'var(--text-muted)',
-                transition: 'color 0.15s',
-              }}
+              className="btn-ghost type-caps"
+              style={{ fontStyle: 'normal', fontSize: '0.6875rem', color: copied ? 'var(--accent)' : undefined }}
             >
               {copied ? strings.copiedMsg : strings.copyStoryBtn}
             </button>

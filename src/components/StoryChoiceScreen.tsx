@@ -8,6 +8,7 @@ export function StoryChoiceScreen() {
   const language = useGameStore((s) => s.settings.language)
   const stories = useGameStore((s) => s.availableStories)
   const initStory = useGameStore((s) => s.initStory)
+  const reset = useGameStore((s) => s.reset)
   const isLoading = useGameStore((s) => s.isLoading)
   const error = useGameStore((s) => s.error)
   const strings = translations[language]
@@ -19,6 +20,9 @@ export function StoryChoiceScreen() {
 
   return (
     <section className="space-y-8">
+      <button type="button" onClick={reset} disabled={isLoading} className="btn-ghost" style={{ fontStyle: 'normal', fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.5rem 0' }}>
+        ← {language === 'et' ? 'seadistused' : 'setup'}
+      </button>
       <div>
         <p className="type-caps" style={{ marginBottom: '0.5rem' }}>
           {language === 'et' ? 'teie seiklus' : 'your adventure'}
@@ -69,10 +73,19 @@ export function StoryChoiceScreen() {
             {story.summary}
           </p>
           <div className="flex gap-3 items-center">
-            <button className="btn-primary" onClick={() => initStory(story)}>
+            <button
+              className="btn-primary"
+              onClick={() => initStory(story)}
+              disabled={isLoading}
+            >
               {strings.useThisStoryBtn}
             </button>
-            <button className="btn-secondary" onClick={generateStories}>
+            <button
+              className="btn-secondary"
+              onClick={() => void generateStories()}
+              disabled={isLoading}
+              aria-busy={isLoading}
+            >
               {strings.regenerateBtn}
             </button>
           </div>
@@ -84,19 +97,7 @@ export function StoryChoiceScreen() {
           <button
             type="button"
             onClick={() => setShowCustom(true)}
-            style={{
-              color: 'var(--text-faint)',
-              fontFamily: "'Fraunces', Georgia, serif",
-              fontStyle: 'italic',
-              fontSize: '0.95rem',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '0.25rem 0',
-              transition: 'color 0.15s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}
+            className="btn-ghost"
           >
             {strings.customStoryTitle}…
           </button>
@@ -120,8 +121,9 @@ export function StoryChoiceScreen() {
                 {isLoading ? <LoadingDots /> : strings.useCustomStoryBtn}
               </button>
               <button
+                type="button"
                 onClick={() => { setShowCustom(false); setCustomText('') }}
-                style={{ color: 'var(--text-faint)', fontSize: '0.85rem', background: 'none', border: 'none', cursor: 'pointer' }}
+                className="btn-ghost"
               >
                 {strings.customChoiceCancel}
               </button>

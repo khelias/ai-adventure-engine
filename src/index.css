@@ -314,7 +314,10 @@ body {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
-  padding: 0.25rem 0;
+  padding: 0.625rem 0.5rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   transition: color 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 }
@@ -409,12 +412,35 @@ body {
   font-weight: 500;
   letter-spacing: 0.06em;
   color: var(--text-faint);
-  padding: 0.2rem 0;
+  padding: 0.625rem 0.5rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   transition: color 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 }
 .ctx-vibe-btn.active { color: var(--accent); }
 .ctx-vibe-btn:hover:not(.active) { color: var(--text-muted); }
+
+/* Shared ghost-link button: tertiary actions, italic Fraunces, muted.
+   Replaces ~5 inline-styled buttons that all had sub-tap-target size. */
+.btn-ghost {
+  color: var(--text-faint);
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: italic;
+  font-size: 0.95rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.625rem 0.5rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-ghost:hover { color: var(--text-muted); }
+.btn-ghost:focus-visible { outline: none; color: var(--text-dim); }
 
 .ctx-provider {
   padding-top: 0.75rem;
@@ -486,7 +512,7 @@ body {
 }
 .param-pill:last-child { border-right: none; }
 .param-pill__name {
-  font: 600 0.5rem/1 'Inter', system-ui;
+  font: 600 0.625rem/1.1 'Inter', system-ui;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
@@ -511,7 +537,7 @@ body {
   opacity: 1;
 }
 .param-pill__state {
-  font: 400 0.575rem/1 'Inter', system-ui;
+  font: 400 0.6875rem/1.2 'Inter', system-ui;
   letter-spacing: 0.04em;
   color: currentColor;
   opacity: 0.8;

@@ -131,19 +131,7 @@ export function GameScreen() {
                   <button
                     type="button"
                     onClick={() => setShowCustomInput(true)}
-                    style={{
-                      color: 'var(--text-faint)',
-                      fontFamily: "'Fraunces', Georgia, serif",
-                      fontStyle: 'italic',
-                      fontSize: '0.95rem',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '0.25rem 0',
-                      transition: 'color 0.15s',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}
+                    className="btn-ghost"
                   >
                     {strings.customChoiceLink}…
                   </button>
@@ -160,16 +148,21 @@ export function GameScreen() {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault()
                           onCustomSubmit()
+                        } else if (e.key === 'Escape') {
+                          e.preventDefault()
+                          setShowCustomInput(false)
+                          setCustomText('')
                         }
                       }}
                     />
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 items-center">
                       <button onClick={onCustomSubmit} disabled={!customText.trim()} className="btn-primary text-xs py-1.5 px-3">
                         {strings.customChoiceSubmit}
                       </button>
                       <button
+                        type="button"
                         onClick={() => { setShowCustomInput(false); setCustomText('') }}
-                        style={{ color: 'var(--text-faint)', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer' }}
+                        className="btn-ghost"
                       >
                         {strings.customChoiceCancel}
                       </button>

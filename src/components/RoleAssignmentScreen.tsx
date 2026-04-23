@@ -9,6 +9,7 @@ export function RoleAssignmentScreen() {
   const summary = useGameStore((s) => s.summary)
   const roles = useGameStore((s) => s.roles)
   const setRoleName = useGameStore((s) => s.setRoleName)
+  const reset = useGameStore((s) => s.reset)
   const isLoading = useGameStore((s) => s.isLoading)
   const error = useGameStore((s) => s.error)
   const strings = translations[language]
@@ -21,6 +22,9 @@ export function RoleAssignmentScreen() {
 
   return (
     <section className="space-y-7">
+      <button type="button" onClick={reset} disabled={isLoading} className="btn-ghost" style={{ fontStyle: 'normal', fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.5rem 0' }}>
+        ← {language === 'et' ? 'seadistused' : 'setup'}
+      </button>
       <div className="space-y-2">
         <p className="type-caps">{language === 'et' ? 'rollid' : 'cast'}</p>
         <h2
@@ -51,10 +55,8 @@ export function RoleAssignmentScreen() {
         <button
           type="button"
           onClick={fillDefaultNames}
-          className="type-caps"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.15s' }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-dim)')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = '')}
+          className="btn-ghost type-caps"
+          style={{ fontStyle: 'normal', fontSize: '0.6875rem' }}
         >
           {strings.defaultNamesBtn}
         </button>
