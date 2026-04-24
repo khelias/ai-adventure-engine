@@ -62,8 +62,10 @@ export const storyGenerationSchema: JsonSchema = {
               properties: {
                 name: { type: 'STRING' },
                 states: { type: 'ARRAY', items: { type: 'STRING' } },
+                archetype: { type: 'STRING' },
+                ownerRoleId: { type: 'INTEGER' },
               },
-              required: ['name', 'states'],
+              required: ['name', 'states', 'archetype'],
             },
           },
         },
@@ -116,6 +118,8 @@ For a Fantasy ghost story, good shapes are often SECRET + CURSE + TIME — not R
 PARAMETER FORMAT:
 - name: 1-4 words, SPECIFIC. Must include a person's name, a pair, or a named external threat. "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓ · "Trust" ✗ · "The zombie wave" ✓ · "Danger" ✗.
 - states: exactly 4 short phrases (2-4 words each), best → worst. Each state must be OBSERVABLE — something a character would SEE or FEEL. Good: "Tank full", "Tank half". Bad: "Good", "Bad".
+- **archetype**: one of \`resource\`, \`bond\`, \`pressure\`, \`secret\`, \`curse\`, \`time\`, \`guilt\`, \`proof\`, \`promise\`, \`hunger\`, \`debt\`. Lowercase. The THREE parameters you design MUST use THREE DIFFERENT archetype values — no duplicates.
+- **ownerRoleId** (optional, integer 0-indexed): when the parameter's name anchors to ONE specific character from the roles above, set this to that character's roleIndex. Example: "Mari's strength" with Mari at roleIndex=0 → ownerRoleId=0. For a BOND naming two characters ("Mari & Jaan's trust") or an external threat ("The zombie wave"), LEAVE ownerRoleId OUT.
 - Double-check that each state phrase is grammatical and idiomatic in the target language.
 
 The three parameters must create a TRILEMMA: no single choice can improve all three. Every meaningful decision trades one against another.${contextBlock}`
@@ -145,8 +149,10 @@ export const customStorySchema: JsonSchema = {
         properties: {
           name: { type: 'STRING' },
           states: { type: 'ARRAY', items: { type: 'STRING' } },
+          archetype: { type: 'STRING' },
+          ownerRoleId: { type: 'INTEGER' },
         },
-        required: ['name', 'states'],
+        required: ['name', 'states', 'archetype'],
       },
     },
   },
@@ -164,7 +170,8 @@ export function customStoryPrompt(args: {
 
 Parameter format (examples shown in English; translate naturally into the target language while keeping the same anchoring pattern):
 - name: 1-4 words, must anchor to a named person, pair, specific threat, or concrete fact — never abstract qualities. "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓ · "Trust" ✗ · "The zombie wave" ✓ · "Danger" ✗.
-- Pick THREE archetypes from this palette that fit the story: RESOURCE (depletes), BOND (pair/relation), PRESSURE (external threat), SECRET (drifts toward exposure), CURSE (inevitable arc), TIME (bounded tick), GUILT (grows only), PROOF (toward revelation), PROMISE (sworn oath), HUNGER (must be fed), DEBT (pursuer closes).
+- Pick THREE DIFFERENT archetypes from this palette that fit the story (must be lowercase in the \`archetype\` field): \`resource\` (depletes), \`bond\` (pair/relation), \`pressure\` (external threat), \`secret\` (drifts toward exposure), \`curse\` (inevitable arc), \`time\` (bounded tick), \`guilt\` (grows only), \`proof\` (toward revelation), \`promise\` (sworn oath), \`hunger\` (must be fed), \`debt\` (pursuer closes).
+- When a parameter's name anchors to ONE specific role, set \`ownerRoleId\` to that role's 0-based index. Omit for bonds, threats, or shared facts.
 - states: 4 short phrases (2-4 words each) from best to worst — no full sentences.
 
 Output language must be ${LANG_PACKS[language].label}.`
@@ -183,8 +190,10 @@ export const sequelSchema: JsonSchema = {
         properties: {
           name: { type: 'STRING' },
           states: { type: 'ARRAY', items: { type: 'STRING' } },
+          archetype: { type: 'STRING' },
+          ownerRoleId: { type: 'INTEGER' },
         },
-        required: ['name', 'states'],
+        required: ['name', 'states', 'archetype'],
       },
     },
   },
@@ -197,7 +206,7 @@ export function sequelPrompt(args: {
   language: Language
 }): string {
   const { sequelText, oldRoles, language } = args
-  return `This is a sequel to a previous adventure. The story continues from this summary: "${sequelText}". The returning characters are: ${JSON.stringify(oldRoles)}. Please generate: 1. A new, unique, one-time-use special ability for EACH of the returning characters. The list of abilities must be in the same order as the characters. 2. Three completely new, unique parameters suitable for this sequel story. Parameter names MUST anchor to a named person from the returning cast, a named pair from them, a specific named external threat, or a concrete fact — never abstract qualities. Examples in English (translate naturally into target language): "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓. Pick three archetypes that fit the sequel — palette: RESOURCE (depletes), BOND (pair), PRESSURE (external threat), SECRET (drifts toward exposure), CURSE (inevitable arc), TIME (bounded tick), GUILT (grows only), PROOF (toward revelation), PROMISE (sworn oath), HUNGER (must be fed), DEBT (pursuer closes). Prefer a DIFFERENT mix from the first adventure — continuation feels fresh when the mechanical shape evolves. Each parameter needs a name and 4 states from best to worst. Output language must be ${LANG_PACKS[language].label}.`
+  return `This is a sequel to a previous adventure. The story continues from this summary: "${sequelText}". The returning characters are: ${JSON.stringify(oldRoles)}. Please generate: 1. A new, unique, one-time-use special ability for EACH of the returning characters. The list of abilities must be in the same order as the characters. 2. Three completely new, unique parameters suitable for this sequel story. Parameter names MUST anchor to a named person from the returning cast, a named pair from them, a specific named external threat, or a concrete fact — never abstract qualities. Examples in English (translate naturally into target language): "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓. Pick three DIFFERENT archetypes that fit the sequel (lowercase in the \`archetype\` field): \`resource\` (depletes), \`bond\` (pair), \`pressure\` (external threat), \`secret\` (drifts toward exposure), \`curse\` (inevitable arc), \`time\` (bounded tick), \`guilt\` (grows only), \`proof\` (toward revelation), \`promise\` (sworn oath), \`hunger\` (must be fed), \`debt\` (pursuer closes). Prefer a DIFFERENT mix from the first adventure — continuation feels fresh when the mechanical shape evolves. Set \`ownerRoleId\` (0-indexed) when a parameter's name anchors to ONE specific returning character; omit for shared/bond/threat parameters. Each parameter needs name, 4 states (best → worst), and archetype. Output language must be ${LANG_PACKS[language].label}.`
 }
 
 // ----- Story phase pacing -----
@@ -325,7 +334,14 @@ export function turnPrompt(args: {
     .join('\n')
 
   const parametersBlock = parameters
-    .map((p) => `- ${p.name}: ${p.states.join(' → ')}`)
+    .map((p) => {
+      const meta = [
+        p.archetype ? p.archetype : null,
+        typeof p.ownerRoleId === 'number' ? `owned by role ${p.ownerRoleId}` : null,
+      ].filter(Boolean).join(', ')
+      const metaStr = meta ? ` [${meta}]` : ''
+      return `- ${p.name}${metaStr}: ${p.states.join(' → ')}`
+    })
     .join('\n')
 
   const pack = LANG_PACKS[language]

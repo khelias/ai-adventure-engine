@@ -11,6 +11,7 @@ export function SecretAssignmentScreen() {
   const language = useGameStore((s) => s.settings.language)
   const roles = useGameStore((s) => s.roles)
   const secrets = useGameStore((s) => s.secrets)
+  const parameters = useGameStore((s) => s.parameters)
   const isLoading = useGameStore((s) => s.isLoading)
   const strings = translations[language]
 
@@ -21,6 +22,7 @@ export function SecretAssignmentScreen() {
 
   const currentRole = roles[index]
   const currentSecret = secrets.find((s) => s.ownerRoleId === currentRole?.id)
+  const ownedParam = parameters.find((p) => p.ownerRoleId === currentRole?.id)
   const isLast = index === roles.length - 1
 
   const onReveal = () => setRevealed(true)
@@ -114,6 +116,22 @@ export function SecretAssignmentScreen() {
             }}>
               {strings.secretDescription(currentSecret.archetype, currentSecret.paramName)}
             </p>
+            {ownedParam && (
+              <p style={{
+                marginTop: '0.75rem',
+                paddingTop: '0.75rem',
+                borderTop: '1px dashed var(--line)',
+                fontFamily: "'Fraunces', Georgia, serif",
+                fontStyle: 'italic',
+                fontSize: '0.8125rem',
+                color: 'var(--text-muted)',
+                margin: '0.75rem 0 0 0',
+              }}>
+                {language === 'et'
+                  ? `Sinu rolli panus loos: «${ownedParam.name}».`
+                  : `Your role's stake in the story: «${ownedParam.name}».`}
+              </p>
+            )}
           </div>
           <button
             onClick={onRememberAndPass}

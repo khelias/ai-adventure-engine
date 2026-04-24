@@ -42,10 +42,30 @@ export interface Role {
   used: boolean
 }
 
+export type ParameterArchetype =
+  | 'resource'
+  | 'bond'
+  | 'pressure'
+  | 'secret'
+  | 'curse'
+  | 'time'
+  | 'guilt'
+  | 'proof'
+  | 'promise'
+  | 'hunger'
+  | 'debt'
+
 export interface Parameter {
   name: string
   states: string[]
   currentStateIndex: number
+  // Mechanical shape — drives UI tone and lets secrets/ownership logic
+  // reason about what kind of pressure this is. AI self-declares.
+  archetype?: ParameterArchetype
+  // Which role (0-based id) this parameter is anchored to. Present when the
+  // parameter's name references a specific character. Secrets for that role's
+  // player can prefer-match against their owned parameter.
+  ownerRoleId?: number
   // true for exactly one turn — the turn it transitions into its worst state.
   // Used by prompts to signal the AI that next scene must dramatize the consequence.
   justBroke?: boolean

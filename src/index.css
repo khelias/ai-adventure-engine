@@ -579,6 +579,23 @@ body {
   100% { color: var(--state-failing); text-shadow: none; }
 }
 
+/* Archetype tone — subtle colour bias per mechanical shape. These apply to
+   phrases NOT already styled as worst/just-broke (the worst-state red wins).
+   Kept muted so three phrases don't clash visually. */
+.scene-slug__phrase--resource  { color: #c9a271; } /* warm amber — body/stamina */
+.scene-slug__phrase--bond      { color: #b0a8c9; } /* neutral mauve — relational */
+.scene-slug__phrase--pressure  { color: #8aa3b5; } /* cool slate — external force */
+.scene-slug__phrase--secret    { color: var(--accent); } /* violet — hidden thing */
+.scene-slug__phrase--curse     { color: #b07a94; } /* dusk rose — inevitable arc */
+.scene-slug__phrase--time      { color: #9b9bb0; } /* grey — neutral ticker */
+.scene-slug__phrase--guilt     { color: #a88a7a; } /* tarnished ochre — weight */
+.scene-slug__phrase--proof     { color: #8fb39b; } /* pale sage — revelation */
+.scene-slug__phrase--promise   { color: #a39378; } /* parchment — oath */
+.scene-slug__phrase--hunger    { color: #c28a74; } /* warm terracotta — need */
+.scene-slug__phrase--debt      { color: #96889a; } /* shadow grey — pursuer */
+/* Worst-state + just-broke override archetype colour (red wins) */
+.scene-slug__phrase--worst { color: var(--state-failing) !important; }
+
 /* Loading */
 .loading-dots {
   display: inline-flex;

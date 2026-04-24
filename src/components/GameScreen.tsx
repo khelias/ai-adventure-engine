@@ -16,6 +16,7 @@ function SceneSlug({ parameters }: { parameters: Parameter[] }) {
       {parameters.map((p) => {
         const atWorst = p.currentStateIndex === p.states.length - 1
         const classes = ['scene-slug__phrase']
+        if (p.archetype) classes.push(`scene-slug__phrase--${p.archetype}`)
         if (atWorst) classes.push('scene-slug__phrase--worst')
         if (p.justBroke) classes.push('scene-slug__phrase--just-broke')
         else if (p.justMoved) classes.push('scene-slug__phrase--moved')

@@ -39,12 +39,17 @@ function pickArchetypes(n: number): SecretArchetype[] {
 
 export function assignSecrets(roles: Role[], parameters: Parameter[]): Secret[] {
   const archetypes = pickArchetypes(roles.length)
-  const paramNames = parameters.map((p) => p.name)
   return roles.map((role, i) => {
     const archetype = archetypes[i]
     const secret: Secret = { ownerRoleId: role.id, archetype }
     if (archetype === 'keeper' || archetype === 'sacrificer') {
-      secret.paramName = paramNames[Math.floor(Math.random() * paramNames.length)]
+      // Prefer the parameter this role OWNS (ownerRoleId match). Makes the
+      // secret feel personal — "your own thing to protect / sacrifice". If
+      // the role owns no parameter (e.g. bond/threat-only game), fall back to
+      // a random parameter so the secret still has a scoring target.
+      const owned = parameters.find((p) => p.ownerRoleId === role.id)
+      const chosen = owned ?? parameters[Math.floor(Math.random() * parameters.length)]
+      secret.paramName = chosen.name
     }
     return secret
   })
