@@ -20,3 +20,6 @@ playtest-transcripts
 .idea
 .DS_Store
 *.sw?
+
+# Pre-refactor backups
+tmp/
