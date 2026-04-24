@@ -13,8 +13,26 @@ export type Screen =
   | 'setup'
   | 'storyChoice'
   | 'roleAssignment'
+  | 'secretAssignment'
   | 'game'
   | 'gameOver'
+
+export type SecretArchetype =
+  | 'optimist'    // all three params end top half
+  | 'traitor'     // parametric end (2+ params at worst)
+  | 'survivor'    // narrative end, regardless of state
+  | 'keeper'      // a specific param stays top half
+  | 'sacrificer'  // a specific param ends at worst
+  | 'guardian'    // zero params at worst
+
+export interface Secret {
+  ownerRoleId: number
+  archetype: SecretArchetype
+  // Populated only for keeper/sacrificer — the parameter name they're tied to.
+  paramName?: string
+  // 'won' / 'lost' set by evaluateSecrets at endgame. undefined during play.
+  result?: 'won' | 'lost'
+}
 
 export interface Role {
   id: number

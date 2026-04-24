@@ -5,11 +5,13 @@ import type {
   Parameter,
   Role,
   Screen,
+  Secret,
   Settings,
   Story,
   Vibe,
 } from '../game/types'
 import { durationToMaxTurns } from '../game/engine'
+import { assignSecrets as assignSecretsImpl, evaluateAll } from '../game/secrets'
 
 const PROVIDER_STORAGE_KEY = 'adventureProvider'
 
@@ -52,6 +54,9 @@ interface GameState {
   recentScenes: string[]
   allScenes: string[]
 
+  // Secrets — each role holds one private win condition, client-only
+  secrets: Secret[]
+
   // End state
   gameOverKind: GameOverKind
   gameOverTitle: string
@@ -78,6 +83,8 @@ interface GameActions {
   }): void
   setGameOver(kind: GameOverKind, title: string, text: string): void
   pushFinalScene(scene: string): void
+  assignSecrets(): void
+  scoreSecrets(): void
   setLoading(loading: boolean): void
   setError(error: string | null): void
   reset(): void
@@ -96,6 +103,7 @@ const initialGameSlice = {
   choices: [] as Choice[],
   recentScenes: [] as string[],
   allScenes: [] as string[],
+  secrets: [] as Secret[],
   gameOverKind: null as GameOverKind,
   gameOverTitle: '',
   gameOverText: '',
@@ -171,6 +179,20 @@ export const useGameStore = create<GameState & GameActions>()((set) => ({
 
   pushFinalScene: (scene) =>
     set((state) => ({ allScenes: [...state.allScenes, scene] })),
+
+  assignSecrets: () =>
+    set((state) => ({
+      secrets: assignSecretsImpl(state.roles, state.parameters),
+      screen: 'secretAssignment',
+    })),
+
+  scoreSecrets: () =>
+    set((state) => ({
+      secrets: evaluateAll(state.secrets, {
+        parameters: state.parameters,
+        gameOverKind: state.gameOverKind,
+      }),
+    })),
 
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),

@@ -120,7 +120,17 @@ export async function generateSequel(sequelText: string): Promise<void> {
   }
 }
 
-export async function startGameAndFirstTurn(): Promise<void> {
+// Called from RoleAssignmentScreen. Assigns secrets and routes to the
+// pass-the-phone distribution screen. The actual game start (kickFirstTurn)
+// runs after distribution completes.
+export function prepareSecretsAndTransition(): void {
+  const store = useGameStore.getState()
+  store.setError(null)
+  store.assignSecrets()
+}
+
+// Called from SecretAssignmentScreen when distribution is done.
+export async function kickFirstTurn(): Promise<void> {
   const store = useGameStore.getState()
   store.setError(null)
   store.startGame()
@@ -168,6 +178,9 @@ export async function handlePlayerChoice(
         strings.endNarrative,
         response.gameOverText || strings.endGenericText,
       )
+      // Secrets win/loss is computed from the final gameOverKind + parameters.
+      // setGameOver just flipped gameOverKind, so scoring reads committed state.
+      useGameStore.getState().scoreSecrets()
       return
     }
 
@@ -290,4 +303,7 @@ async function narrateUnrecoverableEnd(args: {
       ),
     )
   }
+  // Either branch ended with setGameOver committing gameOverKind='parametric';
+  // now evaluate secrets against final state.
+  useGameStore.getState().scoreSecrets()
 }

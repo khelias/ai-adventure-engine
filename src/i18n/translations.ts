@@ -86,6 +86,22 @@ interface StringTable {
   errorStart: (msg: string) => string
   errorSequel: (msg: string) => string
   errorCustom: (msg: string) => string
+  // Secrets
+  secretsKicker: string
+  secretsAssignIntro: string
+  secretsAssignWarning: string
+  secretsPassPhoneTo: (name: string) => string
+  secretsRevealBtn: (name: string) => string
+  secretsRememberBtn: string
+  secretsHideBtn: string
+  secretsRevealKicker: string
+  secretsRevealIntro: string
+  secretsShowResultsBtn: string
+  secretsResultWon: string
+  secretsResultLost: string
+  secretsYourGoalLabel: string
+  secretArchetypeName: (archetype: string) => string
+  secretDescription: (archetype: string, paramName?: string) => string
 }
 
 export const translations: Record<Language, StringTable> = {
@@ -177,6 +193,35 @@ export const translations: Record<Language, StringTable> = {
     errorStart: (msg) => `Mängu alustamisel tekkis viga: ${msg}`,
     errorSequel: (msg) => `Järjeloo genereerimisel tekkis viga: ${msg}`,
     errorCustom: (msg) => `Uue loo genereerimisel tekkis viga: ${msg}`,
+    secretsKicker: 'saladused',
+    secretsAssignIntro: 'Igaüks saab ühe salajase eesmärgi. Teised ei tohi näha.',
+    secretsAssignWarning: 'Teised, pöörake selg. Ära piilu üle õla.',
+    secretsPassPhoneTo: (name) => `Anna telefon ${name}-le.`,
+    secretsRevealBtn: (name) => `${name}, vajuta kui oled üksi`,
+    secretsRememberBtn: 'Hoian meeles — anna edasi',
+    secretsHideBtn: 'Peida',
+    secretsRevealKicker: 'saladused paljastatud',
+    secretsRevealIntro: 'Nüüd näidake kõik, mis olid teie salajased eesmärgid.',
+    secretsShowResultsBtn: 'Paljasta saladused →',
+    secretsResultWon: 'VÕITSID',
+    secretsResultLost: 'KAOTASID',
+    secretsYourGoalLabel: 'Sinu salajane eesmärk',
+    secretArchetypeName: (a) => ({
+      optimist: 'Optimist',
+      traitor: 'Reetur',
+      survivor: 'Ellujääja',
+      keeper: 'Hoidja',
+      sacrificer: 'Ohverdaja',
+      guardian: 'Saladuse kaitsja',
+    }[a] ?? a),
+    secretDescription: (a, paramName) => ({
+      optimist: 'Sa näed kõiges head. Kõik kolm parameetrit peavad mängu lõpuks olema ülemises pooles — mitte kriitilises olekus.',
+      traitor: 'Sa oled salaja kaotuse poolel. Mäng peab lõppema kollapsist — kaks parameetrit halvimas olekus.',
+      survivor: 'Peaasi, et me lõpuni jõuame. Mäng peab lõppema loo kaudu, mitte mõõturite varisemisest.',
+      keeper: `Sul on üks asi, mida hoida. «${paramName}» peab mängu lõpuks olema hea olukorras — ülemises pooles.`,
+      sacrificer: `Üks asi peab minema pihta — muidu sa ei võida. «${paramName}» peab jõudma halvimasse olekusse.`,
+      guardian: 'Mitte midagi ei tohi lõplikult kaotsi minna. Ükski parameeter ei tohi mängu lõpuks halvimasse olekusse jõuda.',
+    }[a] ?? a),
   },
   en: {
     appTitle: 'AI Adventure Engine',
@@ -270,6 +315,35 @@ export const translations: Record<Language, StringTable> = {
       `An error occurred while generating the sequel: ${msg}`,
     errorCustom: (msg) =>
       `An error occurred while generating the new story: ${msg}`,
+    secretsKicker: 'secrets',
+    secretsAssignIntro: 'Each player gets one secret goal. No one else may see it.',
+    secretsAssignWarning: 'Others, turn your backs. No peeking over the shoulder.',
+    secretsPassPhoneTo: (name) => `Pass the phone to ${name}.`,
+    secretsRevealBtn: (name) => `${name}, tap when alone`,
+    secretsRememberBtn: 'Got it — pass it on',
+    secretsHideBtn: 'Hide',
+    secretsRevealKicker: 'secrets revealed',
+    secretsRevealIntro: 'Now each of you shows what you were secretly playing for.',
+    secretsShowResultsBtn: 'Reveal the secrets →',
+    secretsResultWon: 'YOU WON',
+    secretsResultLost: 'YOU LOST',
+    secretsYourGoalLabel: 'Your secret goal',
+    secretArchetypeName: (a) => ({
+      optimist: 'Optimist',
+      traitor: 'Traitor',
+      survivor: 'Survivor',
+      keeper: 'Keeper',
+      sacrificer: 'Sacrificer',
+      guardian: 'Guardian',
+    }[a] ?? a),
+    secretDescription: (a, paramName) => ({
+      optimist: 'You see the good in things. All three parameters must end in the top half — nothing near-worst.',
+      traitor: 'You secretly want collapse. The game must end by parameter collapse — two parameters at worst state.',
+      survivor: 'Just get us to the end. The game must end narratively, not by parameter collapse.',
+      keeper: `You hold one thing dear. «${paramName}» must end in the top half.`,
+      sacrificer: `One thing must fall — or you don't win. «${paramName}» must reach its worst state.`,
+      guardian: 'Nothing may be lost for good. No parameter may end at its worst state.',
+    }[a] ?? a),
   },
 }
 

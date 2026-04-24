@@ -3,6 +3,7 @@ import { LangToggle } from './components/LangToggle'
 import { SetupScreen } from './components/SetupScreen'
 import { StoryChoiceScreen } from './components/StoryChoiceScreen'
 import { RoleAssignmentScreen } from './components/RoleAssignmentScreen'
+import { SecretAssignmentScreen } from './components/SecretAssignmentScreen'
 import { GameScreen } from './components/GameScreen'
 import { GameOverScreen } from './components/GameOverScreen'
 
@@ -40,6 +41,7 @@ export default function App() {
           <div className="w-full max-w-xl">
             {screen === 'storyChoice' && <StoryChoiceScreen />}
             {screen === 'roleAssignment' && <RoleAssignmentScreen />}
+            {screen === 'secretAssignment' && <SecretAssignmentScreen />}
             {screen === 'game' && <GameScreen />}
             {screen === 'gameOver' && <GameOverScreen />}
           </div>
