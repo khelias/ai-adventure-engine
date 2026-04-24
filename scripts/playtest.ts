@@ -30,6 +30,7 @@ import {
   isUnrecoverable,
   durationToMaxTurns,
 } from '../src/game/engine'
+import { assignSecrets, evaluateAll } from '../src/game/secrets'
 import { LANG_PACKS } from '../src/i18n/lang-packs'
 import type {
   Choice,
@@ -225,6 +226,17 @@ async function main() {
   let lastPicked: Choice | null = null
   let endReason: 'narrative' | 'parametric' | 'maxTurns' | 'api-error' = 'maxTurns'
 
+  // ---- Simulated secrets (client-only in prod; here we mirror the logic
+  // so the transcript shows what the room dynamic would have looked like) ----
+  const secrets = assignSecrets(roles, parameters)
+  log(`**Secrets (simulated):**`)
+  for (const s of secrets) {
+    const owner = roles.find((r) => r.id === s.ownerRoleId)
+    const tail = s.paramName ? ` · "${s.paramName}"` : ''
+    log(`- ${owner?.name ?? `role${s.ownerRoleId}`} → **${s.archetype}**${tail}`)
+  }
+  log('')
+
   // ---- Turn loop ----
   for (let t = 1; t <= maxTurns; t++) {
     log(`## Turn ${t} / ${maxTurns}`)
@@ -384,6 +396,21 @@ async function main() {
   log(`- **Reason**: ${endReason}`)
   log(`- **Final params**: ${paramsLine(parameters)}`)
   log(`- **Abilities used**: ${roles.filter((r) => r.used).map((r) => r.name).join(', ') || 'none'}`)
+  log('')
+
+  // ---- Simulated secret outcomes ----
+  const gameOverKind = endReason === 'narrative' ? 'narrative' : endReason === 'parametric' ? 'parametric' : null
+  const scored = evaluateAll(secrets, { parameters, gameOverKind })
+  log(`**Secret outcomes:**`)
+  for (const s of scored) {
+    const owner = roles.find((r) => r.id === s.ownerRoleId)
+    const tail = s.paramName ? ` · "${s.paramName}"` : ''
+    const mark = s.result === 'won' ? '🏆 WON' : '✗ lost'
+    log(`- ${owner?.name ?? `role${s.ownerRoleId}`} (${s.archetype}${tail}) → **${mark}**`)
+  }
+  const wins = scored.filter((s) => s.result === 'won').length
+  log('')
+  log(`Win ratio: ${wins}/${scored.length}`)
   log('')
   console.error(`\nTranscript: ${outPath}`)
 }

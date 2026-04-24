@@ -153,19 +153,24 @@ app.post('/generate', async (req, res) => {
     let isTurnShape = result?.data && typeof result.data.scene === 'string' && Array.isArray(result.data.choices);
 
     // Schema-contract retry: turn-shaped responses MUST have either
-    // choices.length === 3 OR gameOver === true. Claude occasionally drifts
-    // and emits neither — the game then freezes on the client with no way
-    // forward. One retry with an explicit reminder recovers the turn ~90% of
-    // the time at a one-time double-cost for that turn.
-    let retried = false;
-    if (
-      isTurnShape &&
-      result.data.choices.length === 0 &&
-      result.data.gameOver !== true
-    ) {
-      retried = true;
-      console.warn(`empty-choices contract violation (provider=${provider}); retrying with reminder`);
-      const reminder = '\n\n⚠ SCHEMA CONTRACT: Your previous attempt returned an empty `choices` array with `gameOver: false`. This is not a valid response — the game cannot continue without either 3 choices OR gameOver=true. Retry now: output EXACTLY 3 choices that advance the story, OR set gameOver=true with a full gameOverText.';
+    // choices.length === 3 OR gameOver === true. Claude sometimes drifts and
+    // emits neither — most often on tense reveal scenes where the model
+    // "feels" the turn has concluded. Without fallback, the game freezes.
+    //
+    // Strategy: two retries with escalating reminders, then server-side
+    // coercion (force gameOver=true so the client shows a finale rather
+    // than a blank choices panel).
+    const isEmptyTurnContract = () =>
+      isTurnShape && Array.isArray(result.data.choices) && result.data.choices.length === 0 && result.data.gameOver !== true;
+    const RETRY_REMINDERS = [
+      '\n\n⚠ SCHEMA CONTRACT: Your previous attempt returned an empty `choices` array with `gameOver: false`. This is not a valid response — the game cannot continue without either 3 choices OR gameOver=true. Retry now: output EXACTLY 3 choices that advance the story, OR set gameOver=true with a full gameOverText.',
+      '\n\n⚠ FINAL ATTEMPT: The previous TWO responses returned empty choices with gameOver=false. This will FREEZE THE GAME for the players at the table. You have ONE job right now: either produce 3 concrete choices that let play continue, OR commit to gameOver=true and write a full 3-5 paragraph gameOverText that concludes the scene. Choosing one of these is a REQUIREMENT, not a preference. Do not return empty choices again.',
+    ];
+    let retried = 0;
+    for (const reminder of RETRY_REMINDERS) {
+      if (!isEmptyTurnContract()) break;
+      retried += 1;
+      console.warn(`empty-choices contract violation attempt ${retried} (provider=${provider}); retrying`);
       try {
         const retryResult = await callOnce(reminder);
         if (retryResult?.data && typeof retryResult.data.scene === 'string' && !Array.isArray(retryResult.data.choices)) {
@@ -174,7 +179,21 @@ app.post('/generate', async (req, res) => {
         result = retryResult;
         isTurnShape = result?.data && typeof result.data.scene === 'string' && Array.isArray(result.data.choices);
       } catch (e) {
-        console.warn(`retry failed: ${e.message || e} (returning original empty-choices response)`);
+        console.warn(`retry ${retried} failed: ${e.message || e}`);
+      }
+    }
+    // Last-resort coercion: if we still have empty choices + gameOver=false
+    // after all retries, force gameOver=true and synthesize a minimal
+    // gameOverText from the scene. Better an abrupt ending than a freeze.
+    let coercedGameOver = false;
+    if (isEmptyTurnContract()) {
+      coercedGameOver = true;
+      console.warn(`coercing gameOver=true after ${retried} retries failed (provider=${provider})`);
+      result.data.gameOver = true;
+      if (!result.data.gameOverText || typeof result.data.gameOverText !== 'string' || result.data.gameOverText.trim().length < 20) {
+        result.data.gameOverText = (result.data.scene || '') + '\n\n' + (language === 'et'
+          ? 'Lugu katkeb siin — jutustaja jäi sõnadega kimbatusse. Mis edasi juhtus, jääb teie kujutlusvõimesse.'
+          : 'The story breaks off here — the narrator ran out of words. What happens next is yours to imagine.');
       }
     }
     let editorMs = 0;
@@ -196,7 +215,7 @@ app.post('/generate', async (req, res) => {
     const ms = Date.now() - t0;
     const cacheHit = result.cacheHit;
     console.log(
-      `proxy ok: provider=${provider} model=${result.model} ms=${ms}${cacheHit != null ? ` cache=${cacheHit}` : ''}${editorApplied ? ` editor=${editorMs}ms` : ''}${retried ? ' retried=1' : ''}`,
+      `proxy ok: provider=${provider} model=${result.model} ms=${ms}${cacheHit != null ? ` cache=${cacheHit}` : ''}${editorApplied ? ` editor=${editorMs}ms` : ''}${retried ? ` retried=${retried}` : ''}${coercedGameOver ? ' coerced-gameover' : ''}`,
     );
     res.json({ provider, model: result.model, data: result.data });
   } catch (err) {
