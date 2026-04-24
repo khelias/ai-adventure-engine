@@ -16,9 +16,8 @@ import { LANG_PACKS } from '../i18n/lang-packs'
 import {
   applyParameterChanges,
   findBrokenParameters,
-  isAbilityChoice,
   isUnrecoverable,
-  markAbilityUsed,
+  markAbilityUsedById,
 } from './engine'
 import type { Choice, ParameterCost, Story } from './types'
 
@@ -158,6 +157,12 @@ export async function handlePlayerChoice(
     const strings = translations[store.settings.language]
 
     if (response.gameOver) {
+      // Push the AI's final scene to allScenes before flipping to the gameOver
+      // screen — otherwise the "Näita kogu lugu" / copy-transcript output
+      // silently misses the last beat of the story.
+      if (response.scene && response.scene.trim()) {
+        store.pushFinalScene(response.scene)
+      }
       store.setGameOver(
         'narrative',
         strings.endNarrative,
@@ -166,10 +171,11 @@ export async function handlePlayerChoice(
       return
     }
 
-    // Ability used tracking — mirror V1 behaviour.
-    const rolesAfterAbility = isAbilityChoice(choiceText)
-      ? markAbilityUsed(store.roles, choiceText)
-      : store.roles
+    // Ability used tracking — read directly from the structured choice.
+    const rolesAfterAbility =
+      opts.chosenChoice?.isAbility && typeof opts.chosenChoice.actor === 'number'
+        ? markAbilityUsedById(store.roles, opts.chosenChoice.actor)
+        : store.roles
 
     const nextTurn = opts.isFirstTurn ? store.currentTurn : store.currentTurn + 1
 
@@ -215,7 +221,7 @@ export async function handlePlayerChoice(
 // ending mechanically with a template string. Falls back to template on error.
 async function narrateUnrecoverableEnd(args: {
   parameters: ReturnType<typeof applyParameterChanges>
-  roles: ReturnType<typeof markAbilityUsed>
+  roles: ReturnType<typeof markAbilityUsedById>
   choiceText: string
   nextTurn: number
   lastScene: string
@@ -223,6 +229,14 @@ async function narrateUnrecoverableEnd(args: {
   const store = useGameStore.getState()
   const strings = translations[store.settings.language]
   const { parameters, roles, choiceText, nextTurn, lastScene } = args
+
+  // Push the last normal scene to allScenes — narrateUnrecoverableEnd is
+  // called AFTER the turn's scene exists but BEFORE setTurnResult was going
+  // to run, so without this the "full story" transcript drops the final
+  // pre-collapse beat.
+  if (lastScene && lastScene.trim()) {
+    store.pushFinalScene(lastScene)
+  }
 
   const recentPlusLast = [...store.recentScenes, lastScene].slice(-3)
 
@@ -248,6 +262,11 @@ async function narrateUnrecoverableEnd(args: {
       system,
       store.settings.language,
     )
+    // The forceEnd scene is usually short (the weight is in gameOverText),
+    // but when present it's the final on-stage moment — keep it in transcript.
+    if (endResponse.scene && endResponse.scene.trim()) {
+      store.pushFinalScene(endResponse.scene)
+    }
     store.setGameOver(
       'parametric',
       strings.endParametric,

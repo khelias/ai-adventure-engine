@@ -51,16 +51,8 @@ export function durationToMaxTurns(duration: 'Short' | 'Medium' | 'Long'): numbe
   return 20
 }
 
-export function markAbilityUsed(roles: Role[], choiceText: string): Role[] {
-  // V1 parity: ability-choice text contains "[RoleName]" marker.
-  const match = choiceText.match(/\[(.*?)\]/)
-  if (!match?.[1]) return roles
-  const roleName = match[1]
-  return roles.map((r) => (r.name === roleName ? { ...r, used: true } : r))
-}
-
-export function isAbilityChoice(text: string): boolean {
-  return (
-    text.includes('Kasuta erioskust:') || text.includes('Use special ability:')
-  )
+// Mark a role's ability as used. The caller decides whether the choice was
+// an ability — we trust the structured flag + actor id, not text parsing.
+export function markAbilityUsedById(roles: Role[], actorId: number): Role[] {
+  return roles.map((r) => (r.id === actorId ? { ...r, used: true } : r))
 }

@@ -77,6 +77,7 @@ interface GameActions {
     currentTurn: number
   }): void
   setGameOver(kind: GameOverKind, title: string, text: string): void
+  pushFinalScene(scene: string): void
   setLoading(loading: boolean): void
   setError(error: string | null): void
   reset(): void
@@ -167,6 +168,9 @@ export const useGameStore = create<GameState & GameActions>()((set) => ({
       gameOverTitle: title,
       gameOverText: text,
     }),
+
+  pushFinalScene: (scene) =>
+    set((state) => ({ allScenes: [...state.allScenes, scene] })),
 
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),

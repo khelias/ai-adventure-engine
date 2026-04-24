@@ -31,7 +31,7 @@ export function GameOverScreen() {
     <section className="space-y-7">
       <div className="text-center">
         <p className="type-caps" style={{ marginBottom: '0.5rem' }}>
-          {language === 'et' ? 'lugu on räägitud' : 'the story is told'}
+          {strings.storyToldKicker}
         </p>
         <h2
           style={{

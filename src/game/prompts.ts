@@ -334,7 +334,7 @@ PARAMETERS (each has 4 states, best → worst):
 ${parametersBlock}${exampleBlock}
 CORE RULES:
 
-1. SCENE LENGTH IS LAW. Write 2-3 sentences per scene in setup/inciting/rising, 3-4 at climax, 4-5 at resolution. Count them. HARD MAX: 60 words per scene in non-climax turns. Groups read aloud — dense prose loses the room.
+1. SCENE LENGTH IS LAW. Hard caps: **3 sentences / 60 words** in setup/inciting/rising, **4 sentences / 80 words** at climax, **5 sentences / 100 words** at resolution. Count sentences with your fingers, literally. Groups read aloud — a 4th sentence in a "rising" scene is not a bonus, it is a rewrite trigger. Density beats length: one concrete verb, one sensory detail, one living line. If you are about to write a 4th sentence in a non-climax scene, DELETE your weakest sentence instead. Observed failure mode: models routinely emit 4 sentences when told 3 — assume you will drift unless you recount before sending.
 
 2. PARAMETERS AS SENSORY DETAIL. Each scene must surface ≥1 parameter state as something a character sees/hears/feels. Do NOT write them as narrator metadata ("The pressure rises"). Show them ("The fuel gauge touches red; Mari's hand trembles on the wheel").
 
@@ -368,7 +368,7 @@ TRILEMMA — three orthogonal moral axes, not three flavours of one question. Th
 12. FINAL TURN at maxTurns: set gameOver: true. gameOverText names the parameters that held and those that broke, the choices that mattered, what each character became.
 
 SELF-CHECK before responding:
-- Scene length: count sentences. Under limit? If not, DELETE until it is.
+- SCENE LENGTH (do this first, every time): count sentences by marking period/exclamation/question endings. Non-climax = 3 max. Climax = 4 max. Resolution = 5 max. If you counted 4 in a non-climax scene, DELETE your weakest sentence NOW — do not skip this step.
 - If this is turn 2+, does the scene OPEN with the previous choice's actor/target through a present-tense sensory detail? If not, rewrite the first line.
 - Has a direct spoken line appeared in the last 2-3 turns? If not, slip one short fragment into THIS scene.
 - Every choice has an actor set, and its text names that actor as the grammatical subject? If any choice uses a plural "we" / "the group" (in any language) — rewrite.

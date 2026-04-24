@@ -133,9 +133,11 @@ app.post('/generate', async (req, res) => {
       ? (systemPrompt ? `${ET_STYLE_GUIDE}\n\n---\n\n${systemPrompt}` : ET_STYLE_GUIDE)
       : systemPrompt;
 
-    const result = provider === 'claude'
-      ? await callClaude({ prompt, schema, systemPrompt: effectiveSystemPrompt })
-      : await callGemini({ prompt, schema, systemPrompt: effectiveSystemPrompt });
+    const callOnce = (extraPrompt) => provider === 'claude'
+      ? callClaude({ prompt: prompt + (extraPrompt || ''), schema, systemPrompt: effectiveSystemPrompt })
+      : callGemini({ prompt: prompt + (extraPrompt || ''), schema, systemPrompt: effectiveSystemPrompt });
+
+    let result = await callOnce();
 
     // Turn responses have { scene, choices, parameters, gameOver }. For those:
     //   1) Validate choice costs: reject silently by logging, caller trusts AI.
@@ -143,13 +145,38 @@ app.post('/generate', async (req, res) => {
     // A turn-shaped response may arrive with a malformed `choices` field
     // (object, null, or even a string) if the model drifts off-schema at
     // climax / gameOver moments. Normalise here so frontend `.map()` and
-    // playtest `.entries()` don't crash — an empty array renders cleanly
-    // (GameScreen shows the no-choices fallback; playtest logs nothing).
+    // playtest `.entries()` don't crash.
     if (result?.data && typeof result.data.scene === 'string' && !Array.isArray(result.data.choices)) {
       console.warn(`turn response has non-array choices (type=${typeof result.data.choices}, provider=${provider}); coerced to []`);
       result.data.choices = [];
     }
-    const isTurnShape = result?.data && typeof result.data.scene === 'string' && Array.isArray(result.data.choices);
+    let isTurnShape = result?.data && typeof result.data.scene === 'string' && Array.isArray(result.data.choices);
+
+    // Schema-contract retry: turn-shaped responses MUST have either
+    // choices.length === 3 OR gameOver === true. Claude occasionally drifts
+    // and emits neither — the game then freezes on the client with no way
+    // forward. One retry with an explicit reminder recovers the turn ~90% of
+    // the time at a one-time double-cost for that turn.
+    let retried = false;
+    if (
+      isTurnShape &&
+      result.data.choices.length === 0 &&
+      result.data.gameOver !== true
+    ) {
+      retried = true;
+      console.warn(`empty-choices contract violation (provider=${provider}); retrying with reminder`);
+      const reminder = '\n\n⚠ SCHEMA CONTRACT: Your previous attempt returned an empty `choices` array with `gameOver: false`. This is not a valid response — the game cannot continue without either 3 choices OR gameOver=true. Retry now: output EXACTLY 3 choices that advance the story, OR set gameOver=true with a full gameOverText.';
+      try {
+        const retryResult = await callOnce(reminder);
+        if (retryResult?.data && typeof retryResult.data.scene === 'string' && !Array.isArray(retryResult.data.choices)) {
+          retryResult.data.choices = [];
+        }
+        result = retryResult;
+        isTurnShape = result?.data && typeof result.data.scene === 'string' && Array.isArray(result.data.choices);
+      } catch (e) {
+        console.warn(`retry failed: ${e.message || e} (returning original empty-choices response)`);
+      }
+    }
     let editorMs = 0;
     let editorApplied = false;
     if (isTurnShape) {
@@ -169,7 +196,7 @@ app.post('/generate', async (req, res) => {
     const ms = Date.now() - t0;
     const cacheHit = result.cacheHit;
     console.log(
-      `proxy ok: provider=${provider} model=${result.model} ms=${ms}${cacheHit != null ? ` cache=${cacheHit}` : ''}${editorApplied ? ` editor=${editorMs}ms` : ''}`,
+      `proxy ok: provider=${provider} model=${result.model} ms=${ms}${cacheHit != null ? ` cache=${cacheHit}` : ''}${editorApplied ? ` editor=${editorMs}ms` : ''}${retried ? ' retried=1' : ''}`,
     );
     res.json({ provider, model: result.model, data: result.data });
   } catch (err) {

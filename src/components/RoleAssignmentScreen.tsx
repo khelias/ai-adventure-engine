@@ -23,10 +23,10 @@ export function RoleAssignmentScreen() {
   return (
     <section className="space-y-7">
       <button type="button" onClick={reset} disabled={isLoading} className="btn-ghost" style={{ fontStyle: 'normal', fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.5rem 0' }}>
-        ← {language === 'et' ? 'seadistused' : 'setup'}
+        ← {strings.backToSetup}
       </button>
       <div className="space-y-2">
-        <p className="type-caps">{language === 'et' ? 'rollid' : 'cast'}</p>
+        <p className="type-caps">{strings.castKicker}</p>
         <h2
           style={{
             fontFamily: "'Fraunces', Georgia, serif",

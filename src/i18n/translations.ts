@@ -3,6 +3,19 @@ import type { Language } from '../game/types'
 interface StringTable {
   appTitle: string
   playerCountLabel: string
+  playerCountQuestion: string
+  durationQuestion: string
+  adventureKicker: string
+  castKicker: string
+  yourAdventureKicker: string
+  storyToldKicker: string
+  backToSetup: string
+  loadingStoryTitle: string
+  playersAriaLabel: (n: number) => string
+  vibeBtnAny: string
+  vibeBtnLight: string
+  vibeBtnTense: string
+  vibeBtnDark: string
   advancedToggle: string
   groupSectionHeader: string
   groupSectionHint: string
@@ -79,6 +92,19 @@ export const translations: Record<Language, StringTable> = {
   et: {
     appTitle: 'AI Seiklusmootor',
     playerCountLabel: 'Mängijate arv:',
+    playerCountQuestion: 'Mitu mängijat',
+    durationQuestion: 'Kui kaua',
+    adventureKicker: 'seiklus',
+    castKicker: 'rollid',
+    yourAdventureKicker: 'teie seiklus',
+    storyToldKicker: 'lugu on räägitud',
+    backToSetup: 'seadistused',
+    loadingStoryTitle: 'Tint voolab…',
+    playersAriaLabel: (n) => `${n} mängijat`,
+    vibeBtnAny: 'vaba',
+    vibeBtnLight: 'kerge',
+    vibeBtnTense: 'pingeline',
+    vibeBtnDark: 'tume',
     advancedToggle: 'Tehniline',
     groupSectionHeader: 'Räägi oma õhtust',
     groupSectionHint: 'Kõik vabatahtlik — aga mida rohkem räägid, seda rohkem tundub lugu teie enda oma.',
@@ -155,6 +181,19 @@ export const translations: Record<Language, StringTable> = {
   en: {
     appTitle: 'AI Adventure Engine',
     playerCountLabel: 'Number of players:',
+    playerCountQuestion: 'How many players',
+    durationQuestion: 'How long',
+    adventureKicker: 'adventure',
+    castKicker: 'cast',
+    yourAdventureKicker: 'your adventure',
+    storyToldKicker: 'the story is told',
+    backToSetup: 'setup',
+    loadingStoryTitle: 'Ink flows…',
+    playersAriaLabel: (n) => `${n} players`,
+    vibeBtnAny: 'any',
+    vibeBtnLight: 'light',
+    vibeBtnTense: 'tense',
+    vibeBtnDark: 'dark',
     advancedToggle: 'Technical',
     groupSectionHeader: 'Tell us about tonight',
     groupSectionHint: 'All optional — the more you share, the more the story feels like yours.',

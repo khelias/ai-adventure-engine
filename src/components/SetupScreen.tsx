@@ -93,8 +93,7 @@ export function SetupScreen() {
   const setSetting = useGameStore((s) => s.setSetting)
   const isLoading = useGameStore((s) => s.isLoading)
   const error = useGameStore((s) => s.error)
-  const language = settings.language
-  const strings = translations[language]
+  const strings = translations[settings.language]
 
   const [showAdvanced, setShowAdvanced] = useState(false)
   const swipeStartX = useRef<number | null>(null)
@@ -124,10 +123,13 @@ export function SetupScreen() {
   const duration = settings.duration
 
   const genreOption = GENRES.find((g) => g.value === genre) ?? GENRES[0]
-  const playersLabel = language === 'et' ? 'Mitu mängijat' : 'How many players'
-  const durationLabel = language === 'et' ? 'Kui kaua' : 'How long'
 
-  const hasPersonalContext = !!(ctx.vibe || ctx.location.trim() || ctx.playersDesc.trim())
+  const hasPersonalContext = !!(
+    ctx.vibe ||
+    ctx.location.trim() ||
+    ctx.playersDesc.trim() ||
+    ctx.insideJoke.trim()
+  )
 
   // First word of duration label (strips the parenthetical)
   const getDurationWord = (labelKey: keyof typeof translations.et) =>
@@ -135,7 +137,7 @@ export function SetupScreen() {
 
   return (
     <section className="setup-wrap">
-      <span className="setup-eyebrow">{language === 'et' ? 'seiklus' : 'adventure'}</span>
+      <span className="setup-eyebrow">{strings.adventureKicker}</span>
 
       {/* The Circle */}
       <div
@@ -168,7 +170,7 @@ export function SetupScreen() {
 
       {/* Players */}
       <div className="setup-section">
-        <span className="setup-label">{playersLabel}</span>
+        <span className="setup-label">{strings.playerCountQuestion}</span>
         <div className="player-btns">
           {[3, 4, 5, 6].map((n) => (
             <button
@@ -177,7 +179,7 @@ export function SetupScreen() {
               className={`player-btn${players === n ? ' active' : ''}`}
               onClick={() => setSetting('players', n)}
               aria-pressed={players === n}
-              aria-label={language === 'et' ? `${n} mängijat` : `${n} players`}
+              aria-label={strings.playersAriaLabel(n)}
             >
               <span className="player-btn__num">{n}</span>
               <span className="player-btn__dot" />
@@ -188,7 +190,7 @@ export function SetupScreen() {
 
       {/* Duration */}
       <div className="setup-section">
-        <span className="setup-label">{durationLabel}</span>
+        <span className="setup-label">{strings.durationQuestion}</span>
         <div className="duration-btns">
           {DURATION_OPTIONS.map((d, i) => (
             <div key={d.value} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -238,10 +240,10 @@ export function SetupScreen() {
           <div className="ctx-vibe-btns">
             {(
               [
-                { value: '' as Vibe, label: language === 'et' ? 'vaba' : 'any' },
-                { value: 'light' as Vibe, label: language === 'et' ? 'kerge' : 'light' },
-                { value: 'tense' as Vibe, label: language === 'et' ? 'pingeline' : 'tense' },
-                { value: 'dark' as Vibe, label: language === 'et' ? 'tume' : 'dark' },
+                { value: '' as Vibe, label: strings.vibeBtnAny },
+                { value: 'light' as Vibe, label: strings.vibeBtnLight },
+                { value: 'tense' as Vibe, label: strings.vibeBtnTense },
+                { value: 'dark' as Vibe, label: strings.vibeBtnDark },
               ] as const
             ).map((v) => (
               <button
@@ -254,6 +256,17 @@ export function SetupScreen() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="ctx-field">
+          <span className="ctx-label">{strings.insideJokeLabel}</span>
+          <input
+            type="text"
+            value={ctx.insideJoke}
+            placeholder={strings.insideJokePlaceholder}
+            onChange={(e) => setCtx({ insideJoke: e.target.value })}
+            className="input-page"
+          />
         </div>
       </div>
 

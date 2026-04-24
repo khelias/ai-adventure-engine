@@ -21,11 +21,11 @@ export function StoryChoiceScreen() {
   return (
     <section className="space-y-8">
       <button type="button" onClick={reset} disabled={isLoading} className="btn-ghost" style={{ fontStyle: 'normal', fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.5rem 0' }}>
-        ← {language === 'et' ? 'seadistused' : 'setup'}
+        ← {strings.backToSetup}
       </button>
       <div>
         <p className="type-caps" style={{ marginBottom: '0.5rem' }}>
-          {language === 'et' ? 'teie seiklus' : 'your adventure'}
+          {strings.yourAdventureKicker}
         </p>
         <h2
           style={{
@@ -40,7 +40,7 @@ export function StoryChoiceScreen() {
           }}
         >
           {isLoading
-            ? (language === 'et' ? 'Tint voolab…' : 'Ink flows…')
+            ? strings.loadingStoryTitle
             : story?.title ?? ''}
         </h2>
         <div style={{ width: '2rem', height: '1px', background: 'var(--line-accent)', marginTop: '0.75rem', opacity: 0.6 }} />
