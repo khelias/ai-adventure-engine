@@ -619,6 +619,28 @@ body {
   border-top: 1px solid var(--line);
 }
 
+/* Wait-state: dots stacked above a slowly-rotating hint phrase. The phrase
+   swaps every 4s via a key-change, triggering the fade-in animation. Tells
+   the group "still working, this is normal" during the 20-30s turn call. */
+.loading-hint-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+.loading-hint {
+  font: 400 italic 0.875rem/1.4 'Fraunces', Georgia, serif;
+  font-variation-settings: 'opsz' 14, 'SOFT' 50;
+  color: var(--text-muted);
+  margin: 0;
+  letter-spacing: 0.02em;
+  animation: loading-hint-in 0.8s ease-out;
+}
+@keyframes loading-hint-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 0.9; transform: translateY(0); }
+}
+
 /* Choices */
 .choice {
   display: grid;

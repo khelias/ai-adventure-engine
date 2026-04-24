@@ -102,6 +102,9 @@ interface StringTable {
   secretsYourGoalLabel: string
   secretArchetypeName: (archetype: string) => string
   secretDescription: (archetype: string, paramName?: string) => string
+  // Rotating hints shown during the between-turns wait so 20-30s feels
+  // purposeful, not broken. Cycled every 4s client-side.
+  loadingHints: string[]
 }
 
 export const translations: Record<Language, StringTable> = {
@@ -222,6 +225,14 @@ export const translations: Record<Language, StringTable> = {
       sacrificer: `Üks asi peab minema pihta — muidu sa ei võida. «${paramName}» peab jõudma halvimasse olekusse.`,
       guardian: 'Mitte midagi ei tohi lõplikult kaotsi minna. Ükski parameeter ei tohi mängu lõpuks halvimasse olekusse jõuda.',
     }[a] ?? a),
+    loadingHints: [
+      'Järgmine stseen kirjutatakse',
+      'Tegelased arutavad',
+      'Eelmise valiku tagajärjed joonistuvad',
+      'Sõnad leitakse ükshaaval',
+      'Loo lõng pingutub',
+      'Pliiats liigub paberil',
+    ],
   },
   en: {
     appTitle: 'AI Adventure Engine',
@@ -344,6 +355,14 @@ export const translations: Record<Language, StringTable> = {
       sacrificer: `One thing must fall — or you don't win. «${paramName}» must reach its worst state.`,
       guardian: 'Nothing may be lost for good. No parameter may end at its worst state.',
     }[a] ?? a),
+    loadingHints: [
+      'Writing the next scene',
+      'Characters are talking',
+      'The last choice lands',
+      'Words arrive one by one',
+      'The thread of the story tightens',
+      'Pen moves across paper',
+    ],
   },
 }
 

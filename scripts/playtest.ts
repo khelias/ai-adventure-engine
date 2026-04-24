@@ -208,7 +208,13 @@ async function main() {
   for (const r of story.roles) log(`- **${r.name}** — ${r.description}  _(ability: ${r.ability})_`)
   log('')
   log(`**Parameters:**`)
-  for (const p of story.parameters) log(`- **${p.name}**: ${p.states.join(' → ')}`)
+  for (const p of story.parameters) {
+    const meta = [
+      p.archetype ? `archetype=${p.archetype}` : null,
+      typeof p.ownerRoleId === 'number' ? `owner=role${p.ownerRoleId}` : null,
+    ].filter(Boolean).join(', ')
+    log(`- **${p.name}**${meta ? ` _[${meta}]_` : ''}: ${p.states.join(' → ')}`)
+  }
   log('')
 
   // ---- State init ----
@@ -280,7 +286,7 @@ async function main() {
         const cost = (c.expectedChanges ?? [])
           .map((ec) => `${ec.name}:${ec.change >= 0 ? '+' : ''}${ec.change}`)
           .join(', ') || '_none declared_'
-        const actorLabel = c.actor !== undefined ? ` _[actor=${c.actor}]_` : ''
+        const actorLabel = c.actor !== undefined ? ` _[actor=${c.actor}${typeof c.target === 'number' ? `, target=${c.target}` : ''}]_` : ''
         const ability = c.isAbility ? ` **[ABILITY]**` : ''
         log(`- ${i + 1}.${actorLabel} ${c.text}${ability}  _(cost: ${cost})_`)
       }

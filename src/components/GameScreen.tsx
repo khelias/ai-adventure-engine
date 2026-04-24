@@ -3,7 +3,7 @@ import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { handlePlayerChoice } from '../game/actions'
 import type { Choice, Parameter } from '../game/types'
-import { LoadingDots } from './LoadingDots'
+import { LoadingWithHint } from './LoadingDots'
 
 // Scene slug: three current state-phrases rendered as a single italic line,
 // separated by middots. Replaces the former meter-pill dashboard. The state
@@ -94,7 +94,7 @@ export function GameScreen() {
       <div key={currentTurn} className="space-y-0">
         {isLoading && !sceneText ? (
           <div className="py-10 text-center">
-            <LoadingDots />
+            <LoadingWithHint />
           </div>
         ) : (
           paragraphs.map((paragraph, i) => (
@@ -110,7 +110,7 @@ export function GameScreen() {
         <div className="mt-8">
           {isLoading ? (
             <div className="turn-loading">
-              <LoadingDots />
+              <LoadingWithHint />
             </div>
           ) : (
             <>
