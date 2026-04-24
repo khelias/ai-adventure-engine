@@ -530,62 +530,53 @@ body {
 }
 .topbar__turn-num { color: var(--accent); }
 
-/* Parameter bar */
-.param-bar {
-  display: flex;
-  gap: 0;
+/* Scene slug — the three current parameter state-phrases, rendered as
+   italic typography above the scene text. Not a dashboard; part of the
+   narrative frame. Replaces the former progress-pill topbar. */
+.scene-slug {
+  font: 400 italic 0.9375rem/1.55 'Fraunces', Georgia, serif;
+  font-variation-settings: 'opsz' 14, 'SOFT' 50;
+  color: var(--text-muted);
+  margin: 0.75rem 0 1.75rem;
+  padding: 0.5rem 0;
+  text-align: center;
   border-bottom: 1px solid var(--line);
-  margin-bottom: 1.75rem;
+  opacity: 0.95;
 }
-.param-pill {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 0.6rem 0.5rem 0.7rem;
-  border-right: 1px solid var(--line);
-  transition: color 0.3s;
+.scene-slug__phrase {
+  display: inline;
+  transition: color 0.5s, opacity 0.5s, letter-spacing 0.5s;
 }
-.param-pill:last-child { border-right: none; }
-.param-pill__name {
-  font: 600 0.625rem/1.1 'Inter', system-ui;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+.scene-slug__phrase + .scene-slug__phrase::before {
+  content: ' · ';
   color: var(--text-faint);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-style: normal;
+  margin: 0 0.15em;
 }
-.param-pill__dots {
-  display: flex;
-  gap: 4px;
+/* Just-moved phrase: fades in with stronger text colour for 2s. */
+.scene-slug__phrase--moved {
+  color: var(--text-dim);
+  animation: scene-slug-flash 2.2s ease-out forwards;
 }
-.param-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--text-faint);
-  opacity: 0.25;
-  transition: background 0.4s, opacity 0.4s;
+@keyframes scene-slug-flash {
+  0%   { color: var(--accent-bright); }
+  20%  { color: var(--accent-bright); }
+  100% { color: var(--text-muted); }
 }
-.param-dot--filled {
-  background: currentColor;
-  opacity: 1;
-}
-.param-pill__state {
-  font: 400 0.6875rem/1.2 'Inter', system-ui;
-  letter-spacing: 0.04em;
-  color: currentColor;
-  opacity: 0.8;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.param-pill--vital   { color: var(--state-vital); }
-.param-pill--waning  { color: var(--state-waning); }
-.param-pill--failing {
+/* Just-broke / at-worst phrase: uppercase, red, slightly wider letter-spacing. */
+.scene-slug__phrase--worst {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-style: normal;
   color: var(--state-failing);
-  animation: param-pulse 2s ease-in-out infinite;
+  font-weight: 500;
+}
+.scene-slug__phrase--just-broke {
+  animation: scene-slug-break 1.6s ease-out forwards;
+}
+@keyframes scene-slug-break {
+  0%   { color: var(--state-failing); text-shadow: 0 0 12px rgba(248, 113, 113, 0.6); }
+  100% { color: var(--state-failing); text-shadow: none; }
 }
 
 /* Loading */

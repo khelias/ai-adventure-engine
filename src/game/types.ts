@@ -49,6 +49,9 @@ export interface Parameter {
   // true for exactly one turn — the turn it transitions into its worst state.
   // Used by prompts to signal the AI that next scene must dramatize the consequence.
   justBroke?: boolean
+  // true for exactly one turn — any turn the state index actually moved.
+  // Drives the UI's 2-second "this one just shifted" highlight.
+  justMoved?: boolean
 }
 
 export interface ParameterCost {

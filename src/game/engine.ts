@@ -23,6 +23,7 @@ export function applyParameterChanges(
       ...p,
       currentStateIndex: next,
       justBroke: !wasAtWorst && isAtWorst,
+      justMoved: next !== p.currentStateIndex,
     }
   })
 }

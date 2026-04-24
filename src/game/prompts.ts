@@ -93,13 +93,25 @@ ROLES:
 - role.description: one sentence describing who this person is and their relevant skill/background.
 - role.ability: a single powerful one-time-use special ability. Clearly name the ability and what it does.
 
-Design EXACTLY THREE parameters — the mechanical spine of this story. Each MUST be a DIFFERENT archetype. **Players care about names, not meters — so EVERY parameter name must anchor to a named person, a named pair, or a specific named threat. No abstract qualities (Morale, Trust, Danger).**
+Design EXACTLY THREE parameters — the mechanical spine of this story. Each MUST be a DIFFERENT archetype drawn from the palette below. **Players care about names, not meters — so EVERY parameter name must anchor to a named person, a named pair, or a specific named threat. No abstract qualities (Morale, Trust, Danger).**
 
-Output-language examples below are shown in English; translate naturally into the target language while keeping the same anchoring pattern (specific person / pair / threat).
+Output-language examples below are shown in English; translate naturally into the target language while keeping the same anchoring pattern (specific person / pair / threat / fact).
 
-1. RESOURCE (depletes with action, rarely restored) — tie to a person whose body/state is at stake where plausible: "Mari's strength", "Kalev's sobriety", "Siret's wound". Group-wide resources are OK if the ownership feels concrete: "The group's food" (not "Food"), "The car's fuel" (not "Fuel"). Starts full, ends empty. Players spend it to act.
-2. BOND (shifts both ways from social/moral choices) — MUST name at least one pair or specific relation: "Mari & Jaan's trust", "Mother & son's bond", "The marriage". Can improve from sacrifice, collapse from betrayal. Never bare "Trust" or "Cooperation" — too abstract. Use gender-neutral framing when the relationship is generic.
-3. PRESSURE (escalates from events in the story) — an external threat, but made specific: "The zombie wave" (not "Danger"), "The infection's spread" (not "Risk"), "The village closing in". Only the AI's choice costs determine when this changes — there is no hidden per-turn automatic worsening.
+ARCHETYPE PALETTE — pick THREE that fit THIS story (not always the same three — match the genre and tone):
+
+- **RESOURCE** (depletes with action, rarely restored): "Mari's strength", "Kalev's sobriety", "The car's fuel". Starts full, ends empty.
+- **BOND** (shifts both ways from social/moral choices): "Mari & Jaan's trust", "Mother & son's bond", "The marriage". Names a pair or specific relation.
+- **PRESSURE** (escalates with events): "The zombie wave", "The village closing in", "The infection's spread". Named external threat.
+- **SECRET** (something hidden drifts toward exposure): "Mari's lie about the fire", "What Jaan did in the war", "The captain's true name". States track hidden → suspected → known → exposed.
+- **CURSE** (inevitable arc that specific action can interrupt): "The ring's hold on Kalev", "The ghost's claim on the house". Only a concrete counter-act can stall it.
+- **TIME** (ticks regardless, bounded by event): "Nightfall", "The tide", "The trial at dawn". Not every turn — at named thresholds.
+- **GUILT** (grows from specific choices, never shrinks): "What was done in the barn", "The unsigned letter". Once set, it only deepens.
+- **PROOF** (grows toward revelation via truth-seeking): "Evidence against the mayor", "Proof that the well was poisoned". Players push it up at cost to safety.
+- **PROMISE** (sworn oath with teeth if broken): "The vow to bring Liisa home", "The debt to old Mart". Broken = consequences.
+- **HUNGER** (external need that must be fed or be unmade): "The village's winter stores", "The furnace that keeps the frost out".
+- **DEBT** (unpaid obligation pursuing the group): "What the family owes Kask", "The blood price on Mari's name". Pursuer closes in.
+
+For a Fantasy ghost story, good shapes are often SECRET + CURSE + TIME — not RESOURCE + BOND + PRESSURE. For a zombie siege, RESOURCE + BOND + PRESSURE fits. For a Thriller, SECRET + PROOF + DEBT. Match the story. The three archetypes you pick MUST create a TRILEMMA — different axes, not three flavours of one pressure.
 
 PARAMETER FORMAT:
 - name: 1-4 words, SPECIFIC. Must include a person's name, a pair, or a named external threat. "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓ · "Trust" ✗ · "The zombie wave" ✓ · "Danger" ✗.
@@ -151,8 +163,8 @@ export function customStoryPrompt(args: {
   return `Based on this custom story idea: "${storyText}", generate ${players} thematically appropriate roles and 3 unique parameters for a ${genre} game. Each role needs a PROPER FIRST NAME (not a title), description, and a one-time-use ability.
 
 Parameter format (examples shown in English; translate naturally into the target language while keeping the same anchoring pattern):
-- name: 1-4 words, must anchor to a named person, pair, or specific threat — never abstract qualities. "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓ · "Trust" ✗ · "The zombie wave" ✓ · "Danger" ✗.
-- One parameter is a RESOURCE (depletes, tied to a person or concrete group possession), one is a BOND (names a pair or relation), one is a PRESSURE (specific external threat).
+- name: 1-4 words, must anchor to a named person, pair, specific threat, or concrete fact — never abstract qualities. "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓ · "Trust" ✗ · "The zombie wave" ✓ · "Danger" ✗.
+- Pick THREE archetypes from this palette that fit the story: RESOURCE (depletes), BOND (pair/relation), PRESSURE (external threat), SECRET (drifts toward exposure), CURSE (inevitable arc), TIME (bounded tick), GUILT (grows only), PROOF (toward revelation), PROMISE (sworn oath), HUNGER (must be fed), DEBT (pursuer closes).
 - states: 4 short phrases (2-4 words each) from best to worst — no full sentences.
 
 Output language must be ${LANG_PACKS[language].label}.`
@@ -185,7 +197,7 @@ export function sequelPrompt(args: {
   language: Language
 }): string {
   const { sequelText, oldRoles, language } = args
-  return `This is a sequel to a previous adventure. The story continues from this summary: "${sequelText}". The returning characters are: ${JSON.stringify(oldRoles)}. Please generate: 1. A new, unique, one-time-use special ability for EACH of the returning characters. The list of abilities must be in the same order as the characters. 2. Three completely new, unique parameters suitable for this sequel story. Parameter names MUST anchor to a named person from the returning cast, a named pair from them, or a specific named external threat — never abstract qualities. Examples in English (translate naturally into target language): "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓. Each parameter needs a name and 4 states from best to worst. Output language must be ${LANG_PACKS[language].label}.`
+  return `This is a sequel to a previous adventure. The story continues from this summary: "${sequelText}". The returning characters are: ${JSON.stringify(oldRoles)}. Please generate: 1. A new, unique, one-time-use special ability for EACH of the returning characters. The list of abilities must be in the same order as the characters. 2. Three completely new, unique parameters suitable for this sequel story. Parameter names MUST anchor to a named person from the returning cast, a named pair from them, a specific named external threat, or a concrete fact — never abstract qualities. Examples in English (translate naturally into target language): "Mari's strength" ✓ · "Strength" ✗ · "Mari & Jaan's trust" ✓. Pick three archetypes that fit the sequel — palette: RESOURCE (depletes), BOND (pair), PRESSURE (external threat), SECRET (drifts toward exposure), CURSE (inevitable arc), TIME (bounded tick), GUILT (grows only), PROOF (toward revelation), PROMISE (sworn oath), HUNGER (must be fed), DEBT (pursuer closes). Prefer a DIFFERENT mix from the first adventure — continuation feels fresh when the mechanical shape evolves. Each parameter needs a name and 4 states from best to worst. Output language must be ${LANG_PACKS[language].label}.`
 }
 
 // ----- Story phase pacing -----

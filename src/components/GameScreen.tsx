@@ -5,6 +5,30 @@ import { handlePlayerChoice } from '../game/actions'
 import type { Choice, Parameter } from '../game/types'
 import { LoadingDots } from './LoadingDots'
 
+// Scene slug: three current state-phrases rendered as a single italic line,
+// separated by middots. Replaces the former meter-pill dashboard. The state
+// phrase itself IS the information — no dots, no bars. Parameters that moved
+// this turn flash to the accent colour briefly; parameters at worst state
+// render uppercase in red. Drama lives in typography, not in progress bars.
+function SceneSlug({ parameters }: { parameters: Parameter[] }) {
+  return (
+    <div className="scene-slug" role="status" aria-label="parameter states">
+      {parameters.map((p) => {
+        const atWorst = p.currentStateIndex === p.states.length - 1
+        const classes = ['scene-slug__phrase']
+        if (atWorst) classes.push('scene-slug__phrase--worst')
+        if (p.justBroke) classes.push('scene-slug__phrase--just-broke')
+        else if (p.justMoved) classes.push('scene-slug__phrase--moved')
+        return (
+          <span key={p.name} className={classes.join(' ')}>
+            {p.states[p.currentStateIndex]}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
 export function GameScreen() {
   const language = useGameStore((s) => s.settings.language)
   const currentTurn = useGameStore((s) => s.currentTurn)
@@ -52,7 +76,7 @@ export function GameScreen() {
 
   return (
     <section>
-      {/* Top bar */}
+      {/* Top bar: turn counter only — parameters have moved into the scene slug */}
       <div className="topbar">
         <div className="topbar__turn">
           <span className="topbar__turn-num">
@@ -62,14 +86,8 @@ export function GameScreen() {
         </div>
       </div>
 
-      {/* Parameters */}
-      {parameters.length > 0 && (
-        <div className="param-bar">
-          {parameters.map((p) => (
-            <ParamPill key={p.name} param={p} />
-          ))}
-        </div>
-      )}
+      {/* Scene slug — parameter state-phrases as italic typography */}
+      {parameters.length > 0 && <SceneSlug parameters={parameters} />}
 
       {/* Scene text */}
       <div key={currentTurn} className="space-y-0">
@@ -181,35 +199,6 @@ export function GameScreen() {
         </p>
       ) : null}
     </section>
-  )
-}
-
-function paramClass(param: Parameter): string {
-  const maxIdx = param.states.length - 1
-  if (maxIdx === 0) return 'param-pill--vital'
-  const fill = (maxIdx - param.currentStateIndex) / maxIdx
-  if (fill > 0.66) return 'param-pill--vital'
-  if (fill > 0.33) return 'param-pill--waning'
-  return 'param-pill--failing'
-}
-
-function ParamPill({ param }: { param: Parameter }) {
-  const cls = paramClass(param)
-  const filledCount = param.states.length - param.currentStateIndex
-  const stateText = param.states[param.currentStateIndex]
-  return (
-    <div className={`param-pill ${cls}`}>
-      <span className="param-pill__name">{param.name}</span>
-      <span className="param-pill__dots">
-        {param.states.map((_, i) => (
-          <span
-            key={i}
-            className={`param-dot${i < filledCount ? ' param-dot--filled' : ''}`}
-          />
-        ))}
-      </span>
-      <span className="param-pill__state">{stateText}</span>
-    </div>
   )
 }
 
