@@ -20,7 +20,7 @@ import {
   isUnrecoverable,
   markAbilityUsed,
 } from './engine'
-import type { Story } from './types'
+import type { Choice, ParameterCost, Story } from './types'
 
 function t() {
   return translations[useGameStore.getState().settings.language]
@@ -131,7 +131,7 @@ export async function startGameAndFirstTurn(): Promise<void> {
 
 export async function handlePlayerChoice(
   choiceText: string,
-  opts: { isFirstTurn?: boolean; isFreeText?: boolean } = {},
+  opts: { isFirstTurn?: boolean; isFreeText?: boolean; chosenChoice?: Choice } = {},
 ): Promise<void> {
   const store = useGameStore.getState()
   store.setError(null)
@@ -148,6 +148,7 @@ export async function handlePlayerChoice(
       roles: store.roles,
       recentScenes: store.recentScenes,
       choiceText,
+      lastChoiceCost: opts.chosenChoice?.expectedChanges,
       language: store.settings.language,
       context: store.settings.context,
       isFreeText: opts.isFreeText,
@@ -171,7 +172,17 @@ export async function handlePlayerChoice(
       : store.roles
 
     const nextTurn = opts.isFirstTurn ? store.currentTurn : store.currentTurn + 1
-    const parametersAfter = applyParameterChanges(store.parameters, response.parameters ?? [])
+
+    // Apply the CHOICE's declared cost authoritatively — not whatever the AI
+    // wrote into response.parameters. The choice signed a contract when it
+    // was offered (expectedChanges); the engine honours that contract. If we
+    // trusted response.parameters, the AI could silently set all deltas to 0
+    // (observed: entire games with no parameter movement). Turn 1 and custom
+    // free text have no chosenChoice — we fall back to response.parameters
+    // there since the AI is the only source of truth.
+    const authoritativeChanges: ParameterCost[] =
+      opts.chosenChoice?.expectedChanges ?? response.parameters ?? []
+    const parametersAfter = applyParameterChanges(store.parameters, authoritativeChanges)
 
     // Unrecoverable = 2+ parameters at worst. Trigger AI-narrated ending.
     // A single parameter at worst is a phase transition, not a game-over.

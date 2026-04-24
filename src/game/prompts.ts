@@ -289,6 +289,10 @@ export function turnPrompt(args: {
   roles: Role[]
   recentScenes: string[]
   choiceText: string
+  // The declared cost of the choice the players just picked. Engine applies
+  // this directly; we pass it to the AI so the scene it writes NEXT visibly
+  // embodies exactly these deltas rather than inventing new ones.
+  lastChoiceCost?: { name: string; change: number }[]
   language: Language
   context: ContextInput
   isFreeText?: boolean
@@ -296,7 +300,8 @@ export function turnPrompt(args: {
 }): TurnPromptResult {
   const {
     currentTurn, maxTurns, genre, title, summary,
-    parameters, roles, recentScenes, choiceText, language, context, isFreeText, forceEnd,
+    parameters, roles, recentScenes, choiceText, lastChoiceCost,
+    language, context, isFreeText, forceEnd,
   } = args
 
   const phase = getStoryPhase(currentTurn, maxTurns)
@@ -348,9 +353,11 @@ Only omit target when the cost is genuinely collective or falls on the actor the
 
 6. CHOICES DECLARE THEIR COST. Each choice is a TRADE — write the cost into the choice text itself AND fill expectedChanges to match. The text and expectedChanges MUST agree in sign: if the text implies spending X, then X's expectedChange must be negative. NEVER output a choice whose expectedChanges are all zero or all positive — there must be at least one negative cost. The UI no longer shows numeric costs to players — the TEXT must carry the implication ("Mari opens the door loudly" → pressure clearly rises; "Jaan drives back to the gas station" → fuel clearly drops). Do not spell the numeric cost in prose ("we spend 2 fuel") — let the action speak.
 
-7. TRILEMMA — three orthogonal moral axes, not three flavours of one question. The 3 choices must each test a DIFFERENT kind of decision. Think of the axes as: (a) courage vs. caution (who takes the risk), (b) loyalty vs. pragmatism (is someone sacrificed so others survive), (c) truth vs. concealment (is a secret revealed or hidden). At least two of the three axes must appear across the three choices. Two choices that test the same axis (even via different actions) are a design failure — rewrite one to test a different axis. They must also touch a DIFFERENT combination of parameters.
+7. ALWAYS OUTPUT EXACTLY 3 CHOICES — no more, no less, on every single turn unless forceEnd is set in this prompt. A blank choices array is a hard error: the game freezes on the client. Even on the final turn (where you will also set gameOver: true), still output 3 plausible last-gasp actions — the engine reads gameOver to end the run and never renders the choices. There is NO scenario short of forceEnd where empty choices is acceptable.
 
-8. NO HIDDEN RULES. All parameter changes you apply must come from the chosen action's consequences that are visible to the player in the scene and choices. Do NOT auto-degrade any parameter "because time passed". If pressure should rise, write it into the scene's narrated events or the choice costs — never as silent drift.
+TRILEMMA — three orthogonal moral axes, not three flavours of one question. The 3 choices must each test a DIFFERENT kind of decision. Think of the axes as: (a) courage vs. caution (who takes the risk), (b) loyalty vs. pragmatism (is someone sacrificed so others survive), (c) truth vs. concealment (is a secret revealed or hidden). At least two of the three axes must appear across the three choices. Two choices that test the same axis (even via different actions) are a design failure — rewrite one to test a different axis. They must also touch a DIFFERENT combination of parameters.
+
+8. PARAMETER CHANGES ARE ALREADY APPLIED. The engine honoured the chosen action's declared cost (expectedChanges) the moment players picked it — those deltas are LOCKED IN before you write this scene. If this turn's prompt lists "APPLIED CHANGES", those deltas are already in effect. Your scene MUST make the consequences VISIBLE: show what happens in the world because of those deltas. Do NOT narrate "nothing really happened" or skip over the cost — whatever the choice cost, it already cost. The response.parameters field still exists in the schema; echo the applied deltas there for consistency (the engine will ignore them but fellow tools read them for logs).
 
 9. parameter.change semantics: +1 = better (index toward best), -1 = worse (index toward worst). Use ±2 ONLY at climax or when a choice is explicitly extreme (all-or-nothing). Never ±2 in setup or inciting.
 
@@ -420,12 +427,19 @@ Write the final scene NOW:
 
   const phaseLine = forceEnd === 'unrecoverable' ? '' : `${phaseInstruction(phase)}\n`
 
+  const appliedChangesBlock = lastChoiceCost && lastChoiceCost.length > 0
+    ? `APPLIED CHANGES (engine already applied these deltas from the players' last choice — CURRENT PARAMETER STATES above already reflect them; your scene MUST show the consequence visibly):\n${lastChoiceCost
+        .filter((c) => c.change !== 0)
+        .map((c) => `- ${c.name}: ${c.change > 0 ? '+' : ''}${c.change}`)
+        .join('\n')}\n\n`
+    : ''
+
   const user = `TURN ${currentTurn} / ${maxTurns}
 
 ${langReminder}${phaseLine}${forceEndBlock}${recentScenesBlock}CURRENT PARAMETER STATES:
 ${currentStates}
 
-${abilitiesLine}
+${appliedChangesBlock}${abilitiesLine}
 
 ${choiceLine}${freeTextNote}`
 

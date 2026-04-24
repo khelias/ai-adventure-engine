@@ -216,6 +216,7 @@ async function main() {
   let parameters: Parameter[] = story.parameters.map((p) => ({ ...p, currentStateIndex: 0 }))
   const recentScenes: string[] = []
   let nextChoice = LANG_PACKS[language].gameStartChoice
+  let lastPicked: Choice | null = null
   let endReason: 'narrative' | 'parametric' | 'maxTurns' | 'api-error' = 'maxTurns'
 
   // ---- Turn loop ----
@@ -237,6 +238,7 @@ async function main() {
       roles,
       recentScenes,
       choiceText: nextChoice,
+      lastChoiceCost: lastPicked?.expectedChanges,
       language,
       context: ctx,
     })
@@ -257,8 +259,13 @@ async function main() {
     log('')
     log(`> ${r.scene.replace(/\n+/g, '\n> ')}`)
     log('')
-    const deltas = Array.isArray(r.parameters) ? r.parameters : []
-    log(`**Param deltas**: ${deltas.map((p) => `${p.name}:${p.change >= 0 ? '+' : ''}${p.change}`).join(', ') || '(none)'}`)
+    const aiDeltas = Array.isArray(r.parameters) ? r.parameters : []
+    const appliedDeltas = lastPicked?.expectedChanges ?? aiDeltas
+    log(`**Applied deltas** (from picked choice): ${appliedDeltas.map((p) => `${p.name}:${p.change >= 0 ? '+' : ''}${p.change}`).join(', ') || '(none)'}`)
+    if (aiDeltas.length > 0 && lastPicked) {
+      const aiStr = aiDeltas.map((p) => `${p.name}:${p.change >= 0 ? '+' : ''}${p.change}`).join(', ')
+      log(`_AI also echoed:_ ${aiStr}`)
+    }
     log('')
     const choices = Array.isArray(r.choices) ? r.choices : []
     if (!Array.isArray(r.choices)) {
@@ -291,7 +298,11 @@ async function main() {
 
     recentScenes.push(r.scene)
     if (recentScenes.length > 3) recentScenes.shift()
-    parameters = applyParameterChanges(parameters, deltas)
+    // Apply the LAST PICKED choice's declared cost — mirrors actions.ts where
+    // the engine honours the choice contract instead of trusting whatever
+    // the AI wrote into response.parameters. On turn 1 lastPicked is null,
+    // and AI-echoed deltas (aiDeltas) are the only signal — usually empty.
+    parameters = applyParameterChanges(parameters, appliedDeltas)
 
     const justBroke = findJustBrokenParameters(parameters)
     if (justBroke.length > 0) {
@@ -354,6 +365,7 @@ async function main() {
       roles = roles.map((role) => (role.id === picked.actor ? { ...role, used: true } : role))
     }
     nextChoice = picked.text
+    lastPicked = picked
     log(`**→ Strategy "${strategy}" picks:** ${picked.text}`)
     log('')
     log(`---`)

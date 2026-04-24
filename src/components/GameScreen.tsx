@@ -34,9 +34,9 @@ export function GameScreen() {
         language === 'et'
           ? `[${role.name}] Kasuta erioskust: ${role.ability}`
           : `[${role.name}] Use special ability: ${role.ability}`
-      void handlePlayerChoice(abilityText)
+      void handlePlayerChoice(abilityText, { chosenChoice: choice })
     } else {
-      void handlePlayerChoice(choice.text)
+      void handlePlayerChoice(choice.text, { chosenChoice: choice })
     }
   }
 
