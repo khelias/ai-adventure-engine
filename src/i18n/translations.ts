@@ -132,6 +132,12 @@ interface StringTable {
   secretsAssignIntro: string
   secretsAssignWarning: string
   secretsPassPhoneTo: (name: string) => string
+  secretsHandoffTitle: (name: string) => string
+  secretsHandoffMeta: (current: number, total: number) => string
+  secretsPrivacyNote: string
+  secretsDossierLabel: string
+  secretsGoalTypeLabel: string
+  secretsTargetLabel: string
   secretsRevealBtn: (name: string) => string
   secretsRememberBtn: string
   secretsHideBtn: string
@@ -295,7 +301,13 @@ export const translations: Record<Language, StringTable> = {
     secretsAssignIntro: 'Igaüks saab ühe salajase eesmärgi. Teised ei tohi näha.',
     secretsAssignWarning: 'Teised, pöörake selg. Ära piilu üle õla.',
     secretsPassPhoneTo: (name) => `Telefon järgmisele mängijale: ${name}.`,
-    secretsRevealBtn: (name) => `${name}, vajuta kui oled üksi`,
+    secretsHandoffTitle: (name) => `Telefon ${name} kätte`,
+    secretsHandoffMeta: (current, total) => `Mängija ${current} / ${total}`,
+    secretsPrivacyNote: 'Ava kaart ainult siis, kui teised ei näe ekraani.',
+    secretsDossierLabel: 'Salajane toimik',
+    secretsGoalTypeLabel: 'Eesmärgi tüüp',
+    secretsTargetLabel: 'Seotud parameeter',
+    secretsRevealBtn: (name) => `${name}, ava salajane kaart`,
     secretsRememberBtn: 'Hoian meeles — anna edasi',
     secretsHideBtn: 'Peida',
     secretsRevealKicker: 'saladused paljastatud',
@@ -479,7 +491,13 @@ export const translations: Record<Language, StringTable> = {
     secretsAssignIntro: 'Each player gets one secret goal. No one else may see it.',
     secretsAssignWarning: 'Others, turn your backs. No peeking over the shoulder.',
     secretsPassPhoneTo: (name) => `Phone to next player: ${name}.`,
-    secretsRevealBtn: (name) => `${name}, tap when alone`,
+    secretsHandoffTitle: (name) => `Hand the phone to ${name}`,
+    secretsHandoffMeta: (current, total) => `Player ${current} / ${total}`,
+    secretsPrivacyNote: 'Open the card only when no one else can see the screen.',
+    secretsDossierLabel: 'Secret dossier',
+    secretsGoalTypeLabel: 'Goal type',
+    secretsTargetLabel: 'Linked parameter',
+    secretsRevealBtn: (name) => `${name}, open your secret card`,
     secretsRememberBtn: 'Got it — pass it on',
     secretsHideBtn: 'Hide',
     secretsRevealKicker: 'secrets revealed',

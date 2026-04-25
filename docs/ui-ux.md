@@ -110,6 +110,10 @@ Secrets are pass-the-phone interactions. Only one player should see their secret
 at a time, and the UI should make the privacy ritual obvious without a long
 explanation.
 
+The hidden state should feel like a handoff moment: phone owner, progress, and
+privacy cue in one focused surface. The revealed state should feel materially
+different, like opening a classified goal card.
+
 ### Gameplay
 
 The gameplay screen must prioritize:
@@ -171,6 +175,7 @@ Strong:
 - The final setup screen gives useful review before generation.
 - Story selection now previews both premise and mechanics.
 - Role assignment now reads as cast setup instead of a plain form.
+- Secret distribution now has distinct handoff and dossier states.
 
 Needs continued playtest attention:
 

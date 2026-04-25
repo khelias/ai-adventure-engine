@@ -4,6 +4,7 @@ import { translations } from '../i18n/translations'
 import { generateSequel } from '../game/actions'
 import { LoadingDots } from './LoadingDots'
 import { downloadTranscript } from '../game/transcript'
+import { SecretSigil } from './SecretSigil'
 
 export function GameOverScreen() {
   const language = useGameStore((s) => s.settings.language)
@@ -76,32 +77,45 @@ export function GameOverScreen() {
       </div>
 
       {hasSecrets && (
-        <div className="final-panel fade-in">
-          <div className="text-center">
+        <div className="final-panel final-panel--secrets fade-in">
+          <div className="secret-results-header">
             <p className="type-caps">{strings.secretsRevealKicker}</p>
             <h3 className="final-panel-title">{strings.secretsRevealIntro}</h3>
           </div>
-          <div className="space-y-3">
+          <div className="secret-results-grid">
             {roles.map((r) => {
               const s = secrets.find((x) => x.ownerRoleId === r.id)
               if (!s) return null
+              const won = s.result === 'won'
+
               return (
                 <div
                   key={r.id}
-                  className={`secret-result-card ${s.result === 'won' ? 'secret-result-card--won' : ''}`}
+                  className={`secret-result-card ${won ? 'secret-result-card--won' : 'secret-result-card--lost'}`}
                 >
                   <div className="secret-result-card__head">
-                    <span className="secret-result-card__name">{r.name}</span>
-                    <span className={`type-caps secret-result-card__result ${s.result === 'won' ? 'won' : 'lost'}`}>
-                      {s.result === 'won' ? strings.secretsResultWon : strings.secretsResultLost}
+                    <div className="secret-result-card__identity">
+                      <SecretSigil archetype={s.archetype} />
+                      <div>
+                        <span className="secret-result-card__name">{r.name}</span>
+                        <span className="secret-result-card__role">
+                          {strings.secretArchetypeName(s.archetype)}
+                        </span>
+                      </div>
+                    </div>
+                    <span className={`type-caps secret-result-card__result ${won ? 'won' : 'lost'}`}>
+                      {won ? strings.secretsResultWon : strings.secretsResultLost}
                     </span>
-                  </div>
-                  <div className="secret-result-card__role">
-                    {strings.secretArchetypeName(s.archetype)}
                   </div>
                   <div className="secret-result-card__desc">
                     {strings.secretDescription(s.archetype, s.paramName)}
                   </div>
+                  {s.paramName ? (
+                    <div className="secret-result-card__target">
+                      <span>{strings.secretsTargetLabel}</span>
+                      <strong>{s.paramName}</strong>
+                    </div>
+                  ) : null}
                 </div>
               )
             })}
