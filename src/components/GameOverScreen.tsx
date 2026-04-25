@@ -139,6 +139,7 @@ export function GameOverScreen() {
                   color: currentRevealSecret.result === 'won' ? 'var(--accent)' : 'var(--state-failing)',
                   margin: 0,
                   letterSpacing: '0.05em',
+                  textTransform: 'uppercase' as const,
                 }}>
                   {currentRevealSecret.result === 'won' ? strings.secretsResultWon : strings.secretsResultLost}
                 </p>

@@ -171,18 +171,17 @@ export function SetupScreen() {
       {/* Players */}
       <div className="setup-section">
         <span className="setup-label">{strings.playerCountQuestion}</span>
-        <div className="player-btns">
+        <div className="seg-group">
           {[3, 4, 5, 6].map((n) => (
             <button
               key={n}
               type="button"
-              className={`player-btn${players === n ? ' active' : ''}`}
+              className={`seg-btn seg-btn--num${players === n ? ' active' : ''}`}
               onClick={() => setSetting('players', n)}
               aria-pressed={players === n}
               aria-label={strings.playersAriaLabel(n)}
             >
-              <span className="player-btn__num">{n}</span>
-              <span className="player-btn__dot" />
+              {n}
             </button>
           ))}
         </div>
@@ -191,19 +190,17 @@ export function SetupScreen() {
       {/* Duration */}
       <div className="setup-section">
         <span className="setup-label">{strings.durationQuestion}</span>
-        <div className="duration-btns">
-          {DURATION_OPTIONS.map((d, i) => (
-            <div key={d.value} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              {i > 0 && <span className="duration-sep">·</span>}
-              <button
-                type="button"
-                className={`duration-btn${duration === d.value ? ' active' : ''}`}
-                onClick={() => setSetting('duration', d.value)}
-                aria-pressed={duration === d.value}
-              >
-                {getDurationWord(d.labelKey)}
-              </button>
-            </div>
+        <div className="seg-group">
+          {DURATION_OPTIONS.map((d) => (
+            <button
+              key={d.value}
+              type="button"
+              className={`seg-btn${duration === d.value ? ' active' : ''}`}
+              onClick={() => setSetting('duration', d.value)}
+              aria-pressed={duration === d.value}
+            >
+              {getDurationWord(d.labelKey)}
+            </button>
           ))}
         </div>
       </div>
@@ -237,7 +234,7 @@ export function SetupScreen() {
         </div>
         <div className="ctx-field">
           <span className="ctx-label">{strings.vibeLabel}</span>
-          <div className="ctx-vibe-btns">
+          <div className="seg-group">
             {(
               [
                 { value: '' as Vibe, label: strings.vibeBtnAny },
@@ -249,7 +246,7 @@ export function SetupScreen() {
               <button
                 key={v.value}
                 type="button"
-                className={`ctx-vibe-btn${ctx.vibe === v.value ? ' active' : ''}`}
+                className={`seg-btn${ctx.vibe === v.value ? ' active' : ''}`}
                 onClick={() => setCtx({ vibe: v.value })}
               >
                 {v.label}
@@ -299,12 +296,12 @@ export function SetupScreen() {
           {/* Provider — technical, just here for debugging a stuck game */}
           <div className="ctx-provider">
             <span className="ctx-label">{strings.providerLabel}</span>
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div className="seg-group" style={{ maxWidth: '16rem' }}>
               {(['claude', 'gemini'] as const).map((p) => (
                 <button
                   key={p}
                   type="button"
-                  className={`ctx-vibe-btn${settings.provider === p ? ' active' : ''}`}
+                  className={`seg-btn${settings.provider === p ? ' active' : ''}`}
                   onClick={() => setSetting('provider', p)}
                 >
                   {p === 'claude' ? 'Claude' : 'Gemini'}

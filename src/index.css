@@ -277,75 +277,48 @@ body {
 }
 .setup-section--tell .ctx-field { margin-top: 0.25rem; }
 
-/* Player count — big Fraunces numbers */
-.player-btns {
+/* Segmented control — pill-group for single-select options */
+.seg-group {
   display: flex;
-  gap: 1.75rem;
+  width: 100%;
+  gap: 2px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px;
 }
-.player-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem 0.375rem;
-  -webkit-tap-highlight-color: transparent;
-  transition: opacity 0.2s;
-}
-.player-btn__num {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 2.25rem;
-  font-weight: 300;
-  font-variation-settings: 'opsz' 72;
-  line-height: 1;
-  color: var(--text-faint);
-  transition: color 0.2s ease;
-  user-select: none;
-}
-.player-btn.active .player-btn__num { color: var(--text); }
-.player-btn__dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
+.seg-btn {
+  flex: 1;
   background: transparent;
-  transition: background 0.2s ease, box-shadow 0.2s;
-}
-.player-btn.active .player-btn__dot {
-  background: var(--accent);
-  box-shadow: 0 0 6px var(--accent-glow);
-}
-
-/* Duration */
-.duration-btns {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-.duration-sep {
-  color: var(--text-faint);
-  font-size: 0.75rem;
-  user-select: none;
-}
-.duration-btn {
-  background: none;
   border: none;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  letter-spacing: 0.1em;
+  font: 500 0.8125rem/1 'Inter', system-ui;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-faint);
   padding: 0.625rem 0.5rem;
   min-height: 44px;
   display: inline-flex;
   align-items: center;
-  transition: color 0.2s ease;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 }
-.duration-btn.active { color: var(--accent); }
-.duration-btn:hover:not(.active) { color: var(--text-muted); }
+.seg-btn.active {
+  background: var(--surface-raised);
+  color: var(--accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+.seg-btn:hover:not(.active) { color: var(--text-muted); }
+.seg-btn--num {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 300;
+  font-variation-settings: 'opsz' 72;
+  letter-spacing: 0;
+  text-transform: none;
+  min-height: 52px;
+}
 
 /* BEGIN */
 .btn-begin {
@@ -421,29 +394,6 @@ body {
   color: var(--text-muted);
   margin-bottom: 0.4rem;
 }
-.ctx-vibe-btns {
-  display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  flex-wrap: wrap;
-}
-.ctx-vibe-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  color: var(--text-faint);
-  padding: 0.625rem 0.5rem;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  transition: color 0.2s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-.ctx-vibe-btn.active { color: var(--accent); }
-.ctx-vibe-btn:hover:not(.active) { color: var(--text-muted); }
 
 /* Shared ghost-link button: tertiary actions, italic Fraunces, muted.
    Replaces ~5 inline-styled buttons that all had sub-tap-target size. */
