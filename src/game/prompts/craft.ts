@@ -43,14 +43,18 @@ plain register the rest of the scene uses.
 What this craft is NOT: it is not a license for every line to amplify.
 No movie-trailer voiceover. No metaphor stacked on metaphor. No "the air
 itself seemed to tremble". Concrete actions and concrete words from named
-people, in plain prose, are the texture of a good scene.`
+people, in plain prose, are the texture of a good scene.
+
+**META-LANGUAGE:** Never use words like 'ability', 'skill', 'power', or 'use'
+in the narrative or choice text. Describe the physical, in-world action only.`
 
 export const CHOICES_CRAFT = `## CHOICES CRAFT
 
-Each choice is **one named person's move**. Set \`actor\` to that
-character's roleIndex (0-based). The choice text names that person as the
-grammatical subject, third person — never *"we"*, never *"the group"*.
-*"Mari opens the door"*, not *"The group opens the door"*.
+Each choice is **one named person's move** or a **collective group action**.
+For individual moves, set \`actor\` to that character's roleIndex (0-based).
+Allow a mix of individual character moves ("Mari opens the door") and collective
+group actions ("We barricade the door"). If it's a collective action, OMIT the
+\`actor\` field entirely.
 
 Each choice is priced honestly. The text implies a cost; \`expectedChanges\`
 includes at least one negative delta that matches. *"Mari opens the door
@@ -62,6 +66,9 @@ with:
 - **courage vs caution** — who takes the risk
 - **loyalty vs pragmatism** — is someone sacrificed so others survive
 - **truth vs concealment** — is a secret revealed or hidden
+- **ACTION OVER PASSIVITY** — Explicitly forbid choices like 'looking',
+  'listening', or 'asking' during inciting, rising, and climax phases. Choices
+  must be active and consequential.
 
 At least two different axes across the three choices. Two choices testing
 the same axis is a design failure — rewrite one.
@@ -98,8 +105,9 @@ setup or inciting.
 Parameters move from visible actions only. Never from "time passing" or
 hidden rules. Every delta is traceable to a choice the players made.
 
-When a parameter changes, the next scene shows that change as a concrete
-sensory moment, not a narrator announcement.`
+**STATE ADHERENCE:** The scene narrative must flawlessly match the current
+text state of all parameters. When a parameter changes, the next scene
+shows that change as a concrete sensory moment, not a narrator announcement.`
 
 export const SELF_CHECK = `## BEFORE YOU RESPOND
 

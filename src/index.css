@@ -497,6 +497,17 @@ body {
   display: inline;
   transition: color 0.5s, opacity 0.5s, letter-spacing 0.5s;
 }
+.scene-slug__name {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: inherit;
+  opacity: 0.6;
+  font-style: normal;
+  margin-right: 0.25em;
+}
 .scene-slug__phrase + .scene-slug__phrase::before {
   content: ' · ';
   color: var(--text-faint);

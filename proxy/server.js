@@ -1,9 +1,11 @@
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
 const { ET_STYLE_GUIDE } = require('./et-style-guide');
+const crypto = require('crypto');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
+const API_SECRET = process.env.API_SECRET || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
 const DEFAULT_PROVIDER = process.env.DEFAULT_PROVIDER || 'claude';
@@ -20,7 +22,13 @@ const geminiUrl = (model) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
 
 const app = express();
-app.use(express.json({ limit: '1mb', type: '*/*' }));
+app.use(express.json({ 
+  limit: '1mb', 
+  type: '*/*',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 
 // ---- Abuse protections ----
 //
@@ -113,6 +121,16 @@ app.post('/gemini', async (req, res) => {
 app.post('/generate', async (req, res) => {
   if (!isAllowedOrigin(req)) {
     return res.status(403).json({ error: 'Origin not allowed' });
+  }
+  if (API_SECRET) {
+    const signature = req.headers['x-adventure-signature'];
+    if (!signature) {
+      return res.status(401).json({ error: 'Missing signature' });
+    }
+    const expected = crypto.createHmac('sha256', API_SECRET).update(req.rawBody).digest('hex');
+    if (signature !== expected) {
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
   }
   const { prompt, schema, provider = DEFAULT_PROVIDER, systemPrompt, language } = req.body || {};
   if (typeof prompt !== 'string' || !prompt || typeof schema !== 'object' || !schema) {
@@ -213,8 +231,9 @@ app.post('/generate', async (req, res) => {
 
     const ms = Date.now() - t0;
     const cacheHit = result.cacheHit;
+    const tokens = result.tokens || { in: 0, out: 0 };
     console.log(
-      `proxy ok: provider=${provider} model=${result.model} ms=${ms}${cacheHit != null ? ` cache=${cacheHit}` : ''}${editorApplied ? ` editor=${editorMs}ms` : ''}${retried ? ` retried=${retried}` : ''}${coercedGameOver ? ' coerced-gameover' : ''}`,
+      `proxy ok: provider=${provider} model=${result.model} ms=${ms} in=${tokens.in} out=${tokens.out}${cacheHit != null ? ` cache=${cacheHit}` : ''}${editorApplied ? ` editor=${editorMs}ms` : ''}${retried ? ` retried=${retried}` : ''}${coercedGameOver ? ' coerced-gameover' : ''}`,
     );
     res.json({ provider, model: result.model, data: result.data });
   } catch (err) {
@@ -388,7 +407,7 @@ async function callClaude({ prompt, schema, systemPrompt }) {
   }
   const createParams = {
     model: CLAUDE_MODEL,
-    max_tokens: 16000,
+    max_tokens: 2000,
     tools: [
       {
         name: 'respond',
@@ -410,7 +429,7 @@ async function callClaude({ prompt, schema, systemPrompt }) {
   }
   const usage = message.usage;
   const cacheHit = usage?.cache_read_input_tokens > 0 ? `${usage.cache_read_input_tokens}tok` : 'miss';
-  return { model: CLAUDE_MODEL, data: toolUse.input, cacheHit };
+  return { model: CLAUDE_MODEL, data: toolUse.input, cacheHit, tokens: { in: usage?.input_tokens || 0, out: usage?.output_tokens || 0 } };
 }
 
 async function callGemini({ prompt, schema, systemPrompt }) {
@@ -447,7 +466,8 @@ async function callGemini({ prompt, schema, systemPrompt }) {
     if (!text) {
       throw new Error('Gemini returned an empty response');
     }
-    return { model: GEMINI_MODEL, data: JSON.parse(text) };
+    const usageMetadata = body?.usageMetadata || {};
+    return { model: GEMINI_MODEL, data: JSON.parse(text), tokens: { in: usageMetadata.promptTokenCount || 0, out: usageMetadata.candidatesTokenCount || 0 } };
   } finally {
     clearTimeout(timer);
   }

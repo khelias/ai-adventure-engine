@@ -211,9 +211,17 @@ export async function handlePlayerChoice(
     // mark the ability used BEFORE calling the AI so the prompt's AVAILABLE
     // ABILITIES block doesn't silently re-offer the ability the player just
     // used (observed: same one-time-use ability shown twice in adjacent turns).
+    let abilityActorId = opts.chosenChoice?.isAbility ? opts.chosenChoice.actor : null
+    // Fallback: if AI flagged isAbility=true but omitted the actor, try to find
+    // which role's ability matches the choice text to ensure it gets marked used.
+    if (opts.chosenChoice?.isAbility && typeof abilityActorId !== 'number') {
+      const match = store.roles.find(r => opts.chosenChoice!.text.includes(r.name) || opts.chosenChoice!.text.includes(r.ability))
+      if (match) abilityActorId = match.id
+    }
+
     const rolesAfterAbility =
-      opts.chosenChoice?.isAbility && typeof opts.chosenChoice.actor === 'number'
-        ? markAbilityUsedById(store.roles, opts.chosenChoice.actor)
+      typeof abilityActorId === 'number'
+        ? markAbilityUsedById(store.roles, abilityActorId)
         : store.roles
 
     // For chosenChoice turns we know the deltas upfront — preview the

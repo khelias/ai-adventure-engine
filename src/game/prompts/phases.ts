@@ -69,6 +69,11 @@ The story is winding down. Resolution is a TWO-BEAT arc:
   became. The \`scene\` field can stay short — \`gameOverText\` carries
   the weight. Output empty \`choices\`.
 
+**CRITICAL RULE**: You MUST strictly read the \`currentStateIndex\` and text of
+all parameters before writing the \`gameOverText\`. If threats are low (e.g.,
+index 0 or 1), the ending MUST be safe/triumphant. Tragic endings are ONLY
+allowed if parameters have actually collapsed to their worst states.
+
 To know which beat you're on: compare \`currentTurn\` with \`maxTurns\` in
 the turn header above.`
   }

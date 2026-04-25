@@ -105,7 +105,7 @@ export const turnSchema: JsonSchema = {
             },
           },
         },
-        required: ['text', 'isAbility', 'actor', 'expectedChanges'],
+        required: ['text', 'isAbility', 'expectedChanges'],
       },
     },
     gameOver: { type: 'BOOLEAN' },

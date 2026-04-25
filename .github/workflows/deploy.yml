@@ -19,7 +19,12 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build
+        run: |
+          if [ -f /home/khe/homelab/services/apps/games/.env ]; then
+            export $(grep -v '^#' /home/khe/homelab/services/apps/games/.env | xargs)
+            export VITE_API_SECRET=$API_SECRET
+          fi
+          npm run build
 
       - name: Deploy frontend
         run: |

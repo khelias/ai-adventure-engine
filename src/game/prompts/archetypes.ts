@@ -69,4 +69,8 @@ OBSERVABLE — something a character would see or feel. Good: "Tank full",
 When a parameter is tied to ONE specific character (resource and guilt and
 curse often are), set its \`ownerRoleId\` to that character's 0-based
 roleIndex. Leave \`ownerRoleId\` unset for parameters about a pair (bond),
-an external threat (pressure), or a shared fact.`
+an external threat (pressure), or a shared fact.
+
+At least ONE parameter MUST represent a global environmental condition or the
+group's collective state (e.g., "Shelter Defenses", "Group Morale") and must
+NOT have an \`ownerRoleId\`.`

@@ -170,7 +170,7 @@ words. Different actors, different stakes, different verbs.
 
 ${lastTurnChoices
   .map((c, i) => {
-    const actorName = roles[c.actor]?.name ?? `role ${c.actor}`
+    const actorName = typeof c.actor === 'number' ? (roles[c.actor]?.name ?? `role ${c.actor}`) : 'The group'
     const costSummary = c.expectedChanges
       .filter((e) => e.change !== 0)
       .map((e) => `${e.name} ${e.change > 0 ? '+' : ''}${e.change}`)
@@ -224,6 +224,11 @@ Write the ending NOW:
   group's ending — honor the journey, do not narrate around it.
 - The \`scene\` field can be short — \`gameOverText\` carries the weight.
 - Output empty \`choices\`.
+
+**CRITICAL RULE**: You MUST strictly read the \`currentStateIndex\` and text of
+all parameters before writing the \`gameOverText\`. If threats are low (e.g.,
+index 0 or 1), the ending MUST be safe/triumphant. Tragic endings are ONLY
+allowed if parameters have actually collapsed to their worst states.
 
 The story does NOT continue. Do not offer choices. Do not set
 \`gameOver: false\`. There is exactly one valid response shape on this

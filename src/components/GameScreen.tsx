@@ -22,6 +22,7 @@ function SceneSlug({ parameters }: { parameters: Parameter[] }) {
         else if (p.justMoved) classes.push('scene-slug__phrase--moved')
         return (
           <span key={p.name} className={classes.join(' ')}>
+            <span className="scene-slug__name">{p.name}: </span>
             {p.states[p.currentStateIndex]}
           </span>
         )
@@ -52,7 +53,7 @@ export function GameScreen() {
   const onChoice = (choice: Choice) => {
     setShowCustomInput(false)
     setCustomText('')
-    if (choice.isAbility && choice.actor !== undefined) {
+    if (choice.isAbility && typeof choice.actor === 'number') {
       const role = roles[choice.actor]
       if (!role || role.used) return
       const abilityText =
@@ -121,7 +122,7 @@ export function GameScreen() {
               <div>
                 {choices.map((choice, i) => {
                   const actorRole =
-                    choice.actor !== undefined ? roles[choice.actor] : null
+                    typeof choice.actor === 'number' ? roles[choice.actor] : null
                   const isUsed = choice.isAbility && actorRole ? actorRole.used : false
                   return (
                     <button
