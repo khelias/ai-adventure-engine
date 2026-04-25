@@ -1,96 +1,140 @@
 # AI Adventure Engine
 
-An AI-driven group adventure game for 3–6 players — live at **[games.khe.ee/adventure](https://games.khe.ee/adventure/)**.
+AI Adventure Engine is a web-based party adventure game for 3-6 players, live
+at [games.khe.ee/adventure](https://games.khe.ee/adventure/).
 
-Pick a genre. Name your characters. One person reads aloud while the group decides what happens next.
+One person reads the story aloud, the group debates the next move, and the AI
+continues the adventure. The game is designed for a real table: fast setup,
+private objectives, visible shared pressure, and short turns that keep the room
+moving.
 
----
+## Why This Project Exists
 
-## How it works
+This is both a playable game and a reference project for building AI-backed
+consumer software with clear architecture boundaries.
 
-The game runs in turns. Each turn the AI narrates a story beat and presents choices. The group discusses, picks one (or writes their own), and the story continues. A full game runs 20–40 minutes depending on the chosen duration.
+The interesting parts are not just "call an LLM":
 
-Setup is split into short steps: genre, players and duration, current
-location and mood, then one optional detail the story may weave in. The
-location prompt is deliberately local — "where are you right now?" — so the
-first generated story already feels connected to the table.
+- AI output is constrained by canonical schemas and proxy-side allowlists.
+- Game mechanics are app-owned; the model narrates, but the engine applies
+  parameter state and secret scoring.
+- Cost is a product requirement, so Gemini 2.5 Flash is the default and Claude
+  is hidden as an opt-in quality mode.
+- Estonian prose gets a separate editor pass because good local language quality
+  matters more than raw model impressiveness.
+- Prompt design, model selection, and API contracts are documented as first-class
+  engineering decisions.
 
-## Design
+## Product Shape
 
-The interface is built around a concept called **Séance**: a dark, still space lit by a single violet beam. The goal was a UI that reads like a quality product rather than a typical game app, with maximum readability for story text (one person reads aloud to a group of 3–6).
+Setup is split into four focused steps:
 
-- Near-black background (`#0a0913`) with violet accent (`#a78bfa`) — same family as the parent [games.khe.ee](https://games.khe.ee)
-- **Fraunces** variable serif for story text and choices — high readability at phone sizes, literary feel without being costume-y
-- **Inter** for all UI chrome
-- Setup screen: four focused steps rather than one crowded form
-- Ambient breathing glow (8s opacity cycle on `body::before`), staggered paragraph fade-in on each new scene
-- Parameter states shown in a compact board with icons, progress, and recent-change feedback
-- Special abilities are spent through a separate player action, not mixed into the three normal choices
-- End-game secrets ritual: "Pass the phone" mechanics ensuring tabletop friction and asynchronous secret roles.
+1. Genre
+2. Player names, player count, and game duration
+3. Current location and mood
+4. Optional detail the story may weave in
+
+During play, the group sees:
+
+- a narrated scene
+- three group-facing choices
+- shared story parameters with visual state
+- a separate "use special ability" action
+- private secret goals revealed through a pass-the-phone ritual
+- final scoring that shows who achieved their hidden objective
+
+## Architecture At A Glance
+
+```mermaid
+flowchart LR
+    Browser["React SPA"]
+    Nginx["nginx<br/>static app + API proxy"]
+    Proxy["adventure-proxy<br/>schema guard + provider adapters"]
+    Gemini["Google Gemini<br/>default generation + ET editor"]
+    Claude["Anthropic Claude<br/>opt-in quality mode"]
+
+    Browser --> Nginx
+    Nginx --> Proxy
+    Proxy --> Gemini
+    Proxy --> Claude
+```
+
+The browser never calls AI providers directly. All generation goes through the
+Node proxy, which owns provider keys, validates request signatures, enforces an
+exact schema hash allowlist, and logs model telemetry.
 
 ## Stack
 
-**Frontend**
-- React 19 + TypeScript + Vite
-- Tailwind CSS v4 + hand-written design system in `src/index.css`
-- Zustand for state management
+- React 19, TypeScript, Vite
+- Tailwind CSS v4 with a hand-written app design layer in `src/index.css`
+- Zustand for client state
+- Node.js / Express proxy for AI provider access
+- Gemini 2.5 Flash as the default live model
+- Claude Sonnet 4.6 as an opt-in quality mode
+- GitHub Actions self-hosted runner for deployment
+- nginx behind Cloudflare Tunnel on a homelab VM
 
-**Adventure Proxy** — Node.js / Express container on the homelab
-- Routes to Google (Gemini 2.5 Flash default) or Anthropic (Claude Sonnet 4.6 opt-in quality mode)
-- **Security:** origin checks, HMAC-SHA256 request signing, exact schema hash allowlist, and nginx rate limiting
-- Advanced Telemetry logging exact `input_tokens` and `output_tokens` per request
+## Documentation
 
-**Deployment**
-- Self-hosted on a home server (Proxmox VM, Docker Compose)
-- GitHub Actions self-hosted runner deploys on every push to `main`
-- Served via nginx behind Cloudflare tunnel at `games.khe.ee`
+Start here:
 
-## Architecture
+- [Documentation index](docs/README.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [API contract](docs/api-contract.md)
+- [Model strategy](docs/model-strategy.md)
+- [Prompt audit](docs/prompt-audit.md)
+- [Roadmap](ROADMAP.md)
 
-```
-Browser
-  └── games.khe.ee (nginx)
-        ├── /adventure/         → static React build
-        └── /adventure/api/     → adventure-proxy (Node.js)
-                                      ├── Google AI API     (Gemini 2.5 Flash default)
-                                      └── Anthropic API     (Claude Sonnet 4.6 opt-in)
-```
-
-Story generation, turns, custom stories, and sequels use Gemini 2.5 Flash by
-default. Gemini also runs the Estonian language editor pass. Claude Sonnet 4.6
-is available as a hidden quality mode, but it is not the default because it is
-much more expensive per turn. See [`docs/model-strategy.md`](docs/model-strategy.md).
-
-## Local development
+## Local Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-The dev build proxies `/adventure/api/` to the production endpoint at `games.khe.ee` by default. To run a local proxy, see the [`proxy/`](./proxy) directory in this repo. You will need to sync `VITE_API_SECRET` and `API_SECRET` in your local `.env` files for the HMAC signatures to work.
+The dev build proxies `/adventure/api/` to the production endpoint by default.
+For local or live-proxy smoke tests, the frontend and proxy HMAC secrets must
+match.
 
-For a one-off signed smoke test against the live proxy without writing secrets
-to disk:
+One-off signed smoke test against the live proxy:
 
 ```bash
 API_SECRET="$(ssh khe@192.168.0.11 'cd /home/khe/homelab/services/apps/games && set -a && . ./.env && printf %s "$API_SECRET"')" npm run proxy:smoke
 ```
 
-To run the local frontend against the live proxy, pass the same secret only to
-the Vite process:
+Run the local frontend against the live proxy:
 
 ```bash
 VITE_API_SECRET="$(ssh khe@192.168.0.11 'cd /home/khe/homelab/services/apps/games && set -a && . ./.env && printf %s "$API_SECRET"')" npm run dev
 ```
 
-## What's next
+## Quality Gates
 
-- **Whispers** — the AI privately messages one player mid-scene (`whisper_to(player)` tool). Creates information asymmetry without the group knowing. The player reads silently, hands the phone back, and the story continues.
-- **Wounded / ghost states** — players who "die" narratively continue as wounded (limited agency) or a ghost (exclusive whispers only they receive), so no one sits out of a 20-minute session
+Before shipping prompt, contract, or proxy changes:
 
-Full roadmap in [ROADMAP.md](ROADMAP.md).
+```bash
+npm run lint
+npm run build
+npm run schema:hashes
+node --check proxy/server.js
+```
 
----
+For gameplay quality, use the headless runner:
 
-Part of a personal homelab project. Infrastructure details at [khe-homelab](https://github.com/khelias/khe-homelab).
+```bash
+npm run playtest -- --genre=Thriller --duration=Short --language=et
+```
+
+The rubric is in [docs/prompt-audit.md](docs/prompt-audit.md). Model changes
+should be judged by transcripts and proxy telemetry, not by one attractive run.
+
+## Deployment
+
+Every push to `main` triggers the self-hosted GitHub Actions runner on the
+homelab VM. The workflow builds the Vite app, publishes static assets to the
+games nginx mount, builds the proxy image, and restarts the `adventure-proxy`
+container.
+
+Infrastructure orchestration lives in
+[khe-homelab](https://github.com/khelias/khe-homelab); this repo owns the app,
+proxy, prompts, contracts, and product documentation.

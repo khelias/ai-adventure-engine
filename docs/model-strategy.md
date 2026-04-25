@@ -46,8 +46,8 @@ Implementation:
   calls dynamic until transcripts show it is wasteful.
 - **Implicit context caching**: Gemini 2.5 and newer models have implicit
   caching enabled by default. The turn system prompt has a stable prefix
-  during one game, so we may get hits without extra code. Log
-  `cachedContentTokenCount` before adding explicit caching.
+  during one game, so we may get hits without extra code. The proxy logs
+  `cachedContentTokenCount` when Gemini returns it.
 - **Explicit context caching**: possible future optimization for the static
   turn system prompt, but it adds cache lifecycle work and is only worth it if
   telemetry shows repeated large prompt prefixes.

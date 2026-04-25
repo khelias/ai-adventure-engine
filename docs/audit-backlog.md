@@ -10,8 +10,8 @@ into feature work.
 - Done: documented current request/response ownership in
   [`api-contract.md`](./api-contract.md).
 - Done: removed the legacy `/gemini` endpoint from `proxy/server.js`.
-- Done: replaced top-level schema fingerprints with exact canonical schema
-  hashes.
+- Done: replaced the old top-level schema fingerprint approach with exact
+  canonical schema hashes.
 - Done: added `abilityParameter` so generated special abilities have a
   machine-readable parameter anchor.
 - Follow-up: deploy proxy and confirm old cached clients refresh cleanly to

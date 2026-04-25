@@ -21,7 +21,7 @@ npx tsx scripts/playtest.ts
 # Same runner via package script
 npm run playtest -- --genre=Thriller --duration=Short --language=et
 
-# Push through to the endgame even if engine tries to force-end early
+# Push through to the endgame even if the engine tries to force-end early
 npx tsx scripts/playtest.ts --skip-parametric-end
 
 # Short fantasy in English, picking the first choice every turn
@@ -44,7 +44,7 @@ Transcripts land in `playtest-transcripts/<timestamp>__<genre>-<duration>-<strat
 | `--provider` | `gemini` | `gemini` \| `claude` — which model handles story generation and turns |
 | `--strategy` | `balanced` | See below |
 | `--endpoint` | `https://games.khe.ee/adventure/api/generate` | Override for local dev |
-| `--skip-parametric-end` | off | Continue past the engine's auto-end when one parameter hits worst state. Needed to see climax/resolution phase while the parametric-end bug is unfixed. |
+| `--skip-parametric-end` | off | Continue past the engine's auto-end when multiple parameters collapse. Useful for testing late-phase prompts. |
 | `--out` | auto | Override transcript path |
 
 ## Strategies
@@ -54,7 +54,7 @@ Decides how the bot picks one of the three choices each turn. Different strategi
 - **`first`** — always choice 0. Deterministic. Good for regression-testing: same story seed + same strategy should produce broadly similar arcs. Reveals what the AI puts first when it's uncertain.
 - **`random`** — uniform random. Baseline variance. Useful to run many short games and see whether any path produces a watchable story.
 - **`balanced`** (default) — weighted by criticality. Protects the parameter closest to worst state. Approximates a cautious player.
-- **`protect-threat`** — always picks the choice with the best effect on the last parameter (heuristic: THREAT archetype is generated last). Useful to push deeper into the game if you're testing late-phase prompts.
+- **`protect-threat`** — legacy strategy name; protects the last generated parameter. Useful when you want a deterministic run that favors one tracked pressure.
 
 ## What the transcript shows
 
