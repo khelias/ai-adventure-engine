@@ -2,8 +2,8 @@
 // Playtest harness: simulates the frontend, plays a full game through the
 // proxy API, writes a Markdown transcript.
 //
-// Imports live prompts + engine from src/ — no duplication. When prompts.ts
-// or engine.ts change, this runner follows automatically.
+// Imports live prompts + engine from src/ — no duplication. When prompt
+// modules or engine.ts change, this runner follows automatically.
 //
 // Run:
 //   npx tsx scripts/playtest.ts --duration=Short --strategy=balanced
@@ -215,13 +215,15 @@ async function main() {
   log(`> ${story.summary}`)
   log('')
   log(`**Characters:**`)
-  for (const r of story.roles) log(`- **${r.name}** — ${r.description}  _(ability: ${r.ability})_`)
+  for (const r of story.roles) {
+    const anchor = r.abilityParameter ? `; anchor: ${r.abilityParameter}` : ''
+    log(`- **${r.name}** — ${r.description}  _(ability: ${r.ability}${anchor})_`)
+  }
   log('')
   log(`**Parameters:**`)
   for (const p of story.parameters) {
     const meta = [
       p.archetype ? `archetype=${p.archetype}` : null,
-      typeof p.ownerRoleId === 'number' ? `owner=role${p.ownerRoleId}` : null,
     ].filter(Boolean).join(', ')
     log(`- **${p.name}**${meta ? ` _[${meta}]_` : ''}: ${p.states.join(' → ')}`)
   }

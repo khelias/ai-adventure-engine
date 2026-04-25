@@ -3,7 +3,8 @@ import type { Language, Provider } from '../game/types'
 const API_URL = '/adventure/api/generate'
 
 // Opaque JSON schema shape — the proxy forwards it to whichever provider is
-// selected. We keep it untyped deliberately; V1 schemas live in game/prompts.ts.
+// selected. We keep it untyped deliberately; canonical schemas live in
+// src/game/prompts/schemas.ts.
 export type JsonSchema = Record<string, unknown>
 
 const secret = import.meta.env.VITE_API_SECRET || ''

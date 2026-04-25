@@ -39,6 +39,9 @@ export interface Role {
   name: string
   description: string
   ability: string
+  // Exact generated parameter name this one-time ability is meant to affect.
+  // Older saved transcripts and sequel-generated roles may not have it.
+  abilityParameter?: string
   used: boolean
 }
 

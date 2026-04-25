@@ -27,8 +27,8 @@ flowchart TB
 
     Group -->|"games.khe.ee/adventure/"| CF
     CF -->|"tunnel (cloudflared)"| Engine
-    Engine -->|"story gen + turn narration"| Anthropic
-    Engine -->|"Estonian editor + fallback"| Google
+    Engine -->|"opt-in quality mode"| Anthropic
+    Engine -->|"default story + turns + Estonian editor"| Google
 ```
 
 The group's browser never talks to Anthropic or Google directly — every AI call goes through the home-server proxy, which holds the API keys and enforces schema + origin rules.
@@ -45,7 +45,7 @@ flowchart LR
     subgraph "adventure-proxy container (Node.js)"
         Endpoint["/generate endpoint"]
         EditorPass["Gemini editor pass<br/>(Estonian only)"]
-        SchemaGuard["Schema allowlist<br/>Origin check"]
+        SchemaGuard["Origin + HMAC<br/>Exact schema hashes"]
     end
     Anthropic["Anthropic API"]
     Google["Google AI API"]
@@ -54,15 +54,15 @@ flowchart LR
     Browser -->|"POST /adventure/api/generate"| NginxProxy
     NginxProxy -->|"internal: adventure-proxy:3000"| SchemaGuard
     SchemaGuard --> Endpoint
-    Endpoint -->|"turn / story / sequel / custom"| Anthropic
-    Endpoint -->|"fallback or editor"| Google
-    Endpoint -.->|"if scene.language=et"| EditorPass
+    Endpoint -->|"opt-in quality mode"| Anthropic
+    Endpoint -->|"default generation"| Google
+    Endpoint -.->|"if language=et"| EditorPass
     EditorPass --> Google
 ```
 
 - **Browser**: React 19 + Vite + Zustand SPA. Built once, served as static files.
 - **nginx (games container)**: serves the bundle, reverse-proxies `/adventure/api/` to the proxy container, enforces per-visitor rate limit (30 req/min keyed on `CF-Connecting-IP`).
-- **adventure-proxy (Node.js)**: the only place holding API keys. Validates origin + schema shape + HMAC request signature, calls Claude or Gemini, optionally routes the response through an Estonian editor pass. Logs exact `in/out` token counts and choice-cost violations as telemetry.
+- **adventure-proxy (Node.js)**: the only place holding provider API keys. Validates origin + exact schema hash + HMAC request signature, calls Gemini by default or Claude in opt-in quality mode, and optionally routes the response through an Estonian editor pass. Logs exact `in/out` token counts and choice-cost violations as telemetry.
 - **Cloudflare Tunnel**: a separate `cloudflared` container (in the homelab's `core/cloudflare-tunnel` stack) publishes `games.khe.ee` to the internet. No ports exposed from the VM directly.
 
 ## 3. Request flows
@@ -74,19 +74,21 @@ sequenceDiagram
     participant UI as Browser (React)
     participant N as nginx (games)
     participant P as adventure-proxy
-    participant C as Claude
+    participant G as Gemini
 
-    UI->>N: POST /adventure/api/generate<br/>{prompt, schema=storyGen, provider=claude}
+    UI->>N: POST /adventure/api/generate<br/>{prompt, schema=storyGen, provider=gemini}
     N->>P: forward (internal network)
-    P->>P: origin check ✓<br/>schema allowlist ✓
-    P->>C: messages.create(tool=respond)
-    C-->>P: tool_use { stories: [...] }
-    P->>P: not turn-shaped → skip editor
+    P->>P: origin check ✓<br/>exact schema hash ✓
+    P->>G: generateContent(responseSchema)
+    G-->>P: { stories: [...] }
+    P->>P: if language=et → structured editor pass
     P-->>N: {data: {stories}, model}
     N-->>UI: 200 OK
 ```
 
-Story gen is a single Claude call. No editor pass (different schema shape). Typical cost: ~$0.02, ~15-20s latency.
+Story generation uses Gemini by default. Claude remains available only through
+the hidden advanced provider picker. Estonian story/role/parameter text also
+goes through the structured editor pass when `language=et`.
 
 ### 3b. Turn (the hot path)
 
@@ -94,42 +96,47 @@ Story gen is a single Claude call. No editor pass (different schema shape). Typi
 sequenceDiagram
     participant UI as Browser (React)
     participant P as adventure-proxy
-    participant C as Claude
-    participant G as Gemini (editor)
+    participant G as Gemini
+    participant GE as Gemini (editor)
 
     UI->>P: POST /generate<br/>{prompt=turnPrompt.user, schema=turn,<br/>systemPrompt=turnPrompt.system, language=et}
-    P->>P: origin ✓ / schema ✓
-    P->>C: messages.create(tool=respond)<br/>(system prompt cached via ephemeral)
-    C-->>P: { scene, parameters, choices, gameOver }
-    P->>P: log choice-cost violations
+    P->>P: origin ✓ / schema hash ✓
+    P->>G: generateContent(responseSchema)
+    G-->>P: { scene, parameters, choices, consequences, gameOver }
+    P->>P: retry empty/free-choice contract violations<br/>log choice-cost violations
     alt language=et AND turn-shaped
         par editor scene
-            P->>G: editorCall(scene)
-            G-->>P: corrected
+            P->>GE: editorCall(scene)
+            GE-->>P: corrected
         and editor gameOverText (if present)
-            P->>G: editorCall(gameOverText)
-            G-->>P: corrected
+            P->>GE: editorCall(gameOverText)
+            GE-->>P: corrected
+        and editor choices + consequences
+            P->>GE: editorCall(choice/consequence text)
+            GE-->>P: corrected
         end
-        Note over P,G: 25s shared budget;<br/>failures fall back to unedited
+        Note over P,GE: 25s shared budget;<br/>failures fall back to unedited
     end
     P-->>UI: {data: {scene, choices, ...}, model}
 ```
 
-A turn is one Gemini call + up to two parallel Gemini editor calls. The editor pass has a 25-second shared budget (one `AbortController` across both fields) so total response time stays below nginx's 120s ceiling even in the worst case.
+A turn is one provider call plus parallel Gemini editor calls for Estonian
+story-facing text. The editor pass has a 25-second shared budget so total
+response time stays below nginx's 120s ceiling even in the worst case.
 
 ### 3c. Narrative end (2+ parameters at worst)
 
 ```mermaid
 sequenceDiagram
     participant Engine as client-side engine
-    participant P as proxy + Claude
+    participant P as proxy
     Engine->>Engine: applyParameterChanges<br/>detects 2+ params at worst
     Engine->>P: turn call with forceEnd='unrecoverable'
     P-->>Engine: { scene (short), gameOverText (3-5 paragraphs), gameOver: true }
     Engine->>Engine: setGameOver('parametric', aiText)
 ```
 
-One parameter at worst = phase transition (AI narrates the consequence, game continues); two or more at worst = dedicated finale Claude call with `forceEnd: 'unrecoverable'`, AI writes the ending. The hardcoded template line in `translations.ts` is a fallback that fires only if this second call throws.
+One parameter at worst = phase transition (AI narrates the consequence, game continues); two or more at worst = dedicated finale provider call with `forceEnd: 'unrecoverable'`, AI writes the ending. The hardcoded template line in `translations.ts` is a fallback that fires only if this second call throws.
 
 ## 4. Prompt architecture
 
@@ -152,24 +159,23 @@ Internal layout:
 | `turn.ts` | `turnPrompt({...}) → { system, user }` composer |
 | `index.ts` | Public re-exports |
 
-Four schemas; the proxy validates against the sorted top-level `properties` keys:
+Four schemas; the proxy validates against exact canonical schema hashes:
 
-| Schema | Purpose | Shape fingerprint |
+| Schema | Purpose | Hash source |
 |---|---|---|
-| `storyGenerationSchema` | Generate a story + roles + parameters | `stories` |
-| `customStorySchema` | User-typed story idea → roles + params | `parameters,roles` |
-| `sequelSchema` | Continue a finished game with new twist | `newAbilities,newParameters` |
-| `turnSchema` | One turn: scene + param changes + choices + optional gameOver | `choices,gameOver,gameOverText,parameters,scene` |
+| `storyGenerationSchema` | Generate a story + roles + parameters | `npm run schema:hashes` |
+| `customStorySchema` | User-typed story idea → roles + params | `npm run schema:hashes` |
+| `sequelSchema` | Continue a finished game with new twist | `npm run schema:hashes` |
+| `turnSchema` | One turn: scene + param changes + consequences + choices + optional gameOver | `npm run schema:hashes` |
 
 The turn prompt is split into **system** (static — story, characters,
 parameters, archetype behaviors, craft + contract blocks, few-shot
 example) and **user** (dynamic — current turn, parameter states, recent
 scenes, last choice).
-The turn prompt is split into **system** (static) and **user** (dynamic).
 
 ### CRAFT vs CONTRACT vs META
 
-Three concerns are kept apart because Claude attends to each differently:
+Three concerns are kept apart because models attend to each differently:
 
 - **CRAFT** (`craft.ts`, `scene-craft`/`choices-craft`/`parameter-movement`):
   how to write the scene, the choices, the dialogue. Treated as creative
@@ -191,11 +197,12 @@ Three concerns are kept apart because Claude attends to each differently:
 `time`, `guilt`, `proof`, `promise`, `hunger`, `debt`. AI picks 3 different
 archetypes per story (not the fixed RESOURCE+BOND+PRESSURE that earlier
 versions defaulted to). Each parameter declares its archetype + optional
-`ownerRoleId` (set when the parameter anchors to one specific character).
+story states. Character-specific pressure is modeled through roles, secrets,
+and ability anchors instead of parameter ownership.
 
 ### Empty-choices safety net
 
-Even with the new contract framing, Claude occasionally still emits
+Even with the new contract framing, models can still emit
 `choices: []` + `gameOver: false`. Proxy retries 2x with escalating
 reminders, then coerces `gameOver=true` and synthesizes a minimal
 gameOverText from the scene. Logs `retried=N` and `coerced-gameover`
@@ -203,21 +210,16 @@ when this fires — telemetry to track real-world drift rate.
 
 ## 5. Cost model
 
-Approximate per-game costs at Claude Sonnet 4.6 input $3/MTok, output $15/MTok, Gemini Flash input/output ~$0.075/$0.3 per MTok:
+Gemini 2.5 Flash is the live default because this is a casual table game and
+turn latency/cost matter more than premium prose. Claude Sonnet remains a
+hidden opt-in quality mode.
 
-| Action | Claude call | Editor pass | Total |
-|---|---|---|---|
-| Story gen (once) | ~$0.02 | — | **~$0.02** |
-| Turn (each) | ~$0.04 | ~$0.001 | **~$0.04** |
-| Narrative end | ~$0.05 | ~$0.002 | **~$0.05** |
+Current source of truth: [`docs/model-strategy.md`](./model-strategy.md).
 
-Per full game:
-- **Short (8 turns)**: ~$0.35
-- **Medium (15 turns)**: ~$0.65
-- **Long (20 turns)**: ~$0.85
-
-Monthly bill for moderate use (~30 games): **$5-10**.
-The proxy enforces a strict `max_tokens: 2000` ceiling on generation to prevent runaway costs, and logs exact `input_tokens` and `output_tokens` per turn for telemetry.
+The proxy logs `in=`, `out=`, Gemini `thoughts=`, `total=`, cache hits,
+retries, editor time, provider, model, and schema name. Model changes should
+be made from transcript quality plus these logs, not from a single good or bad
+manual run.
 
 ## 6. Security boundaries
 
@@ -227,23 +229,23 @@ flowchart LR
     CFEdge["CF Edge<br/>DDoS + TLS termination"]
     Tunnel["CF Tunnel<br/>(cloudflared on VM)"]
     NginxLimit["nginx rate limit<br/>30 req/min per CF-Connecting-IP"]
-    ProxyGuard["proxy<br/>Origin check<br/>Schema allowlist<br/>Body size ≤1MB"]
+    ProxyGuard["proxy<br/>Origin check<br/>Exact schema hashes<br/>Body size ≤1MB"]
     AI["AI providers<br/>(keys never leave VM .env)"]
 
     Internet --> CFEdge --> Tunnel --> NginxLimit --> ProxyGuard --> AI
 ```
 
-Three layered controls against abuse:
+Four layered controls against abuse:
 
 1. **nginx rate limit** — per-visitor via `$http_cf_connecting_ip` map (falls back to `$remote_addr` for direct LAN hits). Without the map, all CF-tunnel traffic would collapse to one counter.
-2. **HMAC Request Signature** in proxy — Requests must carry a valid `x-adventure-signature` header generated by the client using `VITE_API_SECRET` and verified against the proxy's `API_SECRET`.
+2. **HMAC Request Signature** in proxy — Requests carry `x-adventure-signature` generated by the client using `VITE_API_SECRET` and verified against the proxy's `API_SECRET`. This is a friction layer, not a true browser-side secret.
 3. **Origin check** in proxy — `Origin` or `Referer` must match `https://games.khe.ee` or a localhost dev origin. 403 otherwise.
-4. **Schema allowlist** in proxy — incoming `schema.properties` top-level keys must match one of the four known shapes. 400 otherwise.
+4. **Exact schema allowlist** in proxy — incoming schema must hash to one of the four canonical game schemas. 400 otherwise.
 
 What is **not** protected:
-- Anyone who knows the API shape + spoofs `Origin: https://games.khe.ee` can still make game-shaped calls (bounded by rate limit). Acceptable threat model for a public share-link game.
+- Anyone who knows the API shape, extracts the bundled signature secret, and spoofs `Origin: https://games.khe.ee` can still make game-shaped calls (bounded by rate limit and schema guard). Acceptable threat model for a public share-link game.
 - No CAPTCHA / bot check at the edge. If abuse materializes, Cloudflare Turnstile is the next layer.
-- Anthropic API quota is the ultimate ceiling — set an account-level hard budget cap.
+- Provider API quota is the ultimate ceiling — set account-level hard budget caps.
 
 API keys live only in the VM's `.env` file, never in the repo or git history.
 
@@ -274,7 +276,8 @@ flowchart LR
 
 Frontend and proxy live in the same repo, so schema/contract changes go in one commit:
 - **Schema shapes**: adding or changing a schema in `src/game/prompts/schemas.ts`
-  requires updating `ALLOWED_SCHEMA_SHAPES` in `proxy/server.js`. Forgetting this
+  requires running `npm run schema:hashes` and updating `ALLOWED_SCHEMA_HASHES`
+  in `proxy/server.js`. Forgetting this
   breaks the feature silently (proxy returns 400).
 - **Request body contract**: adding a new field the proxy should respect
   (e.g. `language`) requires matching changes in `src/api/adventure.ts`.
@@ -288,8 +291,11 @@ Frontend and proxy live in the same repo, so schema/contract changes go in one c
 | Secrets archetypes + scoring (client-only) | `src/game/secrets.ts` |
 | Turn orchestration, error handling | `src/game/actions.ts` |
 | Pass-the-phone secrets ritual UI | `src/components/SecretAssignmentScreen.tsx`, `src/components/GameOverScreen.tsx` (reveal flow) |
-| Scene-slug UI (replaces param pills) | `src/components/GameScreen.tsx` (`SceneSlug`) |
+| Parameter board + ability panel | `src/components/GameScreen.tsx` |
 | Proxy routing + editor pass + retry/coerce | `proxy/server.js` |
 | nginx rate limit + reverse proxy | `khe-homelab/services/apps/games/nginx.conf` |
 | Full-game smoke test (with secret simulation) | `scripts/playtest.ts` — see [`scripts/README.md`](../scripts/README.md) |
+| API contract | [`docs/api-contract.md`](./api-contract.md) |
+| Prompt audit rubric | [`docs/prompt-audit.md`](./prompt-audit.md) |
+| Model strategy | [`docs/model-strategy.md`](./model-strategy.md) |
 | Design principles / invariants, roadmap | [`ROADMAP.md`](../ROADMAP.md) |

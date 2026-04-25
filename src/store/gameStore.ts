@@ -163,6 +163,7 @@ export const useGameStore = create<GameState & GameActions>()((set) => ({
         name: r.name,
         description: r.description,
         ability: r.ability,
+        abilityParameter: r.abilityParameter,
         used: false,
       })),
       parameters: story.parameters.map((p) => ({

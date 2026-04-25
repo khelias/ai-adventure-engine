@@ -10,7 +10,10 @@ Pick a genre. Name your characters. One person reads aloud while the group decid
 
 The game runs in turns. Each turn the AI narrates a story beat and presents choices. The group discusses, picks one (or writes their own), and the story continues. A full game runs 20–40 minutes depending on the chosen duration.
 
-The setup screen accepts optional context — where you are, who's in the room, today's inside joke — and the AI weaves it into the story. A car trip becomes the setting; a friend's name shows up in a character description.
+Setup is split into short steps: genre, players and duration, current
+location and mood, then one optional detail the story may weave in. The
+location prompt is deliberately local — "where are you right now?" — so the
+first generated story already feels connected to the table.
 
 ## Design
 
@@ -19,9 +22,10 @@ The interface is built around a concept called **Séance**: a dark, still space 
 - Near-black background (`#0a0913`) with violet accent (`#a78bfa`) — same family as the parent [games.khe.ee](https://games.khe.ee)
 - **Fraunces** variable serif for story text and choices — high readability at phone sizes, literary feel without being costume-y
 - **Inter** for all UI chrome
-- Setup screen: **The Circle** — a 140px ring with a violet beam that intensifies on genre selection, icon cross-fades inside, big Fraunces numbers for player count
+- Setup screen: four focused steps rather than one crowded form
 - Ambient breathing glow (8s opacity cycle on `body::before`), staggered paragraph fade-in on each new scene
-- Parameter states displayed seamlessly inside the **Scene Slug** for maximum narrative immersion (e.g., `FUEL: Tank full`)
+- Parameter states shown in a compact board with icons, progress, and recent-change feedback
+- Special abilities are spent through a separate player action, not mixed into the three normal choices
 - End-game secrets ritual: "Pass the phone" mechanics ensuring tabletop friction and asynchronous secret roles.
 
 ## Stack
@@ -32,8 +36,8 @@ The interface is built around a concept called **Séance**: a dark, still space 
 - Zustand for state management
 
 **Adventure Proxy** — Node.js / Express container on the homelab
-- Routes to Anthropic (Claude Sonnet 4.6) or Google (Gemini 2.5 Flash)
-- **Security:** HMAC-SHA256 request signing prevents unauthorized proxy usage
+- Routes to Google (Gemini 2.5 Flash default) or Anthropic (Claude Sonnet 4.6 opt-in quality mode)
+- **Security:** origin checks, HMAC-SHA256 request signing, exact schema hash allowlist, and nginx rate limiting
 - Advanced Telemetry logging exact `input_tokens` and `output_tokens` per request
 
 **Deployment**
@@ -47,12 +51,15 @@ The interface is built around a concept called **Séance**: a dark, still space 
 Browser
   └── games.khe.ee (nginx)
         ├── /adventure/         → static React build
-        └── /adventure/api/     → adventure-proxy (Node.js) (HMAC Secured)
-                                      ├── Anthropic API  (Claude Sonnet 4.6)
-                                      └── Google AI API  (Gemini 2.5 Flash)
+        └── /adventure/api/     → adventure-proxy (Node.js)
+                                      ├── Google AI API     (Gemini 2.5 Flash default)
+                                      └── Anthropic API     (Claude Sonnet 4.6 opt-in)
 ```
 
-Initial story generation uses Claude Sonnet 4.6. Turn-by-turn choices use Gemini 2.5 Flash, and Gemini also runs the Estonian language validation pass. Rough cost: ~$0.02–0.05 per full game.
+Story generation, turns, custom stories, and sequels use Gemini 2.5 Flash by
+default. Gemini also runs the Estonian language editor pass. Claude Sonnet 4.6
+is available as a hidden quality mode, but it is not the default because it is
+much more expensive per turn. See [`docs/model-strategy.md`](docs/model-strategy.md).
 
 ## Local development
 

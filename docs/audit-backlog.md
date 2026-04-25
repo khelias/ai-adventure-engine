@@ -7,38 +7,41 @@ into feature work.
 
 ## API contract
 
-- Re-check every request and response shape used by the frontend, proxy,
-  and playtest script.
-- Decide whether the legacy `/gemini` endpoint can be removed.
-- Confirm whether schema fingerprints are still enough now that
-  `consequences` and special-ability handling are stricter.
-- Document which fields are authored by the AI and which are app-owned
-  (`choice.isAbility`, `choice.actor`, `expectedChanges`, `consequences`).
+- Done: documented current request/response ownership in
+  [`api-contract.md`](./api-contract.md).
+- Done: removed the legacy `/gemini` endpoint from `proxy/server.js`.
+- Done: replaced top-level schema fingerprints with exact canonical schema
+  hashes.
+- Done: added `abilityParameter` so generated special abilities have a
+  machine-readable parameter anchor.
+- Follow-up: deploy proxy and confirm old cached clients refresh cleanly to
+  `/generate`.
 
 ## Caching and Gemini capabilities
 
-- Audit whether Anthropic prompt caching still matters if Gemini is the
-  default provider.
-- Review Gemini options that may improve the game without making each turn
-  expensive: structured outputs, thinking budget, context caching, batch
-  tests, and newer Flash-Lite preview models.
-- Measure before switching: first-story latency, turn latency, schema
-  retries, editor-pass frequency, and total token cost per short game.
+- Done: refreshed [`model-strategy.md`](./model-strategy.md) with Gemini
+  structured outputs, thinking budget, implicit/explicit context caching,
+  Batch API, and candidate Flash-Lite models.
+- Decision: keep `gemini-2.5-flash` as live default until measured playtests
+  prove a cheaper model keeps gameplay quality.
+- Done: proxy logs Gemini cache-hit, thinking-token, and total-token fields
+  from `usageMetadata` when present.
+- Follow-up: run a short Estonian playtest matrix against `gemini-2.5-flash`,
+  `gemini-2.5-flash-lite`, and `gemini-3.1-flash-lite-preview`.
 
 ## Prompt audit
 
-- Review story, turn, secret, sequel, and editor prompts together instead
-  of tuning them one by one.
-- Remove duplicated instructions where they make prompts longer without
-  improving behavior.
-- Check for hidden sameness: repeated zombie siege shapes, repeated
-  investigate/fortify/wait choices, generic abilities, and parameters that
-  are too abstract.
-- Add a small playtest rubric so model comparisons judge gameplay, not just
-  prettier prose.
+- Done: added [`prompt-audit.md`](./prompt-audit.md) with current prompt risks
+  and a playtest rubric.
+- Done: tightened special ability generation with `abilityParameter`.
+- Follow-up: run transcripts through the rubric and only then prune duplicated
+  prompt text.
+- Follow-up: audit secrets and final scoring after the next full playtest;
+  the role/parameter design is now clearer, but needs table-feel validation.
 
 ## Documentation
 
-- Update the README and script docs after the API contract audit.
-- Keep `docs/model-strategy.md` as the source of truth for model defaults
-  and candidate tests.
+- Done: refreshed README, architecture docs, script docs, API contract, model
+  strategy, and prompt audit notes.
+- Keep `docs/model-strategy.md` as the source of truth for model defaults and
+  candidate tests.

@@ -32,22 +32,26 @@ app.use(express.json({
 
 // ---- Abuse protections ----
 //
-// 1. Schema allowlist: reject requests whose JSON Schema does not match one of
-//    the four known game shapes. Without this, the proxy is a free generic
-//    Claude/Gemini API for whoever finds the URL.
+// 1. Schema allowlist: reject requests whose JSON Schema does not exactly
+//    match one of the known game schemas. Without this, the proxy is a free
+//    generic Claude/Gemini API for whoever finds the URL.
 // 2. Origin check: require Origin or Referer to match an allowed origin.
 //    Filters casual curl abuse; real attackers can spoof but then they still
 //    hit the schema allowlist + per-IP rate limit in nginx.
 // 3. Rate limit: enforced by nginx (see nginx.conf) using CF-Connecting-IP.
 //
-// Shapes are identified by the sorted top-level keys of schema.properties.
-// When adding a new schema in prompts.ts, add its fingerprint here too.
-const ALLOWED_SCHEMA_SHAPES = new Set([
-  'stories',                                         // storyGenerationSchema
-  'parameters,roles',                                // customStorySchema
-  'newAbilities,newParameters',                      // sequelSchema
-  'choices,gameOver,gameOverText,parameters,scene',  // legacy turnSchema (pre-consequences)
-  'choices,consequences,gameOver,gameOverText,parameters,scene',  // turnSchema
+// Hashes are SHA-256 over a canonicalized JSON representation of the schema
+// object sent by the frontend. This is stricter than checking top-level keys:
+// a caller cannot send `{ properties: { stories: ... } }` with an arbitrary
+// loose nested schema and still pass the guard.
+//
+// Recompute after changing src/game/prompts/schemas.ts:
+//   npm run schema:hashes
+const ALLOWED_SCHEMA_HASHES = new Map([
+  ['b03076dbb8868948ccd3eb5a576b67806a7fd415c2634ae985ed1639e1260977', 'storyGenerationSchema'],
+  ['276f490cdb0c5e913f93a025004bb353d078643ec71b60e6b92317230f2e30bb', 'customStorySchema'],
+  ['668239c498ac09d383b9609829a2bb3bb4727a64de379e9a2e2c1c9f0d3ad2cd', 'sequelSchema'],
+  ['ecef588fd5abf60f990d3e092b13351f5a59a6353db967569e514354c04ea53a', 'turnSchema'],
 ]);
 
 function schemaFingerprint(schema) {
@@ -57,9 +61,29 @@ function schemaFingerprint(schema) {
   return Object.keys(schema.properties).sort().join(',');
 }
 
-function isKnownSchema(schema) {
-  const fp = schemaFingerprint(schema);
-  return fp != null && ALLOWED_SCHEMA_SHAPES.has(fp);
+function canonicalize(value) {
+  if (Array.isArray(value)) {
+    return value.map(canonicalize);
+  }
+  if (value !== null && typeof value === 'object') {
+    const out = {};
+    for (const key of Object.keys(value).sort()) {
+      out[key] = canonicalize(value[key]);
+    }
+    return out;
+  }
+  return value;
+}
+
+function schemaHash(schema) {
+  return crypto
+    .createHash('sha256')
+    .update(JSON.stringify(canonicalize(schema)))
+    .digest('hex');
+}
+
+function schemaLabel(schema) {
+  return ALLOWED_SCHEMA_HASHES.get(schemaHash(schema)) || null;
 }
 
 // Allowed origins for the game UI. Localhost entries let `npm run dev`
@@ -82,43 +106,6 @@ function isAllowedOrigin(req) {
 
 app.get('/healthz', (_req, res) => res.status(200).send('ok'));
 
-// Legacy endpoint used by older cached frontends. Forwards a Gemini-shaped
-// request body straight through to Google and returns Gemini's raw response.
-// Keep until old `app.js` bundles have aged out of browser/CDN caches.
-app.post('/gemini', async (req, res) => {
-  if (!GEMINI_API_KEY) {
-    return res.status(503).json({ error: 'Gemini not configured on this proxy' });
-  }
-  if (!isAllowedOrigin(req)) {
-    return res.status(403).json({ error: 'Origin not allowed' });
-  }
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
-  try {
-    const upstream = await fetch(geminiUrl(GEMINI_MODEL), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body),
-      signal: controller.signal,
-    });
-    const data = await upstream.json();
-    if (!upstream.ok) {
-      return res.status(upstream.status).json({
-        error: data?.error?.message || 'Gemini upstream error',
-      });
-    }
-    res.json(data);
-  } catch (err) {
-    if (err.name === 'AbortError') {
-      return res.status(504).json({ error: 'Upstream timeout' });
-    }
-    console.error('proxy legacy /gemini:', err.message || err);
-    res.status(500).json({ error: err.message || 'Proxy error' });
-  } finally {
-    clearTimeout(timer);
-  }
-});
-
 app.post('/generate', async (req, res) => {
   if (!isAllowedOrigin(req)) {
     return res.status(403).json({ error: 'Origin not allowed' });
@@ -137,8 +124,11 @@ app.post('/generate', async (req, res) => {
   if (typeof prompt !== 'string' || !prompt || typeof schema !== 'object' || !schema) {
     return res.status(400).json({ error: 'prompt (string) and schema (object) are required' });
   }
-  if (!isKnownSchema(schema)) {
-    return res.status(400).json({ error: 'schema shape is not in the allowlist' });
+  const knownSchema = schemaLabel(schema);
+  if (!knownSchema) {
+    return res.status(400).json({
+      error: `schema is not in the allowlist${schemaFingerprint(schema) ? ` (${schemaFingerprint(schema)})` : ''}`,
+    });
   }
   if (provider !== 'claude' && provider !== 'gemini') {
     return res.status(400).json({ error: `unknown provider: ${provider}` });
@@ -172,8 +162,8 @@ app.post('/generate', async (req, res) => {
     let isTurnShape = result?.data && typeof result.data.scene === 'string' && Array.isArray(result.data.choices);
 
     // Schema-contract retry: turn-shaped responses MUST have either
-    // choices.length === 3 OR gameOver === true. Claude sometimes drifts and
-    // emits neither — most often on tense reveal scenes where the model
+    // choices.length === 3 OR gameOver === true. Providers sometimes drift and
+    // emit neither — most often on tense reveal scenes where the model
     // "feels" the turn has concluded. Without fallback, the game freezes.
     //
     // Strategy: two retries with escalating reminders, then server-side
@@ -269,7 +259,7 @@ app.post('/generate', async (req, res) => {
     const cacheHit = result.cacheHit;
     const tokens = result.tokens || { in: 0, out: 0 };
     console.log(
-      `proxy ok: provider=${provider} model=${result.model} ms=${ms} in=${tokens.in} out=${tokens.out}${cacheHit != null ? ` cache=${cacheHit}` : ''}${editorApplied ? ` editor=${editorMs}ms` : ''}${retried ? ` retried=${retried}` : ''}${costRetried ? ` cost-retried=${costRetried}` : ''}${coercedGameOver ? ' coerced-gameover' : ''}`,
+      `proxy ok: schema=${knownSchema} provider=${provider} model=${result.model} ms=${ms} in=${tokens.in} out=${tokens.out}${tokens.thoughts ? ` thoughts=${tokens.thoughts}` : ''}${tokens.total ? ` total=${tokens.total}` : ''}${cacheHit != null ? ` cache=${cacheHit}` : ''}${editorApplied ? ` editor=${editorMs}ms` : ''}${retried ? ` retried=${retried}` : ''}${costRetried ? ` cost-retried=${costRetried}` : ''}${coercedGameOver ? ' coerced-gameover' : ''}`,
     );
     res.json({ provider, model: result.model, data: result.data });
   } catch (err) {
@@ -591,7 +581,18 @@ async function callGemini({ prompt, schema, systemPrompt }) {
       throw new Error('Gemini returned an empty response');
     }
     const usageMetadata = body?.usageMetadata || {};
-    return { model: GEMINI_MODEL, data: JSON.parse(text), tokens: { in: usageMetadata.promptTokenCount || 0, out: usageMetadata.candidatesTokenCount || 0 } };
+    const cachedTokens = usageMetadata.cachedContentTokenCount || 0;
+    return {
+      model: GEMINI_MODEL,
+      data: JSON.parse(text),
+      cacheHit: cachedTokens > 0 ? `${cachedTokens}tok` : null,
+      tokens: {
+        in: usageMetadata.promptTokenCount || 0,
+        out: usageMetadata.candidatesTokenCount || 0,
+        thoughts: usageMetadata.thoughtsTokenCount || 0,
+        total: usageMetadata.totalTokenCount || 0,
+      },
+    };
   } finally {
     clearTimeout(timer);
   }

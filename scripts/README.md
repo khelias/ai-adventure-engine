@@ -2,22 +2,14 @@
 
 Headless game runner. Simulates what the frontend does — generates a story, plays turns against the proxy API, writes a Markdown transcript. Use it to review AI quality after prompt or engine changes without clicking through the UI.
 
-The runner imports the real `src/game/prompts.ts` and `src/game/engine.ts` directly, so any change there is automatically reflected in the next playtest. No duplication.
+The runner imports the real `src/game/prompts/` modules and `src/game/engine.ts` directly, so any change there is automatically reflected in the next playtest. No duplication.
 
 ## Setup
 
-One-time install of `tsx` (to run TypeScript directly without a build step):
+Install repo dependencies once:
 
 ```bash
-npm install -D tsx
-```
-
-Then add a `playtest` script to `package.json` if you want shorter invocation:
-
-```json
-"scripts": {
-  "playtest": "tsx scripts/playtest.ts"
-}
+npm install
 ```
 
 ## Running
@@ -25,6 +17,9 @@ Then add a `playtest` script to `package.json` if you want shorter invocation:
 ```bash
 # Default: Zombies / Medium / Estonian / Gemini / balanced strategy
 npx tsx scripts/playtest.ts
+
+# Same runner via package script
+npm run playtest -- --genre=Thriller --duration=Short --language=et
 
 # Push through to the endgame even if engine tries to force-end early
 npx tsx scripts/playtest.ts --skip-parametric-end
@@ -74,6 +69,8 @@ Per turn:
 - Strategy's pick
 
 At end: reason (narrative / parametric / maxTurns / api-error) and final parameter states.
+Story setup also logs each role's one-time ability and its generated
+parameter anchor, so ability drift is visible in transcripts.
 
 ## Cost
 
@@ -85,7 +82,7 @@ Each turn is one Gemini or Claude API call. Gemini is the product default; Claud
 
 ## When to run
 
-- After editing `src/game/prompts.ts` — sanity-check a full game
+- After editing `src/game/prompts/` — sanity-check a full game
 - After editing `src/game/engine.ts` — confirm mechanics still work
 - Before committing a prompt PR — attach a transcript as evidence
 - Periodically to catch regressions from model-side changes (Anthropic/Google update their models; output drifts)
@@ -95,4 +92,4 @@ Each turn is one Gemini or Claude API call. Gemini is the product default; Claud
 - The bot reads `expectedChanges` numerics, not scene text. A real player weighs narrative pull too. Use `random` strategy occasionally to get choices a human might make for thematic reasons.
 - No retry on transient API errors. A single 503 aborts the run.
 - Context block (`location`, `playersDesc`, `vibe`, `insideJoke`) is always empty. Add a `--context` flag if you need to test that path.
-- Story-variant generation (`storyGenerationSchema` returns up to 3 stories) is not exercised — we always pick story 0.
+- Story generation still returns a `stories` array for UI compatibility, but the prompt asks for one story. The runner always picks story 0.

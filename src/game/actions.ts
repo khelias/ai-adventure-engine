@@ -216,6 +216,7 @@ export async function generateSequel(sequelText: string): Promise<void> {
   try {
     const response = await callAI<{
       newAbilities: string[]
+      newAbilityParameters: string[]
       newParameters: Story['parameters']
     }>(
       sequelPrompt({
@@ -233,6 +234,7 @@ export async function generateSequel(sequelText: string): Promise<void> {
         name: role.name,
         description: role.description,
         ability: response.newAbilities[index] || 'New Ability',
+        abilityParameter: response.newAbilityParameters[index],
       })),
       parameters: response.newParameters,
     })

@@ -79,7 +79,10 @@ export function turnPrompt(args: {
   const exampleBlock = pack.fewShotExample ? `\n## EXAMPLE TURN\n\n${pack.fewShotExample}\n` : ''
 
   const rolesBlock = roles
-    .map((r) => `- \`roleIndex ${r.id}\` **${r.name}** — ${r.description}. Special ability (one-time): *${r.ability}*${r.used ? ' [USED]' : ''}`)
+    .map((r) => {
+      const abilityAnchor = r.abilityParameter ? ` Anchored parameter: **${r.abilityParameter}**.` : ''
+      return `- \`roleIndex ${r.id}\` **${r.name}** — ${r.description}. Special ability (one-time): *${r.ability}*.${abilityAnchor}${r.used ? ' [USED]' : ''}`
+    })
     .join('\n')
 
   const parametersBlock = parameters
@@ -152,7 +155,10 @@ ${SELF_CHECK}${exampleBlock}`
 
   const availableAbilities = roles.filter((r) => !r.used)
   const abilitiesLine = availableAbilities.length > 0
-    ? `## PLAYER-TRIGGERED SPECIAL ABILITIES\n\nThese are player-controlled one-time actions. Do NOT offer them inside the three normal \`choices\`. If the players spend one, it will arrive as LAST CHOICE with \`isAbility=true\` and an actor.\n\n${availableAbilities.map((r) => `- **${r.name}** (actor: ${r.id}) — *${r.ability}*`).join('\n')}`
+    ? `## PLAYER-TRIGGERED SPECIAL ABILITIES\n\nThese are player-controlled one-time actions. Do NOT offer them inside the three normal \`choices\`. If the players spend one, it will arrive as LAST CHOICE with \`isAbility=true\` and an actor. When spent, its first payoff should normally touch its anchored parameter unless the scene makes that impossible.\n\n${availableAbilities.map((r) => {
+        const anchor = r.abilityParameter ? ` Anchored parameter: **${r.abilityParameter}**.` : ''
+        return `- **${r.name}** (actor: ${r.id}) — *${r.ability}*.${anchor}`
+      }).join('\n')}`
     : '## PLAYER-TRIGGERED SPECIAL ABILITIES\n\n*All special abilities have been used.*'
 
   // Render the previous turn's offered set so the AI can see its own last
@@ -201,6 +207,9 @@ ${lastTurnChoices
           : null,
         chosenChoice.isAbility
           ? 'A spent special ability is a payoff moment. Show a clear local advantage before introducing new pressure. It may still create a tradeoff, but it must not feel wasted: include at least one positive parameter change when the action logically improves or protects something.'
+          : null,
+        chosenChoice.isAbility && chosenActor?.abilityParameter
+          ? `The ability was designed around **${chosenActor.abilityParameter}**. Unless the scene makes it impossible, include a visible consequence for that parameter.`
           : null,
       ].filter(Boolean).join('\n')
     : ''

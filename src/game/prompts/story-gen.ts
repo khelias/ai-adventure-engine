@@ -80,6 +80,9 @@ pressure.
   prefix. Do NOT start the ability with the role's name; the UI already
   displays the owner separately. Good Estonian shape: "Mäletab üht varjatud
   hooldusväravat ja juhatab grupi sealt läbi." Bad: "Ostee: Kristo meenutab...".
+- \`abilityParameter\` is the exact \`name\` of one of the three generated
+  parameters this ability is designed to affect. Design the parameters and
+  abilities together; do not use a vague category or a parameter state phrase.
 - Every ability must be special in THIS story, not generically useful.
   It should clearly help with one of the story's three parameters, protect
   against one named pressure, restore one concrete resource, reveal one
@@ -118,8 +121,10 @@ Each role needs a PROPER FIRST NAME (not a title), a one-sentence
 description, and a one-time-use ability written as one natural sentence.
 Do NOT invent an ability title, label, or colon prefix. Do NOT start the
 ability with the role's name; the UI already displays the owner separately.
-Every ability must clearly matter to one parameter or one named pressure
-in the generated story; avoid generic useful talents.
+Every role also needs \`abilityParameter\`: the exact \`name\` of one of the
+three generated parameters the ability is designed to affect. Every ability
+must clearly matter to that parameter or one named pressure in the generated
+story; avoid generic useful talents.
 
 ${ARCHETYPE_PALETTE}
 
@@ -154,7 +159,10 @@ Generate:
    of abilities must be in the same order as the characters above.
    Each ability must clearly matter to one of the sequel's parameters or
    named pressures; avoid generic useful talents.
-2. Three completely new, unique parameters suitable for this sequel
+2. \`newAbilityParameters\`: one exact parameter \`name\` per returning
+   character, in the same order as \`newAbilities\`. Each value must match one
+   of the three generated sequel parameters exactly.
+3. Three completely new, unique parameters suitable for this sequel
    story.
 
 ${ARCHETYPE_PALETTE}

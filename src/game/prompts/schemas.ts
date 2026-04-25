@@ -1,12 +1,7 @@
 // JSON schemas for the four response shapes the AI produces. Kept pure —
 // no prompt text, no composition logic. The proxy's allowlist is keyed off
-// the sorted top-level `properties` names, so the shape fingerprints are:
-//   storyGenerationSchema → "stories"
-//   customStorySchema     → "parameters,roles"
-//   sequelSchema          → "newAbilities,newParameters"
-//   turnSchema            → "choices,consequences,gameOver,gameOverText,parameters,scene"
-// Do not rename top-level keys without also updating ALLOWED_SCHEMA_SHAPES
-// in proxy/server.js.
+// exact canonical schema hashes; run `npm run schema:hashes` after changing
+// any schema here and update proxy/server.js with the new hashes.
 
 import type { JsonSchema } from '../../api/adventure'
 
@@ -26,8 +21,9 @@ const roleItem: JsonSchema = {
     name: { type: 'STRING' },
     description: { type: 'STRING' },
     ability: { type: 'STRING' },
+    abilityParameter: { type: 'STRING' },
   },
-  required: ['name', 'description', 'ability'],
+  required: ['name', 'description', 'ability', 'abilityParameter'],
 }
 
 export const storyGenerationSchema: JsonSchema = {
@@ -63,9 +59,10 @@ export const sequelSchema: JsonSchema = {
   type: 'OBJECT',
   properties: {
     newAbilities: { type: 'ARRAY', items: { type: 'STRING' } },
+    newAbilityParameters: { type: 'ARRAY', items: { type: 'STRING' } },
     newParameters: { type: 'ARRAY', items: parameterItem },
   },
-  required: ['newAbilities', 'newParameters'],
+  required: ['newAbilities', 'newAbilityParameters', 'newParameters'],
 }
 
 export const turnSchema: JsonSchema = {
