@@ -24,7 +24,7 @@ const PROVIDER_STORAGE_KEY = 'adventureProvider'
 function loadStoredProvider(): Settings['provider'] {
   if (typeof window === 'undefined') return 'gemini'
   const stored = window.localStorage.getItem(PROVIDER_STORAGE_KEY)
-  return stored === 'claude' || stored === 'gemini' ? stored : 'claude'
+  return stored === 'claude' || stored === 'gemini' ? stored : 'gemini'
 }
 
 const initialSettings: Settings = {
