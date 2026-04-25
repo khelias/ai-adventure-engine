@@ -10,11 +10,14 @@ explain how the system is shaped and why.
    security posture, deployment, and where to find key code.
 2. [API contract](./api-contract.md) — request shape, schema allowlist, and
    AI-authored vs app-owned fields.
-3. [Model strategy](./model-strategy.md) — why Gemini 2.5 Flash is the default,
+3. [Architecture decisions](./decisions/README.md) — accepted ADRs for the
+   provider strategy, proxy boundary, game state ownership, special abilities,
+   and secrets.
+4. [Model strategy](./model-strategy.md) — why Gemini 2.5 Flash is the default,
    when Claude is acceptable, and how candidates should be evaluated.
-4. [Prompt audit](./prompt-audit.md) — current prompt risks, gameplay rubric,
+5. [Prompt audit](./prompt-audit.md) — current prompt risks, gameplay rubric,
    and what to inspect in transcripts.
-5. [Audit backlog](./audit-backlog.md) — follow-up work discovered during
+6. [Audit backlog](./audit-backlog.md) — follow-up work discovered during
    architecture and gameplay audits.
 
 The product roadmap remains at the repo root: [ROADMAP.md](../ROADMAP.md).

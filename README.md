@@ -81,6 +81,7 @@ Start here:
 - [Documentation index](docs/README.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [API contract](docs/api-contract.md)
+- [Architecture decision records](docs/decisions/README.md)
 - [Model strategy](docs/model-strategy.md)
 - [Prompt audit](docs/prompt-audit.md)
 - [Roadmap](ROADMAP.md)
