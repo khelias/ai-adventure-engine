@@ -1,11 +1,7 @@
 // Estonian word-order / style guide for AI-generated text.
 //
 // Loaded into:
-//   - Claude system prompt (preventive) when request body has language === 'et'
-//   - Gemini editor pass system prompt (corrective)
-//
-// Claude's `cache_control: ephemeral` is applied to the full system block, so
-// the guide is cached per-conversation — negligible per-turn cost.
+//   - Gemini editor pass system prompt (corrective) in server.js EDITOR_SYSTEM
 
 const ET_STYLE_GUIDE = `# Eesti keele sõnajärje juhis
 

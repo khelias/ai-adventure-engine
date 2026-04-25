@@ -224,6 +224,10 @@ async function main() {
   const recentScenes: string[] = []
   let nextChoice = LANG_PACKS[language].gameStartChoice
   let lastPicked: Choice | null = null
+  // Mirror live-app state: the choices the AI offered LAST turn (= the set
+  // the simulator just picked from). Sent to the next turn's prompt so the
+  // AI can avoid paraphrasing its own previous shape.
+  let lastTurnChoices: Choice[] = []
   let endReason: 'narrative' | 'parametric' | 'maxTurns' | 'api-error' = 'maxTurns'
 
   // ---- Simulated secrets (client-only in prod; here we mirror the logic
@@ -246,6 +250,7 @@ async function main() {
     log(`- **Last choice**: ${nextChoice}`)
     log('')
 
+    const isFinalTurn = t >= maxTurns
     const { system, user } = turnPrompt({
       currentTurn: t,
       maxTurns,
@@ -257,8 +262,13 @@ async function main() {
       recentScenes,
       choiceText: nextChoice,
       lastChoiceCost: lastPicked?.expectedChanges,
+      lastTurnChoices,
       language,
       context: ctx,
+      // Mirror the live app: on the final turn, send forceEnd='narrative-final'
+      // so the simulator exercises the same code path users will hit. Without
+      // it, the harness's diagnostics drift from real game-end behavior.
+      forceEnd: isFinalTurn ? 'narrative-final' : undefined,
     })
 
     const turnStart = Date.now()
@@ -384,6 +394,9 @@ async function main() {
     }
     nextChoice = picked.text
     lastPicked = picked
+    // Snapshot the full set the simulator picked from for the next turn's
+    // anti-paraphrase block — must capture BEFORE the loop body re-overwrites.
+    lastTurnChoices = choices
     log(`**→ Strategy "${strategy}" picks:** ${picked.text}`)
     log('')
     log(`---`)

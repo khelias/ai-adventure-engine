@@ -4,6 +4,7 @@ import { translations } from '../i18n/translations'
 import {
   customStoryPrompt,
   customStorySchema,
+  getStoryPhase,
   sequelPrompt,
   sequelSchema,
   storyGenerationPrompt,
@@ -19,7 +20,8 @@ import {
   isUnrecoverable,
   markAbilityUsedById,
 } from './engine'
-import type { Choice, ParameterCost, Story } from './types'
+import type { Choice, Parameter, ParameterCost, Role, Story } from './types'
+import type { TurnRecord } from './transcript'
 
 function t() {
   return translations[useGameStore.getState().settings.language]
@@ -27,6 +29,52 @@ function t() {
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
+}
+
+// Build a single turn record for the transcript. Each AI call (kickoff,
+// regular turn, narrative-final, unrecoverable retry) produces exactly one
+// record. The transcript is rebuilt at game-end into a single JSON document.
+function buildTurnRecord(args: {
+  turn: number
+  maxTurns: number
+  triggeredBy: TurnRecord['triggeredBy']
+  response: TurnResponse
+  appliedChanges: ParameterCost[]
+  parametersAfter: Parameter[]
+  rolesAfter: Role[]
+  forceEnd?: TurnRecord['forceEnd']
+}): TurnRecord {
+  return {
+    turn: args.turn,
+    phase: getStoryPhase(args.turn, args.maxTurns),
+    triggeredBy: args.triggeredBy,
+    scene: args.response.scene,
+    choicesOffered: args.response.choices ?? [],
+    appliedChanges: args.appliedChanges,
+    aiClaimedChanges: args.response.parameters ?? [],
+    parametersAfter: args.parametersAfter,
+    rolesAfter: args.rolesAfter,
+    forceEnd: args.forceEnd,
+  }
+}
+
+function describeTrigger(args: {
+  isFirstTurn?: boolean
+  isFreeText?: boolean
+  chosenChoice?: Choice
+  choiceText: string
+}): TurnRecord['triggeredBy'] {
+  if (args.isFirstTurn) return { kind: 'kickoff' }
+  if (args.isFreeText) return { kind: 'free-text', text: args.choiceText }
+  if (args.chosenChoice) {
+    return {
+      kind: 'option',
+      choiceText: args.choiceText,
+      chosenChoice: args.chosenChoice,
+    }
+  }
+  // Defensive — shouldn't happen given the call sites, but record it cleanly.
+  return { kind: 'free-text', text: args.choiceText }
 }
 
 export async function generateStories(): Promise<void> {
@@ -147,32 +195,110 @@ export async function handlePlayerChoice(
   store.setLoading(true)
 
   try {
+    const strings = translations[store.settings.language]
+
+    // Off-by-one fix: the AI is writing the scene the player is ABOUT to see,
+    // not the one already on screen. Sending stale store.currentTurn made the
+    // prompt header lag one turn behind reality — for Short=8 the AI was told
+    // "TURN 7 / 8" when generating the 8th scene, so it never read its own
+    // header as "final turn" and never ended.
+    const upcomingTurn = opts.isFirstTurn
+      ? store.currentTurn
+      : store.currentTurn + 1
+    const isFinalTurn = upcomingTurn >= store.maxTurns
+
+    // Ability used tracking — read directly from the structured choice. We
+    // mark the ability used BEFORE calling the AI so the prompt's AVAILABLE
+    // ABILITIES block doesn't silently re-offer the ability the player just
+    // used (observed: same one-time-use ability shown twice in adjacent turns).
+    const rolesAfterAbility =
+      opts.chosenChoice?.isAbility && typeof opts.chosenChoice.actor === 'number'
+        ? markAbilityUsedById(store.roles, opts.chosenChoice.actor)
+        : store.roles
+
+    // For chosenChoice turns we know the deltas upfront — preview the
+    // post-apply state and pass it to the AI as "current parameter states".
+    // Without this, the prompt was self-contradictory: states block showed
+    // pre-apply values while the APPLIED CHANGES block claimed they "already
+    // reflect" the deltas. AI got contradictory information. For kickoff /
+    // free-text we can't preview (deltas come from the AI's own response),
+    // so we fall back to pre-apply and finalize after the call.
+    const choiceDeltas: ParameterCost[] =
+      opts.chosenChoice?.expectedChanges ?? []
+    const paramsForPrompt = opts.chosenChoice
+      ? applyParameterChanges(store.parameters, choiceDeltas)
+      : store.parameters
+
     const { system, user } = turnPrompt({
-      currentTurn: store.currentTurn,
+      currentTurn: upcomingTurn,
       maxTurns: store.maxTurns,
       genre: store.settings.genre,
       title: store.title,
       summary: store.summary,
-      parameters: store.parameters,
-      roles: store.roles,
+      parameters: paramsForPrompt,
+      roles: rolesAfterAbility,
       recentScenes: store.recentScenes,
       choiceText,
       lastChoiceCost: opts.chosenChoice?.expectedChanges,
+      lastTurnChoices: store.lastTurnChoices,
       language: store.settings.language,
       context: store.settings.context,
       isFreeText: opts.isFreeText,
+      // Final-turn forceEnd is sent PROACTIVELY (not as a retry like
+      // 'unrecoverable') because we know upfront which turn the story ends on.
+      // This guarantees the natural-pacing ending lands on time.
+      forceEnd: isFinalTurn ? 'narrative-final' : undefined,
     })
     const response = await callAI<TurnResponse>(user, turnSchema, store.settings.provider, system, store.settings.language)
 
-    const strings = translations[store.settings.language]
+    // Authoritative deltas: chosenChoice.expectedChanges when we have a
+    // structured pick (the contract the choice signed when it was offered),
+    // otherwise the AI's response.parameters for kickoff / free-text.
+    // Trusting response.parameters on chosenChoice turns is unsafe — the AI
+    // sometimes silently zeroes them out, which produced parameter-frozen
+    // playthroughs in the past.
+    const authoritativeChanges: ParameterCost[] =
+      opts.chosenChoice?.expectedChanges ?? response.parameters ?? []
+    const parametersAfter = opts.chosenChoice
+      ? paramsForPrompt
+      : applyParameterChanges(store.parameters, authoritativeChanges)
 
-    if (response.gameOver) {
-      // Push the AI's final scene to allScenes before flipping to the gameOver
-      // screen — otherwise the "Näita kogu lugu" / copy-transcript output
-      // silently misses the last beat of the story.
+    const triggeredBy = describeTrigger({
+      isFirstTurn: opts.isFirstTurn,
+      isFreeText: opts.isFreeText,
+      chosenChoice: opts.chosenChoice,
+      choiceText,
+    })
+
+    // Narrative end path:
+    //   - isFinalTurn=true: forceEnd='narrative-final' was sent. Engine
+    //     guarantees the end here even if AI ignored forceEnd (response.scene
+    //     becomes the closing beat, fallback gameOverText if AI didn't write one).
+    //   - response.gameOver=true: AI volunteered a mid-game ending (shape B).
+    if (isFinalTurn || response.gameOver) {
       if (response.scene && response.scene.trim()) {
         store.pushFinalScene(response.scene)
       }
+      // Commit applied changes before setGameOver so the gameOver screen,
+      // secrets scoring, and the persisted transcript see the FINAL state.
+      // (Previously we ended without applying, so the "final parameters"
+      // captured in the gameOver screen lagged one choice behind.)
+      useGameStore.setState({
+        parameters: parametersAfter,
+        roles: rolesAfterAbility,
+      })
+      store.appendTurnRecord(
+        buildTurnRecord({
+          turn: upcomingTurn,
+          maxTurns: store.maxTurns,
+          triggeredBy,
+          response,
+          appliedChanges: authoritativeChanges,
+          parametersAfter,
+          rolesAfter: rolesAfterAbility,
+          forceEnd: isFinalTurn ? 'narrative-final' : undefined,
+        }),
+      )
       store.setGameOver(
         'narrative',
         strings.endNarrative,
@@ -184,44 +310,50 @@ export async function handlePlayerChoice(
       return
     }
 
-    // Ability used tracking — read directly from the structured choice.
-    const rolesAfterAbility =
-      opts.chosenChoice?.isAbility && typeof opts.chosenChoice.actor === 'number'
-        ? markAbilityUsedById(store.roles, opts.chosenChoice.actor)
-        : store.roles
-
-    const nextTurn = opts.isFirstTurn ? store.currentTurn : store.currentTurn + 1
-
-    // Apply the CHOICE's declared cost authoritatively — not whatever the AI
-    // wrote into response.parameters. The choice signed a contract when it
-    // was offered (expectedChanges); the engine honours that contract. If we
-    // trusted response.parameters, the AI could silently set all deltas to 0
-    // (observed: entire games with no parameter movement). Turn 1 and custom
-    // free text have no chosenChoice — we fall back to response.parameters
-    // there since the AI is the only source of truth.
-    const authoritativeChanges: ParameterCost[] =
-      opts.chosenChoice?.expectedChanges ?? response.parameters ?? []
-    const parametersAfter = applyParameterChanges(store.parameters, authoritativeChanges)
-
     // Unrecoverable = 2+ parameters at worst. Trigger AI-narrated ending.
     // A single parameter at worst is a phase transition, not a game-over.
     if (isUnrecoverable(parametersAfter)) {
+      // Record the regular turn that produced the collapse, BEFORE running
+      // the unrecoverable retry. narrateUnrecoverableEnd appends its own
+      // record for the second AI call.
+      store.appendTurnRecord(
+        buildTurnRecord({
+          turn: upcomingTurn,
+          maxTurns: store.maxTurns,
+          triggeredBy,
+          response,
+          appliedChanges: authoritativeChanges,
+          parametersAfter,
+          rolesAfter: rolesAfterAbility,
+        }),
+      )
       await narrateUnrecoverableEnd({
         parameters: parametersAfter,
         roles: rolesAfterAbility,
         choiceText,
-        nextTurn,
+        nextTurn: upcomingTurn,
         lastScene: response.scene,
       })
       return
     }
 
+    store.appendTurnRecord(
+      buildTurnRecord({
+        turn: upcomingTurn,
+        maxTurns: store.maxTurns,
+        triggeredBy,
+        response,
+        appliedChanges: authoritativeChanges,
+        parametersAfter,
+        rolesAfter: rolesAfterAbility,
+      }),
+    )
     store.setTurnResult({
       sceneText: response.scene,
       choices: response.choices,
       parameters: parametersAfter,
       roles: rolesAfterAbility,
-      currentTurn: nextTurn,
+      currentTurn: upcomingTurn,
     })
   } catch (err) {
     store.setError(t().errorApi(errorMessage(err)))
@@ -250,6 +382,12 @@ async function narrateUnrecoverableEnd(args: {
   if (lastScene && lastScene.trim()) {
     store.pushFinalScene(lastScene)
   }
+
+  // Commit the post-apply (collapsed) state to the store before any setGameOver
+  // path. Otherwise the gameOver screen, secrets scoring, and persisted
+  // transcript would see pre-collapse parameters — the very deltas that
+  // triggered the parametric end wouldn't appear in finalParameters.
+  useGameStore.setState({ parameters, roles })
 
   const recentPlusLast = [...store.recentScenes, lastScene].slice(-3)
 
@@ -280,6 +418,25 @@ async function narrateUnrecoverableEnd(args: {
     if (endResponse.scene && endResponse.scene.trim()) {
       store.pushFinalScene(endResponse.scene)
     }
+    // Append the unrecoverable retry as its own turn record. No new deltas
+    // are applied here — the collapse was applied by the regular turn that
+    // preceded this retry; this AI call only writes the closing beat.
+    store.appendTurnRecord(
+      buildTurnRecord({
+        turn: nextTurn,
+        maxTurns: store.maxTurns,
+        triggeredBy: {
+          kind: 'engine-retry',
+          reason: 'unrecoverable',
+          lastChoiceText: choiceText,
+        },
+        response: endResponse,
+        appliedChanges: [],
+        parametersAfter: parameters,
+        rolesAfter: roles,
+        forceEnd: 'unrecoverable',
+      }),
+    )
     store.setGameOver(
       'parametric',
       strings.endParametric,

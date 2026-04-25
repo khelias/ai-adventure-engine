@@ -77,6 +77,7 @@ interface StringTable {
   hideFullStoryBtn: string
   copyStoryBtn: string
   copiedMsg: string
+  downloadTranscriptBtn: string
   endNarrative: string
   endParametric: string
   endGenericText: string
@@ -186,6 +187,7 @@ export const translations: Record<Language, StringTable> = {
     hideFullStoryBtn: 'Peida kogu lugu',
     copyStoryBtn: 'Kopeeri tekst',
     copiedMsg: 'Kopeeritud!',
+    downloadTranscriptBtn: 'Lae alla JSON',
     endNarrative: 'Narratiivne Lõpp',
     endParametric: 'Parameetriline Kaotus',
     endGenericText: 'Seiklus on jõudnud ootamatu lõpuni.',
@@ -312,6 +314,7 @@ export const translations: Record<Language, StringTable> = {
     hideFullStoryBtn: 'Hide full story',
     copyStoryBtn: 'Copy text',
     copiedMsg: 'Copied!',
+    downloadTranscriptBtn: 'Download JSON',
     endNarrative: 'Narrative End',
     endParametric: 'Parametric Loss',
     endGenericText: 'The adventure has come to an unexpected end.',

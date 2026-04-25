@@ -38,6 +38,22 @@ A ghost-story fantasy wants secret + curse + time. A zombie siege wants
 resource + bond + pressure. A thriller wants secret + proof + debt. A
 post-apocalyptic wants hunger + resource + pressure. Match the story.`
 
+export const ARCHETYPE_BEHAVIORS = `## ARCHETYPE BEHAVIORS
+
+How each archetype moves — respect these at turn time.
+
+- **resource**: depletes with action, rarely restored. Starts full, ends empty.
+- **bond**: shifts both ways from social and moral choices. Named pair.
+- **pressure**: escalates with events. Named external threat.
+- **secret**: drifts hidden → suspected → known → exposed. Never jumps two states.
+- **curse**: inevitable arc that a specific act can interrupt. Inches, not leaps.
+- **time**: moves at named thresholds, NOT every turn.
+- **guilt**: grows from choices, NEVER shrinks. Only worsens.
+- **proof**: grows toward revelation via truth-seeking, at cost to safety.
+- **promise**: sworn oath with teeth if broken.
+- **hunger**: external need that must be fed or the world breaks.
+- **debt**: unpaid obligation pursuing the group.`
+
 export const PARAMETER_CRAFT = `## PARAMETER CRAFT
 
 Three parameters per story. Three DIFFERENT archetypes — no duplicates.

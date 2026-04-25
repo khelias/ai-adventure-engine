@@ -4,12 +4,37 @@ import { buildToneBlock } from './tone'
 import { ARCHETYPE_PALETTE, PARAMETER_CRAFT } from './archetypes'
 
 function buildContextBlock(ctx: ContextInput): string {
-  const parts: string[] = []
-  if (ctx.location) parts.push(`- Physical setting: "${ctx.location}"`)
-  if (ctx.playersDesc) parts.push(`- People in the group: "${ctx.playersDesc}"`)
-  if (ctx.insideJoke) parts.push(`- Something that happened today (weave in naturally): "${ctx.insideJoke}"`)
-  if (!parts.length) return ''
-  return `\n## GROUP CONTEXT\n\nWeave subtly and naturally into the story — the setting, the people, the mood.\n\n${parts.join('\n')}\n`
+  const structural: string[] = []
+  if (ctx.location) structural.push(`- Physical setting: "${ctx.location}"`)
+  if (ctx.playersDesc) structural.push(`- People in the group: "${ctx.playersDesc}"`)
+
+  const hasStructural = structural.length > 0
+  const hasJoke = !!ctx.insideJoke
+  if (!hasStructural && !hasJoke) return ''
+
+  const parts: string[] = ['\n## GROUP CONTEXT\n']
+  if (hasStructural) {
+    parts.push(
+      'Story-shaping inputs — fold these into the setting, the people, the mood.\n',
+    )
+    parts.push(structural.join('\n') + '\n')
+  }
+  if (hasJoke) {
+    parts.push(`### SCENE EASTER EGG (flavor only, NOT story structure)
+
+A small in-joke from the group's day: "${ctx.insideJoke}"
+
+This is decoration, not material. It MUST NOT appear in:
+- the title or summary
+- any parameter (name, archetype, or state phrase)
+- any role (name, description, or ability)
+
+The genre and the player count drive the story's bones. Build those
+first as if this easter egg did not exist. The narrator may reference
+it lightly later as a passing scene-level wink — but the story must
+stand on its own without it.\n`)
+  }
+  return parts.join('\n')
 }
 
 export function storyGenerationPrompt(args: {

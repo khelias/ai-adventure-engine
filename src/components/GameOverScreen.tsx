@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { generateSequel } from '../game/actions'
 import { LoadingDots } from './LoadingDots'
+import { downloadTranscript } from '../game/transcript'
 
 type RevealPhase = 'prompt' | 'reveal'
 
@@ -14,6 +15,7 @@ export function GameOverScreen() {
   const allScenes = useGameStore((s) => s.allScenes)
   const roles = useGameStore((s) => s.roles)
   const secrets = useGameStore((s) => s.secrets)
+  const transcript = useGameStore((s) => s.transcript)
   const reset = useGameStore((s) => s.reset)
   const isLoading = useGameStore((s) => s.isLoading)
   const error = useGameStore((s) => s.error)
@@ -184,7 +186,7 @@ export function GameOverScreen() {
       {/* Full story toggle */}
       {allScenes.length > 0 && (
         <div className="text-left space-y-3">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderTop: '1px solid var(--line)', paddingTop: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderTop: '1px solid var(--line)', paddingTop: '1rem', flexWrap: 'wrap' }}>
             <button
               type="button"
               onClick={() => setShowFullStory((v) => !v)}
@@ -202,6 +204,16 @@ export function GameOverScreen() {
             >
               {copied ? strings.copiedMsg : strings.copyStoryBtn}
             </button>
+            {transcript ? (
+              <button
+                type="button"
+                onClick={() => downloadTranscript(transcript)}
+                className="btn-ghost type-caps"
+                style={{ fontStyle: 'normal', fontSize: '0.6875rem' }}
+              >
+                {strings.downloadTranscriptBtn}
+              </button>
+            ) : null}
           </div>
 
           {showFullStory && (

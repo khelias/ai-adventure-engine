@@ -6,7 +6,11 @@ export type StoryPhase = 'setup' | 'inciting' | 'rising' | 'climax' | 'resolutio
 
 export function getStoryPhase(turn: number, maxTurns: number): StoryPhase {
   if (turn <= Math.max(1, Math.round(maxTurns * 0.12))) return 'setup'
-  if (turn >= maxTurns) return 'resolution'
+  // Resolution covers the LAST TWO turns. The penultimate turn pulls
+  // threads together (no new threats); the final turn lands the ending.
+  // Giving resolution one beat leaves the AI no room to wind down — it
+  // had to climax and conclude in the same scene, which it could not do.
+  if (turn >= maxTurns - 1) return 'resolution'
   const incitingEnd = Math.max(2, Math.round(maxTurns * 0.3))
   const risingEnd = Math.round(maxTurns * 0.67)
   const climaxEnd = Math.round(maxTurns * 0.87)
@@ -21,9 +25,12 @@ export function phaseInstruction(phase: StoryPhase): string {
     case 'setup':
       return `## PHASE — Setup
 
-Open on a vivid sensory scene. Introduce each character through action,
-not exposition. End on an ominous hook. Parameters are stable. No special
-abilities offered. Choices are exploratory — low-cost, information-gathering.`
+Open on a concrete physical scene — what is happening, where, who is
+present. Introduce each character through one specific action, not
+exposition. End on a hook — a sound, a sight, a name spoken — that
+sets the threat in motion without yet naming it. Parameters are stable.
+No special abilities offered. Choices are exploratory — low-cost,
+information-gathering.`
     case 'inciting':
       return `## PHASE — Inciting incident
 
@@ -33,9 +40,13 @@ yet desperate. No special abilities offered.`
     case 'rising':
       return `## PHASE — Rising action
 
-Complications mount. At least one parameter shifts meaningfully this turn.
-The situation grows harder. Characters' specific natures shape the crisis.
-When an ability fits dramatically, a character may rise to their moment.`
+The situation must TRANSFORM each turn, not merely intensify. A new
+development, a new face, a new angle, a new piece of information, a new
+location pressure — something the players have not yet faced. "The same
+threat, harder" is the boredom failure mode. At least one parameter
+shifts meaningfully this turn. Characters' specific natures shape the
+crisis. When an ability fits dramatically, a character may rise to
+their moment.`
     case 'climax':
       return `## PHASE — Climax
 
@@ -45,9 +56,20 @@ feel heavy and irreversible.`
     case 'resolution':
       return `## PHASE — Resolution
 
-The story's fate is sealing. Weave threads toward an ending — do not
-introduce new threats. If this is the final turn, set \`gameOver=true\` and
-write a gameOverText that honors the specific choices made, who each
-character became, what happened to this world.`
+The story is winding down. Resolution is a TWO-BEAT arc:
+
+- **Penultimate beat** (the turn before the final one): threads converge.
+  No new threats. No new characters. Each choice this turn is about
+  HOW the inevitable lands, not whether. Choices feel weighty but not
+  expansive — they shape the ending, they do not delay it.
+- **Final beat** (the turn header reads \`TURN N / N\`): the ending lands.
+  This is the only turn where you set \`gameOver=true\` and write the full
+  \`gameOverText\` — 3–5 paragraphs naming which parameters held and which
+  broke, the specific choices that mattered, and what each character
+  became. The \`scene\` field can stay short — \`gameOverText\` carries
+  the weight. Output empty \`choices\`.
+
+To know which beat you're on: compare \`currentTurn\` with \`maxTurns\` in
+the turn header above.`
   }
 }

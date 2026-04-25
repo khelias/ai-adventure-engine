@@ -31,17 +31,13 @@ Your response resolves to ONE of two shapes. There is no third shape.
   held and which broke, the specific choices that mattered, and what
   each character became
 
-Shape B is chosen when (i) this is the final turn of the game, (ii) two
-or more parameters have collapsed into their worst state, or (iii) the
-situation has genuinely concluded and you cannot conceive of three
-forward actions.
+The engine tells you when to end by adding a **FORCED CONCLUSION** block
+to the turn message. Without that block, choose Shape B only when the
+situation has genuinely concluded and you cannot conceive of three forward
+actions — which is rare. Before accepting it, check for three fallback
+options: *who speaks first*, *who moves first*, *who does nothing and
+forces the others to act*.
 
-Case (iii) is rare. Before accepting it, check for the three fallback
-options that almost always exist in any moment: *who speaks first*,
-*who moves first*, *who does nothing and forces the others to act*.
-These three are themselves a valid choice-set when you feel stuck.
-
-Returning empty \`choices\` with \`gameOver=false\` is never valid. It
-leaves the group without a way forward. If the moment feels paralyzed,
-that IS your choice to write about — three different ways to break the
-silence.`
+Returning empty \`choices\` with \`gameOver=false\` is never valid. If the
+moment feels paralyzed, that IS your choice to write about — three
+different ways to break the silence.`

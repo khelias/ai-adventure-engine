@@ -143,7 +143,7 @@ Internal layout:
 | File | Concern |
 |---|---|
 | `schemas.ts` | JSON schemas + `TurnResponse` type |
-| `archetypes.ts` | 11-archetype palette + parameter-craft block |
+| `archetypes.ts` | 11-archetype palette + turn-time behavior rules + parameter-craft block |
 | `phases.ts` | `getStoryPhase()` + per-phase narrative instruction |
 | `tone.ts` | TONE blocks for light / tense / dark vibes |
 | `craft.ts` | Scene / choices / parameter-movement craft + self-check |
@@ -162,8 +162,9 @@ Four schemas; the proxy validates against the sorted top-level `properties` keys
 | `turnSchema` | One turn: scene + param changes + choices + optional gameOver | `choices,gameOver,gameOverText,parameters,scene` |
 
 The turn prompt is split into **system** (static — story, characters,
-parameters, craft + contract blocks, few-shot example) and **user**
-(dynamic — current turn, parameter states, recent scenes, last choice).
+parameters, archetype behaviors, craft + contract blocks, few-shot
+example) and **user** (dynamic — current turn, parameter states, recent
+scenes, last choice).
 Claude's `cache_control: { type: 'ephemeral' }` caches the system block
 across turns — cache hit saves ~50% of input tokens.
 
@@ -178,9 +179,9 @@ Three concerns are kept apart because Claude attends to each differently:
 - **CONTRACT** (`contract.ts`): the response *shape*. Phrased as a binary
   narrative choice: *"Your response resolves to ONE of two shapes. There
   is no third shape."* (3 choices + gameOver=false, or empty + gameOver=true
-  + a full gameOverText.) Replaces the old rule 7 framed as a system
-  constraint — Claude underweighted "the game freezes" framing relative
-  to creative instincts on tense reveal scenes.
+  + a full gameOverText.) The contract does not enumerate ending triggers —
+  the engine handles forced endings via `forceEnd` blocks in the user
+  message, and the contract only describes the AI-initiated case (rare).
 - **META** (kept out of system prompt): app internals, what the engine
   does with the response. The model is a narrator, not the engine — telling
   it about engine behavior wastes attention.

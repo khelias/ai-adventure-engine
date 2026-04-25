@@ -126,12 +126,11 @@ app.post('/generate', async (req, res) => {
   }
   const t0 = Date.now();
   try {
-    // When the request language is Estonian, prepend the style guide to the
-    // system prompt so the generator has it in its working context. Cheaper
-    // and more reliable than only fixing mistakes downstream in the editor.
-    const effectiveSystemPrompt = language === 'et'
-      ? (systemPrompt ? `${ET_STYLE_GUIDE}\n\n---\n\n${systemPrompt}` : ET_STYLE_GUIDE)
-      : systemPrompt;
+    // Estonian grammar is handled by the Gemini editor pass (corrective),
+    // not by prepending the style guide to the generator's system prompt.
+    // This keeps the generator focused on narrative craft and saves ~800
+    // tokens per turn. The ET_STYLE_GUIDE is still used in EDITOR_SYSTEM.
+    const effectiveSystemPrompt = systemPrompt;
 
     const callOnce = (extraPrompt) => provider === 'claude'
       ? callClaude({ prompt: prompt + (extraPrompt || ''), schema, systemPrompt: effectiveSystemPrompt })

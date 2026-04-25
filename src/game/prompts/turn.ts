@@ -1,8 +1,9 @@
-import type { ContextInput, Language, Parameter, Role } from '../types'
+import type { Choice, ContextInput, Language, Parameter, Role } from '../types'
 import { LANG_PACKS } from '../../i18n/lang-packs'
 import { buildToneBlock } from './tone'
 import { SCENE_CRAFT, CHOICES_CRAFT, PARAMETER_MOVEMENT, SELF_CHECK } from './craft'
 import { TURN_CONTRACT } from './contract'
+import { ARCHETYPE_BEHAVIORS } from './archetypes'
 import { getStoryPhase, phaseInstruction } from './phases'
 
 export interface TurnPromptResult {
@@ -11,12 +12,30 @@ export interface TurnPromptResult {
 }
 
 function buildContextBlock(ctx: ContextInput): string {
-  const parts: string[] = []
-  if (ctx.location) parts.push(`- Physical setting: "${ctx.location}"`)
-  if (ctx.playersDesc) parts.push(`- People in the group: "${ctx.playersDesc}"`)
-  if (ctx.insideJoke) parts.push(`- Something that happened today (weave in naturally): "${ctx.insideJoke}"`)
-  if (!parts.length) return ''
-  return `\n## GROUP CONTEXT\n\n${parts.join('\n')}\n`
+  const structural: string[] = []
+  if (ctx.location) structural.push(`- Physical setting: "${ctx.location}"`)
+  if (ctx.playersDesc) structural.push(`- People in the group: "${ctx.playersDesc}"`)
+
+  const hasStructural = structural.length > 0
+  const hasJoke = !!ctx.insideJoke
+  if (!hasStructural && !hasJoke) return ''
+
+  const parts: string[] = ['\n## GROUP CONTEXT\n']
+  if (hasStructural) {
+    parts.push(structural.join('\n') + '\n')
+  }
+  if (hasJoke) {
+    parts.push(`### SCENE EASTER EGG (use lightly, never as story driver)
+
+A small in-joke from the group's day: "${ctx.insideJoke}"
+
+It can earn at most one passing reference per scene, only when the
+moment naturally invites it. Skip it entirely if it would not fit
+this scene's tone — most scenes will not include it. Never let it
+shape choices, parameter movement, or the threat. It is a wink, not
+a hinge.\n`)
+  }
+  return parts.join('\n')
 }
 
 export function turnPrompt(args: {
@@ -33,14 +52,22 @@ export function turnPrompt(args: {
   // this directly; we pass it to the AI so the scene it writes NEXT visibly
   // embodies exactly these deltas rather than inventing new ones.
   lastChoiceCost?: { name: string; change: number }[]
+  // The full set of choices the AI offered on the previous turn (the set
+  // the players just picked from). Surfaced so the AI can see the shape
+  // it just used and avoid paraphrasing it on this turn.
+  lastTurnChoices?: Choice[]
   language: Language
   context: ContextInput
   isFreeText?: boolean
-  forceEnd?: 'unrecoverable' // set when 2+ params at worst — AI must conclude now
+  // 'unrecoverable': 2+ params at worst — AI must conclude now (parametric end).
+  // 'narrative-final': we're on the FINAL turn (currentTurn === maxTurns) —
+  // AI must wrap the story arc as planned, regardless of phase reading.
+  forceEnd?: 'unrecoverable' | 'narrative-final'
 }): TurnPromptResult {
   const {
     currentTurn, maxTurns, genre, title, summary,
     parameters, roles, recentScenes, choiceText, lastChoiceCost,
+    lastTurnChoices,
     language, context, isFreeText, forceEnd,
   } = args
 
@@ -97,6 +124,8 @@ Each has 4 states, best → worst.
 
 ${parametersBlock}
 
+${ARCHETYPE_BEHAVIORS}
+
 ${SCENE_CRAFT}
 
 ${CHOICES_CRAFT}
@@ -126,6 +155,32 @@ ${SELF_CHECK}${exampleBlock}`
     ? `## AVAILABLE ABILITIES\n\n${availableAbilities.map((r) => `- **${r.name}** (actor: ${r.id}) — *${r.ability}*`).join('\n')}`
     : '*All special abilities have been used.*'
 
+  // Render the previous turn's offered set so the AI can see its own last
+  // choice-shape and explicitly differ from it. Skipped on turn 1 (nothing
+  // was offered yet) and on free-text turns (the prior choices weren't the
+  // input — the player typed something).
+  const lastTurnChoicesBlock =
+    lastTurnChoices && lastTurnChoices.length > 0 && !isFreeText
+      ? `## PREVIOUS TURN'S OFFERED CHOICES
+
+You wrote these three choices last turn. The players picked one (see
+**LAST CHOICE** below). Do NOT paraphrase this shape on this turn —
+the situation must have transformed, not merely repeated with new
+words. Different actors, different stakes, different verbs.
+
+${lastTurnChoices
+  .map((c, i) => {
+    const actorName = roles[c.actor]?.name ?? `role ${c.actor}`
+    const costSummary = c.expectedChanges
+      .filter((e) => e.change !== 0)
+      .map((e) => `${e.name} ${e.change > 0 ? '+' : ''}${e.change}`)
+      .join(', ')
+    return `${i + 1}. **${actorName}** — "${c.text}"${costSummary ? ` *(cost: ${costSummary})*` : ''}`
+  })
+  .join('\n')}
+`
+      : ''
+
   const choiceLine = currentTurn === 1
     ? '## LAST CHOICE\n\n*Open the story.*'
     : `## LAST CHOICE\n\nThe players chose: **"${choiceText}"**`
@@ -138,8 +193,9 @@ ${SELF_CHECK}${exampleBlock}`
     ? `## STORY SO FAR (recent scenes — maintain continuity, reference past events)\n\n${recentScenes.map((s, i) => `**Scene ${currentTurn - recentScenes.length + i}**:\n\n> ${s}`).join('\n\n')}\n`
     : ''
 
-  const forceEndBlock = forceEnd === 'unrecoverable'
-    ? `\n## ⚠ FORCED CONCLUSION — UNRECOVERABLE STATE
+  let forceEndBlock = ''
+  if (forceEnd === 'unrecoverable') {
+    forceEndBlock = `\n## ⚠ FORCED CONCLUSION — UNRECOVERABLE STATE
 
 Two or more parameters have collapsed to worst state simultaneously. The
 situation is unrecoverable.
@@ -153,9 +209,28 @@ Write the final scene NOW:
   group's ending.
 - The \`scene\` field can be short — the \`gameOverText\` carries the weight.
 - Output empty \`choices\`.\n`
-    : ''
+  } else if (forceEnd === 'narrative-final') {
+    forceEndBlock = `\n## ⚠ FORCED CONCLUSION — FINAL TURN
 
-  const phaseLine = forceEnd === 'unrecoverable' ? '' : `${phaseInstruction(phase)}\n`
+This is the final turn of the story (\`TURN ${currentTurn} / ${maxTurns}\`).
+The arc ends here. There is no next turn to defer to.
+
+Write the ending NOW:
+
+- Set \`gameOver: true\`.
+- Write a full \`gameOverText\` (3–5 paragraphs) that names which
+  parameters held and which broke, the specific choices that mattered
+  along the way, and what each named character became. This is the
+  group's ending — honor the journey, do not narrate around it.
+- The \`scene\` field can be short — \`gameOverText\` carries the weight.
+- Output empty \`choices\`.
+
+The story does NOT continue. Do not offer choices. Do not set
+\`gameOver: false\`. There is exactly one valid response shape on this
+turn: gameOver=true with a written ending.\n`
+  }
+
+  const phaseLine = forceEnd ? '' : `${phaseInstruction(phase)}\n`
 
   const appliedChangesBlock = lastChoiceCost && lastChoiceCost.length > 0
     ? `## APPLIED CHANGES
@@ -181,7 +256,7 @@ ${currentStates}
 
 ${appliedChangesBlock}${abilitiesLine}
 
-${choiceLine}${freeTextNote}`
+${lastTurnChoicesBlock}${choiceLine}${freeTextNote}`
 
   return { system, user }
 }
