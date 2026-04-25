@@ -240,4 +240,3 @@ prompts, schemas, and documentation.
 - [API contract](./api-contract.md)
 - [Model strategy](./model-strategy.md)
 - [Prompt audit](./prompt-audit.md)
-- [Audit backlog](./audit-backlog.md)

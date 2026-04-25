@@ -17,8 +17,6 @@ explain how the system is shaped and why.
    when Claude is acceptable, and how candidates should be evaluated.
 5. [Prompt audit](./prompt-audit.md) — current prompt risks, gameplay rubric,
    and what to inspect in transcripts.
-6. [Audit backlog](./audit-backlog.md) — follow-up work discovered during
-   architecture and gameplay audits.
 
 The product roadmap remains at the repo root: [ROADMAP.md](../ROADMAP.md).
 
