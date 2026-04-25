@@ -127,6 +127,7 @@ export function SetupScreen() {
   const duration = settings.duration
 
   const genreOption = GENRES.find((g) => g.value === genre) ?? GENRES[0]
+  const durationOption = DURATION_OPTIONS.find((d) => d.value === duration) ?? DURATION_OPTIONS[0]
   const stepTitle = {
     1: strings.step1Title,
     2: strings.step2Title,
@@ -134,9 +135,15 @@ export function SetupScreen() {
     4: strings.step4Title,
   }[step]
 
-  // First word of duration label (strips the parenthetical)
-  const getDurationWord = (labelKey: keyof typeof translations.et) =>
-    (strings[labelKey] as string).split(' ')[0]
+  const getDurationParts = (labelKey: keyof typeof translations.et) => {
+    const label = strings[labelKey] as string
+    const match = label.match(/\(([^)]+)\)/)
+    return {
+      name: label.replace(/\s*\(.+\)\s*$/, ''),
+      meta: match?.[1] ?? '',
+    }
+  }
+  const selectedDurationParts = getDurationParts(durationOption.labelKey)
 
   return (
     <section className="setup-wrap">
@@ -150,45 +157,102 @@ export function SetupScreen() {
       <h2 className="setup-step-title">{stepTitle}</h2>
 
       {step === 1 && (
-        <>
-          <div className="setup-step-content fade-in">
+        <div className="setup-step-content setup-step-content--start fade-in">
+          <div className="setup-showcase">
             <div
-              className="circle-wrap"
+              className="setup-showcase__stage"
               onTouchStart={handleSwipeStart}
               onTouchEnd={handleSwipeEnd}
             >
-              <div className={`circle-beam${genre ? ' active' : ''}`} />
-              <div className={`circle${genre ? ' active' : ''}`}>
-                <span className={`circle__icon${genre ? ' visible' : ''}`}>
+              <div className="setup-stage-orbit" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </div>
+
+              <div className="setup-stage-core">
+                <span className="setup-stage-core__icon">
                   {genreOption.icon}
                 </span>
               </div>
-              <p className={`circle-genre-name${genre ? ' active' : ''}`}>
-                {strings[genreOption.labelKey] as string}
-              </p>
-              <div className="genre-dots" role="group" aria-label={strings.genreLabel}>
-                {GENRES.map((g) => (
-                  <button
-                    key={g.value}
-                    type="button"
-                    className={`genre-dot${genre === g.value ? ' active' : ''}`}
-                    aria-label={strings[g.labelKey] as string}
-                    aria-pressed={genre === g.value}
-                    onClick={() => setSetting('genre', g.value)}
-                  />
-                ))}
+
+              <div className="setup-stage-copy">
+                <span className="setup-stage-label">{strings.setupStageLabel}</span>
+                <h3>{strings[genreOption.labelKey] as string}</h3>
+                <p>{strings.genreTeaser(genre)}</p>
+              </div>
+
+              <div className="setup-stage-meta">
+                <span>{strings.durationQuestion}</span>
+                <strong>{selectedDurationParts.name}</strong>
+                {selectedDurationParts.meta ? (
+                  <small>{selectedDurationParts.meta}</small>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="setup-showcase__controls">
+              <div>
+                <h3 className="setup-tell-header">{strings.setupBasicsHeader}</h3>
+                <p className="setup-context-hint">{strings.setupBasicsHint}</p>
+              </div>
+
+              <div className="setup-section setup-section--genre">
+                <span className="setup-label">{strings.genreLabel}</span>
+                <div className="genre-choice-grid" role="group" aria-label={strings.genreLabel}>
+                  {GENRES.map((g) => (
+                    <button
+                      key={g.value}
+                      type="button"
+                      className={`genre-choice${genre === g.value ? ' active' : ''}`}
+                      aria-pressed={genre === g.value}
+                      onClick={() => setSetting('genre', g.value)}
+                    >
+                      <span className="genre-choice__icon" aria-hidden="true">
+                        {g.icon}
+                      </span>
+                      <span>{strings[g.labelKey] as string}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="setup-section setup-section--inline">
+                <span className="setup-label">{strings.durationQuestion}</span>
+                <div className="seg-group">
+                  {DURATION_OPTIONS.map((d) => {
+                    const durationParts = getDurationParts(d.labelKey)
+
+                    return (
+                      <button
+                        key={d.value}
+                        type="button"
+                        className={`seg-btn seg-btn--duration${duration === d.value ? ' active' : ''}`}
+                        onClick={() => setSetting('duration', d.value)}
+                        aria-pressed={duration === d.value}
+                        aria-label={strings[d.labelKey] as string}
+                      >
+                        <span>{durationParts.name}</span>
+                        {durationParts.meta ? (
+                          <span className="seg-btn__meta">{durationParts.meta}</span>
+                        ) : null}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="setup-duration-note">{strings.durationTeaser(duration)}</p>
               </div>
             </div>
           </div>
 
           <button
             type="button"
-            className="btn-begin ready"
+            className="btn-begin ready setup-start-action"
             onClick={() => setStep(2)}
           >
             {strings.nextStepBtn}
           </button>
-        </>
+        </div>
       )}
 
       {step === 2 && (
@@ -199,40 +263,21 @@ export function SetupScreen() {
               <p className="setup-context-hint">{strings.playerNamesHint}</p>
             </div>
 
-            <div className="setup-mini-grid">
-              <div className="setup-section setup-section--inline">
-                <span className="setup-label">{strings.playerCountQuestion}</span>
-                <div className="seg-group">
-                  {[3, 4, 5, 6].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      className={`seg-btn seg-btn--num${players === n ? ' active' : ''}`}
-                      onClick={() => setSetting('players', n)}
-                      aria-pressed={players === n}
-                      aria-label={strings.playersAriaLabel(n)}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="setup-section setup-section--inline">
-                <span className="setup-label">{strings.durationQuestion}</span>
-                <div className="seg-group">
-                  {DURATION_OPTIONS.map((d) => (
-                    <button
-                      key={d.value}
-                      type="button"
-                      className={`seg-btn${duration === d.value ? ' active' : ''}`}
-                      onClick={() => setSetting('duration', d.value)}
-                      aria-pressed={duration === d.value}
-                    >
-                      {getDurationWord(d.labelKey)}
-                    </button>
-                  ))}
-                </div>
+            <div className="setup-section setup-section--inline">
+              <span className="setup-label">{strings.playerCountQuestion}</span>
+              <div className="seg-group">
+                {[3, 4, 5, 6].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className={`seg-btn seg-btn--num${players === n ? ' active' : ''}`}
+                    onClick={() => setSetting('players', n)}
+                    aria-pressed={players === n}
+                    aria-label={strings.playersAriaLabel(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -335,6 +380,28 @@ export function SetupScreen() {
 
       {step === 4 && (
         <div className="setup-step-content setup-step-content--context fade-in">
+          <div className="setup-summary" aria-label={strings.setupReviewHeader}>
+            <h3 className="setup-tell-header">{strings.setupReviewHeader}</h3>
+            <div className="setup-summary-grid">
+              <div className="setup-summary-item">
+                <span>{strings.genreLabel}</span>
+                <strong>{strings[genreOption.labelKey] as string}</strong>
+              </div>
+              <div className="setup-summary-item">
+                <span>{strings.playerCountQuestion}</span>
+                <strong>{strings.playersAriaLabel(players)}</strong>
+              </div>
+              <div className="setup-summary-item">
+                <span>{strings.durationQuestion}</span>
+                <strong>{strings[DURATION_OPTIONS.find((d) => d.value === duration)?.labelKey ?? 'durationShort'] as string}</strong>
+              </div>
+              <div className="setup-summary-item">
+                <span>{strings.locationLabel}</span>
+                <strong>{ctx.location.trim() || strings.setupReviewNoLocation}</strong>
+              </div>
+            </div>
+          </div>
+
           <div className="context-form-card">
             <div>
               <h3 className="setup-tell-header">{strings.ideaSectionHeader}</h3>

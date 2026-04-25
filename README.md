@@ -29,10 +29,10 @@ The interesting parts are not just "call an LLM":
 
 Setup is split into four focused steps:
 
-1. Genre
-2. Player names, player count, and game duration
-3. Current location and mood
-4. Optional detail the story may weave in
+1. Adventure direction: genre and game length
+2. The group: player count and optional names
+3. Place and tone
+4. Optional final detail with a setup review
 
 During play, the group sees:
 
@@ -82,6 +82,7 @@ Start here:
 - [Architecture](docs/ARCHITECTURE.md)
 - [API contract](docs/api-contract.md)
 - [Architecture decision records](docs/decisions/README.md)
+- [UI/UX notes](docs/ui-ux.md)
 - [Model strategy](docs/model-strategy.md)
 - [Prompt audit](docs/prompt-audit.md)
 - [Roadmap](ROADMAP.md)

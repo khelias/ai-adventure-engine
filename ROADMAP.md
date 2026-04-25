@@ -10,7 +10,7 @@ table play, not from adding more mechanics in isolation.
 
 Shipped:
 
-- four-step setup flow
+- four-step setup flow with a genre/length showcase first step
 - generated roles, parameters, one-time special abilities, and ability anchors
 - separate special ability action outside the three normal choices
 - shared parameter board with event feedback
@@ -22,6 +22,7 @@ Shipped:
 - headless playtest runner and transcript export
 
 The live architecture is described in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Screen-level UX principles are described in [docs/ui-ux.md](docs/ui-ux.md).
 
 ## Product Invariants
 
@@ -84,12 +85,13 @@ transcripts show the rule is ineffective or redundant.
 
 ### UX Polish
 
-- Reduce setup step density where users still feel crowded.
 - Rework parameter board spacing for small screens.
 - Improve parameter event transitions so state changes feel like story events,
   not score updates.
 - Tighten game-over summary so secrets, winners, and final parameters read as
   one conclusion.
+- Validate the new setup showcase with real users before adding more visual
+  complexity.
 
 ### Gameplay
 

@@ -13,9 +13,11 @@ explain how the system is shaped and why.
 3. [Architecture decisions](./decisions/README.md) — accepted ADRs for the
    provider strategy, proxy boundary, game state ownership, special abilities,
    and secrets.
-4. [Model strategy](./model-strategy.md) — why Gemini 2.5 Flash is the default,
+4. [UI/UX notes](./ui-ux.md) — screen flow, interaction principles, and current
+   UX risks.
+5. [Model strategy](./model-strategy.md) — why Gemini 2.5 Flash is the default,
    when Claude is acceptable, and how candidates should be evaluated.
-5. [Prompt audit](./prompt-audit.md) — current prompt risks, gameplay rubric,
+6. [Prompt audit](./prompt-audit.md) — current prompt risks, gameplay rubric,
    and what to inspect in transcripts.
 
 The product roadmap remains at the repo root: [ROADMAP.md](../ROADMAP.md).
@@ -30,6 +32,8 @@ The product roadmap remains at the repo root: [ROADMAP.md](../ROADMAP.md).
   the most important architectural boundary in the project.
 - Treat cost, latency, and Estonian language quality as product requirements,
   not implementation details.
+- Document screen-level user flows and invariants when UI changes affect the
+  product experience.
 
 ## Change Checklist
 
