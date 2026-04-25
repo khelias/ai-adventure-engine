@@ -52,12 +52,13 @@ function pickArchetypes(n: number): SecretArchetype[] {
 
 export function assignSecrets(roles: Role[], parameters: Parameter[]): Secret[] {
   if (parameters.length === 0) return []
+  const goalParameters = secretEligibleParameters(parameters)
   const archetypes = pickArchetypes(roles.length)
   return roles.map((role, i) => {
     const archetype = archetypes[i]
     const secret: Secret = { ownerRoleId: role.id, archetype }
     if (archetype === 'keeper' || archetype === 'sacrificer') {
-      const chosen = parameters[Math.floor(Math.random() * parameters.length)]
+      const chosen = goalParameters[Math.floor(Math.random() * goalParameters.length)]
       secret.paramName = chosen.name
     }
     return secret
@@ -83,12 +84,18 @@ function isAtWorst(p: Parameter): boolean {
   return p.currentStateIndex === p.states.length - 1
 }
 
+function secretEligibleParameters(parameters: Parameter[]): Parameter[] {
+  const eligible = parameters.filter((p) => p.archetype !== 'time')
+  return eligible.length > 0 ? eligible : parameters
+}
+
 function worstCount(parameters: Parameter[]): number {
   return parameters.filter(isAtWorst).length
 }
 
 export function evaluateSecret(secret: Secret, end: EndState): 'won' | 'lost' {
-  const { parameters, gameOverKind } = end
+  const { gameOverKind } = end
+  const parameters = secretEligibleParameters(end.parameters)
   const collapsed = worstCount(parameters) >= 2
   const contained = worstCount(parameters) === 0
   switch (secret.archetype) {

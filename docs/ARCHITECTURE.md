@@ -119,6 +119,11 @@ Normal offered choices are group-facing and must have `isAbility=false`.
 Player-triggered special abilities are created by the app from the separate
 ability panel and sent back as `isAbility=true`.
 
+Secret goals are scored from core group pressures. `time` parameters are treated
+as deadline context, not personal win-condition targets, because progress clocks
+can move in the opposite direction from the engine's best-to-worst parameter
+contract.
+
 ## Prompt And Schema Structure
 
 Prompts live in `src/game/prompts/`.

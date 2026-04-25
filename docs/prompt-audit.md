@@ -11,6 +11,7 @@ Last reviewed: 2026-04-25
 | Sequel | `src/game/prompts/story-gen.ts` | old story carries forward without a fresh objective |
 | Turn | `src/game/prompts/turn.ts` | repeated choice shapes, free choices, ignored ability payoff |
 | Contract/craft blocks | `src/game/prompts/contract.ts`, `craft.ts` | duplicated rules can dilute attention |
+| Parameter archetypes | `src/game/prompts/archetypes.ts` | progress-to-victory clocks break best-to-worst scoring |
 | Estonian editor | `proxy/server.js` | over-editing facts instead of wording |
 
 ## Findings
@@ -30,6 +31,12 @@ Last reviewed: 2026-04-25
 - **Consequence text is part of the turn contract.** Parameter movement no
   longer relies only on numeric deltas; the model must also provide a short
   in-world consequence that the UI can surface immediately.
+- **Progress clocks are not valid core parameters.** A parameter must be a
+  pressure that runs best → worst. "Until morning" or "distance to escape"
+  improves as the story advances, so it breaks secret goals and parameter
+  feedback. Prompts now tell the model to express deadlines as worsening risk
+  windows instead, and client secret scoring excludes `time` parameters from
+  player win conditions.
 - **Sameness risk remains.** The prompts now compare against previous choices,
   but a real answer needs playtest metrics: repeated verbs, repeated locations,
   repeated "investigate/fortify/wait" shapes, and whether players feel choices

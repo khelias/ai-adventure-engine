@@ -110,23 +110,45 @@ The gameplay screen must prioritize:
 - current scene text
 - shared parameter state
 - three group-facing choices
-- separate special ability action
-- visible consequences when parameters move
+- separate special ability action in a drawer/dialog
+- visible consequence events when parameters move
 
 Normal choices should not be named after one player. Special abilities may use a
 player's skill, but they are triggered through the separate ability action.
+Parameter movement should feel like something happened in the fiction, not like
+the UI changed a score.
 
 ### Game Over
 
 The end screen should read as one conclusion:
 
-- final narrative
 - final parameters
 - revealed secrets
 - winners
+- final narrative
 
-Players should not need to click through the entire game again to understand who
+Players should see winners and final parameters before the long final prose.
+They should not need to click through the entire game again to understand who
 won and why.
+
+## Parameter Rules
+
+Parameters are group-level pressures ordered best → worst. They are not personal
+meters and they are not progress-to-victory clocks.
+
+Bad parameter:
+
+- `Hommikuni`: `Mitu tundi` → `Pool ööd` → `Kohe hommik`
+
+That sequence gets better as the group survives, while the engine treats movement
+down the list as worse. It also makes "perfect ending" goals unfair.
+
+Better parameter:
+
+- `Päästeaken`: `Selgelt avatud` → `Kitseneb` → `Sekundid jäänud` → `Kadunud`
+
+If a `time` parameter appears, it is treated as a worsening deadline and is not
+eligible for personal secret-goal assignment.
 
 ## Current UI Assessment
 
@@ -135,13 +157,15 @@ Strong:
 - Setup now has a clearer first impression.
 - Player count and names are grouped correctly.
 - Advanced model selection is hidden from the main path.
-- Special abilities are separate from normal choices.
+- Special abilities are separate from normal choices and open as a focused
+  drawer.
+- Parameter changes appear as in-world consequence events.
+- Game over shows winners and final parameters before the long final narration.
 - The final setup screen gives useful review before generation.
 
 Needs continued playtest attention:
 
 - Parameter board density on small screens.
-- Whether parameter event feedback feels like story, not scoring.
 - Whether secrets are immediately understandable when the phone is passed.
 - Whether game-over summaries create a satisfying table discussion.
 - Whether the generated choices create disagreement instead of obvious

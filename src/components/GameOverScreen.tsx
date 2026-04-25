@@ -49,41 +49,37 @@ export function GameOverScreen() {
         <div className="title-rule" />
       </div>
 
-      <div className="text-left space-y-4">
-        {text.split('\n').filter(Boolean).map((p, i) => (
-          <p key={i} className="scene-prose">
-            {p}
+      <div className="gameover-result-panel fade-in">
+        <div className="gameover-result-head">
+          <p className="type-caps">{strings.gameResultTitle}</p>
+          <p className="gameover-result-line">
+            {winningRoleNames.length > 0
+              ? strings.winnersList(winningRoleNames.join(', '))
+              : strings.noSecretWinners}
           </p>
-        ))}
-      </div>
-
-      {parameters.length > 0 && (
-        <div className="final-panel fade-in">
-          <p className="type-caps">{strings.finalParametersTitle}</p>
-          <div className="final-parameter-grid">
-            {parameters.map((parameter) => (
-              <div key={parameter.name} className="final-parameter">
-                <span className="final-parameter__name">{parameter.name}</span>
-                <span className="final-parameter__state">
-                  {parameter.states[parameter.currentStateIndex]}
-                </span>
-              </div>
-            ))}
-          </div>
         </div>
-      )}
+        {parameters.length > 0 && (
+          <div>
+            <p className="type-caps gameover-result-kicker">{strings.finalParametersTitle}</p>
+            <div className="final-parameter-grid">
+              {parameters.map((parameter) => (
+                <div key={parameter.name} className="final-parameter">
+                  <span className="final-parameter__name">{parameter.name}</span>
+                  <span className="final-parameter__state">
+                    {parameter.states[parameter.currentStateIndex]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {hasSecrets && (
         <div className="final-panel fade-in">
           <div className="text-center">
             <p className="type-caps">{strings.secretsRevealKicker}</p>
             <h3 className="final-panel-title">{strings.secretsRevealIntro}</h3>
-            <p className="type-caps winner-kicker">{strings.winnersTitle}</p>
-            <p className="winner-line">
-              {winningRoleNames.length > 0
-                ? strings.winnersList(winningRoleNames.join(', '))
-                : strings.noSecretWinners}
-            </p>
           </div>
           <div className="space-y-3">
             {roles.map((r) => {
@@ -112,6 +108,15 @@ export function GameOverScreen() {
           </div>
         </div>
       )}
+
+      <div className="ending-story-panel text-left space-y-4">
+        <p className="type-caps">{strings.endingStoryTitle}</p>
+        {text.split('\n').filter(Boolean).map((p, i) => (
+          <p key={i} className="scene-prose">
+            {p}
+          </p>
+        ))}
+      </div>
 
       {/* Full story toggle */}
       {allScenes.length > 0 && (

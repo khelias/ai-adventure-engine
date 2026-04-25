@@ -100,12 +100,12 @@ function fallbackConsequenceText(args: {
 }): string {
   if (args.language === 'et') {
     return args.direction === 'improved'
-      ? `Seis läks paremaks: ${args.toState}`
-      : `Seis läks halvemaks: ${args.toState}`
+      ? `${args.parameterName} saab hingamisruumi`
+      : `${args.parameterName} annab järele`
   }
   return args.direction === 'improved'
-    ? `State improved: ${args.toState}`
-    : `State worsened: ${args.toState}`
+    ? `${args.parameterName} catches a break`
+    : `${args.parameterName} gives way`
 }
 
 function buildParameterEvents(args: {

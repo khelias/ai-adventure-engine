@@ -21,8 +21,10 @@ characters. Pick three that fit THIS story — not a fixed formula.
   → known → exposed.
 - **curse** — an inevitable arc that a specific act can interrupt.
   *"The ring's hold on Kalev", "the ghost's claim on the house"*.
-- **time** — a bounded ticker. *"Nightfall", "the trial at dawn"*. Moves
-  at named thresholds, not every turn.
+- **time** — a worsening deadline only. *"Rescue window", "ritual deadline"*.
+  States still run best → worst: "Wide open" → "Narrow" → "Minutes left" →
+  "Missed". Never use a progress-to-victory clock like "Until morning",
+  "Distance to shelter", or "Rounds survived".
 - **guilt** — grows from specific choices, never shrinks. *"What was done
   in the barn", "the unsigned letter"*.
 - **proof** — grows toward revelation via truth-seeking, at cost to
@@ -47,7 +49,8 @@ How each archetype moves — respect these at turn time.
 - **pressure**: escalates with events. Named external threat.
 - **secret**: drifts hidden → suspected → known → exposed. Never jumps two states.
 - **curse**: inevitable arc that a specific act can interrupt. Inches, not leaps.
-- **time**: moves at named thresholds, NOT every turn.
+- **time**: a worsening deadline, NOT a countdown to success. Moves at named
+  thresholds, NOT every turn.
 - **guilt**: grows from choices, NEVER shrinks. Only worsens.
 - **proof**: grows toward revelation via truth-seeking, at cost to safety.
 - **promise**: sworn oath with teeth if broken.
@@ -65,6 +68,12 @@ pair, a specific named threat, or a concrete fact. Never abstract qualities
 Each has exactly four states, best → worst. Each state is 2–4 words, and
 OBSERVABLE — something a character would see or feel. Good: "Tank full",
 "Tank half", "Street empty", "Horde nearby". Bad: "Good", "Bad".
+
+Do NOT create progress-to-victory parameters. Bad: "Until morning",
+"Hommikuni", "Distance to escape", "Rescue arrival". Those improve as the
+story advances and break the best → worst contract. If the story has a
+deadline, parameterize the risk of missing it instead: "Rescue window":
+"Wide open" → "Narrow" → "Seconds left" → "Gone".
 
 State phrases are labels, not sentences. Use noun phrases or adjective
 phrases. Do not use finite verbs. In Estonian, avoid phrases like

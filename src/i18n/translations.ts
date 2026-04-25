@@ -106,12 +106,17 @@ interface StringTable {
   copyStoryBtn: string
   copiedMsg: string
   downloadTranscriptBtn: string
+  gameResultTitle: string
+  endingStoryTitle: string
   finalParametersTitle: string
   winnersTitle: string
   winnersList: (names: string) => string
   noSecretWinners: string
+  parameterEventKicker: string
   parameterEventTitle: (name: string) => string
   parameterStateChange: (from: string, to: string) => string
+  parameterEventImproved: string
+  parameterEventWorsened: string
   parameterStatusAria: (name: string, state: string) => string
   endNarrative: string
   endParametric: string
@@ -264,12 +269,17 @@ export const translations: Record<Language, StringTable> = {
     copyStoryBtn: 'Kopeeri tekst',
     copiedMsg: 'Kopeeritud!',
     downloadTranscriptBtn: 'Laadi JSON alla',
+    gameResultTitle: 'Tulemus',
+    endingStoryTitle: 'Lõpulugu',
     finalParametersTitle: 'Lõppseis',
     winnersTitle: 'Salajased võitjad',
     winnersList: (names) => `Võitsid: ${names}`,
     noSecretWinners: 'Seekord ei täitnud keegi oma salajast eesmärki.',
-    parameterEventTitle: (name) => `${name} muutus`,
+    parameterEventKicker: 'Tagajärg',
+    parameterEventTitle: (name) => name,
     parameterStateChange: (from, to) => `${from} → ${to}`,
+    parameterEventImproved: 'paranes',
+    parameterEventWorsened: 'halvenes',
     parameterStatusAria: (name, state) => `${name}: ${state}`,
     endNarrative: 'Lugu jõudis lõpuni',
     endParametric: 'Olukord varises kokku',
@@ -289,7 +299,7 @@ export const translations: Record<Language, StringTable> = {
     secretsRememberBtn: 'Hoian meeles — anna edasi',
     secretsHideBtn: 'Peida',
     secretsRevealKicker: 'saladused paljastatud',
-    secretsRevealIntro: 'Nüüd näidake kõik, mis olid teie salajased eesmärgid.',
+    secretsRevealIntro: 'Salajased eesmärgid ja tulemused.',
     secretsShowResultsBtn: 'Paljasta saladused →',
     secretsResultWon: 'Võitsid',
     secretsResultLost: 'Kaotasid',
@@ -305,12 +315,12 @@ export const translations: Record<Language, StringTable> = {
       guardian: 'Saladuse kaitsja',
     }[a] ?? a),
     secretDescription: (a, paramName) => ({
-      optimist: 'Sinu eesmärk on täiuslik lõpp. Kõik grupi parameetrid peavad mängu lõpuks olema parimas olekus.',
-      traitor: 'Sa töötad salaja grupile vastu. Võidad siis, kui mäng lõpeb kollapsiga — vähemalt kaks parameetrit on halvimasse olekusse langenud.',
+      optimist: 'Sinu eesmärk on täiuslik lõpp. Kõik põhiparameetrid peavad mängu lõpuks olema parimas olekus.',
+      traitor: 'Sa töötad salaja grupile vastu. Võidad siis, kui mäng lõpeb kollapsiga — vähemalt kaks põhiparameetrit on halvimasse olekusse langenud.',
       survivor: 'Peaasi, et jõuate lõpuni ilma täieliku kollapsita. Võidad siis, kui lugu lõpeb narratiivselt ja vähem kui kaks parameetrit on põhjas.',
       keeper: `Sul on üks asi, mida hoida. «${paramName}» peab mängu lõpuks olema heas seisus — ülemises pooles.`,
       sacrificer: `Üks asi peab minema pihta — muidu sa ei võida. «${paramName}» peab jõudma halvimasse olekusse.`,
-      guardian: 'Mitte midagi ei tohi lõplikult kaotsi minna. Ükski parameeter ei tohi mängu lõpuks halvimasse olekusse jõuda.',
+      guardian: 'Mitte midagi ei tohi lõplikult kaotsi minna. Ükski põhiparameeter ei tohi mängu lõpuks halvimasse olekusse jõuda.',
     }[a] ?? a),
     loadingHints: [
       'AI ragistab ajusid...',
@@ -439,12 +449,17 @@ export const translations: Record<Language, StringTable> = {
     copyStoryBtn: 'Copy text',
     copiedMsg: 'Copied!',
     downloadTranscriptBtn: 'Download JSON',
+    gameResultTitle: 'Result',
+    endingStoryTitle: 'Ending',
     finalParametersTitle: 'Final state',
     winnersTitle: 'Secret winners',
     winnersList: (names) => `Winners: ${names}`,
     noSecretWinners: 'No one completed their secret goal this time.',
-    parameterEventTitle: (name) => `${name} changed`,
+    parameterEventKicker: 'Consequence',
+    parameterEventTitle: (name) => name,
     parameterStateChange: (from, to) => `${from} → ${to}`,
+    parameterEventImproved: 'improved',
+    parameterEventWorsened: 'worsened',
     parameterStatusAria: (name, state) => `${name}: ${state}`,
     endNarrative: 'Narrative End',
     endParametric: 'Parametric Loss',
@@ -468,7 +483,7 @@ export const translations: Record<Language, StringTable> = {
     secretsRememberBtn: 'Got it — pass it on',
     secretsHideBtn: 'Hide',
     secretsRevealKicker: 'secrets revealed',
-    secretsRevealIntro: 'Now each of you shows what you were secretly playing for.',
+    secretsRevealIntro: 'Secret goals and results.',
     secretsShowResultsBtn: 'Reveal the secrets →',
     secretsResultWon: 'Won',
     secretsResultLost: 'Lost',
@@ -484,12 +499,12 @@ export const translations: Record<Language, StringTable> = {
       guardian: 'Guardian',
     }[a] ?? a),
     secretDescription: (a, paramName) => ({
-      optimist: 'You want a perfect finish. Every group parameter must end at its best state.',
-      traitor: 'You are secretly working against the group. You win if the game ends in collapse — at least two parameters at their worst state.',
+      optimist: 'You want a perfect finish. Every core parameter must end at its best state.',
+      traitor: 'You are secretly working against the group. You win if the game ends in collapse — at least two core parameters at their worst state.',
       survivor: 'Just get everyone to the end without full collapse. You win if the story ends narratively and fewer than two parameters are at their worst state.',
       keeper: `You hold one thing dear. «${paramName}» must end in the top half.`,
       sacrificer: `One thing must fall — or you don't win. «${paramName}» must reach its worst state.`,
-      guardian: 'Nothing may be lost for good. No parameter may end at its worst state.',
+      guardian: 'Nothing may be lost for good. No core parameter may end at its worst state.',
     }[a] ?? a),
     loadingHints: [
       'The AI is racking its brains...',

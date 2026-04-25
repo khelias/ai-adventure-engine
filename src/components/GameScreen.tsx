@@ -119,7 +119,7 @@ function ParameterToast({
     if (events.length > 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveEvents(events)
-      const timer = setTimeout(() => setActiveEvents([]), 4500)
+      const timer = setTimeout(() => setActiveEvents([]), 5600)
       return () => clearTimeout(timer)
     }
   }, [events])
@@ -127,21 +127,27 @@ function ParameterToast({
   if (activeEvents.length === 0) return null
 
   return (
-    <div className="param-toast-overlay" aria-live="polite">
+    <div className="param-impact-overlay" aria-live="polite">
       {activeEvents.map((event) => (
         <div
           key={`${event.parameterName}-${event.toState}-${event.text}`}
-          className={`param-toast-card slide-down toast-${event.severity}`}
+          className={`param-impact-card impact-${event.severity}`}
         >
-          <div className="toast-icon" aria-hidden="true">
-            {event.direction === 'improved' ? '+' : '-'}
+          <div className="param-impact-mark" aria-hidden="true">
+            {event.direction === 'improved' ? '↑' : '↓'}
           </div>
-          <div className="toast-content">
-            <span className="toast-title">{strings.parameterEventTitle(event.parameterName)}</span>
-            <span className="toast-desc">{event.text}</span>
-            <span className="toast-meta">
-              {strings.parameterStateChange(event.fromState, event.toState)}
-            </span>
+          <div className="param-impact-content">
+            <span className="param-impact-kicker">{strings.parameterEventKicker}</span>
+            <h3>{event.text}</h3>
+            <div className="param-impact-meta">
+              <span>{strings.parameterEventTitle(event.parameterName)}</span>
+              <span className={`param-impact-direction ${event.direction}`}>
+                {event.direction === 'improved'
+                  ? strings.parameterEventImproved
+                  : strings.parameterEventWorsened}
+              </span>
+              <span>{strings.parameterStateChange(event.fromState, event.toState)}</span>
+            </div>
           </div>
         </div>
       ))}
@@ -314,27 +320,38 @@ export function GameScreen() {
               </div>
 
               {showAbilityPanel ? (
-                <div className="ability-panel" aria-label={strings.abilityPanelTitle}>
-                  <div className="ability-panel__head">
-                    <span className="ability-panel__title">{strings.abilityPanelTitle}</span>
-                    <span className="ability-panel__hint">{strings.abilityPanelHint}</span>
-                  </div>
-                  <div className="ability-list">
-                    {roles.map((role) => (
+                <div className="ability-drawer" role="dialog" aria-modal="true" aria-label={strings.abilityPanelTitle}>
+                  <div className="ability-panel">
+                    <div className="ability-panel__head">
+                      <div>
+                        <span className="ability-panel__title">{strings.abilityPanelTitle}</span>
+                        <span className="ability-panel__hint">{strings.abilityPanelHint}</span>
+                      </div>
                       <button
-                        key={role.id}
                         type="button"
-                        className={`ability-card${role.used ? ' is-used' : ''}`}
-                        disabled={role.used}
-                        onClick={() => onAbilityChoice(role)}
+                        className="ability-panel__close"
+                        onClick={() => setShowAbilityPanel(false)}
                       >
-                        <span className="ability-card__owner">{role.name}</span>
-                        <span className="ability-card__text">{formatAbilityForDisplay(role)}</span>
-                        <span className="ability-card__action">
-                          {role.used ? strings.usedLabel : strings.abilityUseBtn}
-                        </span>
+                        {strings.customChoiceCancel}
                       </button>
-                    ))}
+                    </div>
+                    <div className="ability-list">
+                      {roles.map((role) => (
+                        <button
+                          key={role.id}
+                          type="button"
+                          className={`ability-card${role.used ? ' is-used' : ''}`}
+                          disabled={role.used}
+                          onClick={() => onAbilityChoice(role)}
+                        >
+                          <span className="ability-card__owner">{role.name}</span>
+                          <span className="ability-card__text">{formatAbilityForDisplay(role)}</span>
+                          <span className="ability-card__action">
+                            {role.used ? strings.usedLabel : strings.abilityUseBtn}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ) : null}
