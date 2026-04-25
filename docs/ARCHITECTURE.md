@@ -133,7 +133,26 @@ One parameter at worst = phase transition (AI narrates the consequence, game con
 
 ## 4. Prompt architecture
 
-All prompts live in `src/game/prompts.ts`. There are four schemas — the proxy validates incoming requests against the top-level `properties` keys of these:
+Prompts live in `src/game/prompts/` as a per-concern decomposition. The
+public API (`storyGenerationPrompt`, `customStoryPrompt`, `sequelPrompt`,
+`turnPrompt`, schemas, `getStoryPhase`) is re-exported from
+`prompts/index.ts` so callers import unchanged.
+
+Internal layout:
+
+| File | Concern |
+|---|---|
+| `schemas.ts` | JSON schemas + `TurnResponse` type |
+| `archetypes.ts` | 11-archetype palette + parameter-craft block |
+| `phases.ts` | `getStoryPhase()` + per-phase narrative instruction |
+| `tone.ts` | TONE blocks for light / tense / dark vibes |
+| `craft.ts` | Scene / choices / parameter-movement craft + self-check |
+| `contract.ts` | Output-shape contract (the "two narrative shapes" rule) |
+| `story-gen.ts` | `storyGenerationPrompt` / `customStoryPrompt` / `sequelPrompt` |
+| `turn.ts` | `turnPrompt({...}) → { system, user }` composer |
+| `index.ts` | Public re-exports |
+
+Four schemas; the proxy validates against the sorted top-level `properties` keys:
 
 | Schema | Purpose | Shape fingerprint |
 |---|---|---|
@@ -142,19 +161,45 @@ All prompts live in `src/game/prompts.ts`. There are four schemas — the proxy 
 | `sequelSchema` | Continue a finished game with new twist | `newAbilities,newParameters` |
 | `turnSchema` | One turn: scene + param changes + choices + optional gameOver | `choices,gameOver,gameOverText,parameters,scene` |
 
-The turn prompt is split into **system** (static — story, characters, parameters, core rules, few-shot example) and **user** (dynamic — current turn number, parameter states, recent scenes, last choice). Claude's `cache_control: { type: 'ephemeral' }` caches the system block across turns — cache hit saves ~50% of input tokens.
+The turn prompt is split into **system** (static — story, characters,
+parameters, craft + contract blocks, few-shot example) and **user**
+(dynamic — current turn, parameter states, recent scenes, last choice).
+Claude's `cache_control: { type: 'ephemeral' }` caches the system block
+across turns — cache hit saves ~50% of input tokens.
 
-The system prompt encodes the design rules the AI must follow:
+### CRAFT vs CONTRACT vs META
 
-1. Scene length (2-3 sentences non-climax, 60-word cap)
-2. Parameters as sensory detail, not metadata
-3. Choices declare their cost (text and `expectedChanges` agree in sign)
-4. Trilemma enforcement (3 choices touch 3 different parameter combinations)
-5. No hidden rules (all parameter changes visible in choices)
-6. Parameter change semantics (+1 = better toward best state)
-7. Just-broke dramatization (new scene opens with narrative consequence)
-8. Ability timing (rising or climax only)
-9. Final-turn game-over handling
+Three concerns are kept apart because Claude attends to each differently:
+
+- **CRAFT** (`craft.ts`, `scene-craft`/`choices-craft`/`parameter-movement`):
+  how to write the scene, the choices, the dialogue. Treated as creative
+  direction. Positive declarative — *"a scene is 2-3 sentences"* — never
+  imperative-negative.
+- **CONTRACT** (`contract.ts`): the response *shape*. Phrased as a binary
+  narrative choice: *"Your response resolves to ONE of two shapes. There
+  is no third shape."* (3 choices + gameOver=false, or empty + gameOver=true
+  + a full gameOverText.) Replaces the old rule 7 framed as a system
+  constraint — Claude underweighted "the game freezes" framing relative
+  to creative instincts on tense reveal scenes.
+- **META** (kept out of system prompt): app internals, what the engine
+  does with the response. The model is a narrator, not the engine — telling
+  it about engine behavior wastes attention.
+
+### Parameter archetypes
+
+11-shape palette: `resource`, `bond`, `pressure`, `secret`, `curse`,
+`time`, `guilt`, `proof`, `promise`, `hunger`, `debt`. AI picks 3 different
+archetypes per story (not the fixed RESOURCE+BOND+PRESSURE that earlier
+versions defaulted to). Each parameter declares its archetype + optional
+`ownerRoleId` (set when the parameter anchors to one specific character).
+
+### Empty-choices safety net
+
+Even with the new contract framing, Claude occasionally still emits
+`choices: []` + `gameOver: false`. Proxy retries 2x with escalating
+reminders, then coerces `gameOver=true` and synthesizes a minimal
+gameOverText from the scene. Logs `retried=N` and `coerced-gameover`
+when this fires — telemetry to track real-world drift rate.
 
 ## 5. Cost model
 
@@ -225,18 +270,24 @@ flowchart LR
 
 ### Coupling note
 
-Frontend and proxy now live in the same repo, so schema/contract changes go in one commit:
-- **Schema shapes**: adding or changing a schema in `src/game/prompts.ts` requires updating `ALLOWED_SCHEMA_SHAPES` in `proxy/server.js`. Forgetting this breaks the feature silently (the proxy returns 400).
-- **Request body contract**: adding a new field that the proxy should respect (e.g. `language`) requires matching changes in `src/api/adventure.ts`.
+Frontend and proxy live in the same repo, so schema/contract changes go in one commit:
+- **Schema shapes**: adding or changing a schema in `src/game/prompts/schemas.ts`
+  requires updating `ALLOWED_SCHEMA_SHAPES` in `proxy/server.js`. Forgetting this
+  breaks the feature silently (proxy returns 400).
+- **Request body contract**: adding a new field the proxy should respect
+  (e.g. `language`) requires matching changes in `src/api/adventure.ts`.
 
 ## 8. Where to look for what
 
 | Concern | File |
 |---|---|
-| Game rules / prompt authoring | `src/game/prompts.ts` |
+| Prompt authoring (CRAFT / CONTRACT / META) | `src/game/prompts/` modules |
 | Parameter mechanics, gameOver detection | `src/game/engine.ts` |
+| Secrets archetypes + scoring (client-only) | `src/game/secrets.ts` |
 | Turn orchestration, error handling | `src/game/actions.ts` |
-| Proxy routing + editor pass + security | `proxy/server.js` |
+| Pass-the-phone secrets ritual UI | `src/components/SecretAssignmentScreen.tsx`, `src/components/GameOverScreen.tsx` (reveal flow) |
+| Scene-slug UI (replaces param pills) | `src/components/GameScreen.tsx` (`SceneSlug`) |
+| Proxy routing + editor pass + retry/coerce | `proxy/server.js` |
 | nginx rate limit + reverse proxy | `khe-homelab/services/apps/games/nginx.conf` |
-| Full-game smoke test | `scripts/playtest.ts` — see [`scripts/README.md`](../scripts/README.md) |
+| Full-game smoke test (with secret simulation) | `scripts/playtest.ts` — see [`scripts/README.md`](../scripts/README.md) |
 | Design principles / invariants, roadmap | [`ROADMAP.md`](../ROADMAP.md) |

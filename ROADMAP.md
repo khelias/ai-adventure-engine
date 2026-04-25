@@ -1,12 +1,15 @@
 # Roadmap
 
-Live at `games.khe.ee/adventure/`. Active work: **Phase 3** (whispers + wounded/ghost).
+Live at `games.khe.ee/adventure/`. **Next gate: one full pass-the-phone game with
+friends — only that test answers whether the game feels real.** Subsequent phases
+depend on what plays alive vs dead at the table.
+
 Architecture detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 The game reflects *this group, in this place, right now* — group context (location,
-people, vibe) is woven into the story; secrets introduce information asymmetry;
-narrative "death" changes how a player participates rather than removing them from
-the table.
+people, vibe) is woven into the story; private secret-goals create asymmetric
+incentives at the table; narrative "death" changes how a player participates rather
+than removing them from the table.
 
 ---
 
@@ -20,22 +23,33 @@ separate projects, not this one.
 
 ---
 
-## Current state
+## Current state (2026-04-25)
 
 - Stack: React 19 + Vite + TypeScript + Zustand, Tailwind with Fraunces / Inter typography
-- Design: "Séance" — dark background, violet accent, ambient breathing glow. Pass-the-phone
-  party game, not a solo app
+- Design: "Séance" — dark background, violet accent. Pass-the-phone party game.
 - AI: Claude Sonnet 4.6 for scenes + story generation (prompt caching via
   `cache_control: ephemeral`); Gemini 2.5 Flash as fallback and Estonian editor pass
-- Narrative: 5 phases (setup → inciting → rising → climax → resolution) scale with game
-  length. One parameter at worst state = narrative phase transition (AI narrates the
-  consequence and the game continues); two or more at worst = AI writes the ending in
-  its own words. No hardcoded end template unless the AI call fails
-- Proxy: Node.js Express. Schema allowlist + Origin check + real per-visitor rate
-  limit. Estonian editor pass cleans Claude-generated prose before returning it to the
-  client
-- Infra: GitHub Actions runner auto-deploys on push; Cloudflare tunnel publishes the
-  site; API keys live only in the VM's `.env`
+- **Prompts** decomposed into `src/game/prompts/` modules: CRAFT (how to write),
+  CONTRACT (output shape — two narrative shapes, no third), META kept out of system
+  prompt. Markdown structure, declarative-positive style. Replaces the old 450-line
+  monolith
+- **Parameters**: 11-archetype palette (resource / bond / pressure / secret / curse /
+  time / guilt / proof / promise / hunger / debt). AI picks 3 that fit the story
+  shape; declares archetype + optional ownerRoleId per parameter
+- **Secrets MVP** (client-only, AI unaware): 6 archetypes — optimist / traitor /
+  survivor / keeper / sacrificer / guardian. Pass-the-phone assignment ritual at
+  start, reveal ritual at game over. Keeper/Sacrificer prefer the player's
+  role-owned parameter
+- **Scene-slug UI**: italic middot-separated state phrases above each scene. No
+  more progress-bar pills. Per-archetype colour bias, just-moved highlight,
+  worst-state dramatic styling
+- Narrative: 5 phases (setup → inciting → rising → climax → resolution). 1 param at
+  worst = narrative phase transition; 2+ = AI writes ending. Empty-choices safety
+  net: proxy retries 2x with escalating reminders, then coerces gameOver=true
+- Proxy: Node.js Express in same repo (`proxy/`). Schema allowlist + Origin check +
+  per-visitor rate limit. Estonian editor pass cleans Claude prose
+- Infra: GitHub Actions self-hosted runner auto-deploys frontend + builds proxy
+  image on push to main; Cloudflare tunnel publishes the site
 
 ---
 
@@ -71,37 +85,52 @@ fewer hallucinated words, natural verb register, no English calques leaking thro
 
 ### 3. Secrets / private information
 
-The game currently shows 100% public information to everyone. The next phase (3) adds a
-`whisper_to(player)` tool: the AI privately messages one player mid-scene. The phone
-moves to them quietly, they read, hand it back, and the story continues.
+**MVP shipped 2026-04-24.** Each player privately receives a secret win-condition
+at game start (pass-the-phone ritual). The AI knows nothing about secrets — they
+live entirely client-side, scored from final state at game-over. Six archetypes:
 
-> *"Marko, your ex-wife is at the end of the corridor. The others haven't seen her yet.
-> What do you do?"*
+- **optimist** — all 3 parameters end in top half
+- **traitor** — game ends by collapse (2+ params at worst)
+- **survivor** — game ends narratively (not via collapse)
+- **keeper** — your role's owned parameter ends in top half
+- **sacrificer** — your role's owned parameter ends at worst
+- **guardian** — no parameter ends at worst
 
-This is **the drama engine**: information asymmetry is what Werewolf / Mafia / murder
-mystery stories are built on. Every table discussion becomes interesting when one person
-*knows something* the others don't.
+The point: every choice in the room becomes contested because different players
+have different end-state goals. Mari quietly wants Jaan's stamina to fall; Jaan
+wants the village's hunger to never break; the group sees the same scene but
+weighs choices differently.
+
+**Open question (gate)**: does the pass-the-phone ritual create the room-friction
+it's designed to? Engineering metrics (1/3 win rate in playtest) suggest the
+math works. Only a played game with friends answers whether the *room* changes.
+
+Phase 3.5 candidates if MVP is good: history-based archetypes (coward / brave /
+truth-teller — needs per-turn action log); deeper integration (each player owns
+exactly one parameter — would lock parameter count to player count).
 
 ---
 
 ## Core mechanics
 
-Three layers of tension stacked on top of each other:
+Four layers of tension stacked on top of each other:
 
-1. **Group resources** (parameters) — public, shared risk, mechanical pressure toward
-   loss. Three parameters per game; each a distinct archetype:
-   - RESOURCE (depletes with action, rarely restored)
-   - BOND (swings from social/moral choices)
-   - PRESSURE (rises from events in the story; all changes visible via choice costs, no
-     hidden auto-degradation)
-   Together they form a trilemma: no single choice can improve all three. Every
-   meaningful decision trades one against another.
+1. **Story parameters** — public, shared, mechanical. Three per game, each a
+   distinct archetype drawn from an 11-shape palette: resource / bond / pressure /
+   secret / curse / time / guilt / proof / promise / hunger / debt. AI picks the
+   three that fit the story (a ghost story wants secret + curse + time; a zombie
+   siege wants resource + bond + pressure). The three together form a trilemma —
+   no single choice improves all three. Every meaningful decision trades.
 
-2. **Character secrets / relationships** — private information, information asymmetry,
-   the drama engine (phase 3)
+2. **Private secret-goals** — each player holds a secret win-condition; the AI is
+   unaware (client-only scoring). 6 archetypes; Keeper / Sacrificer prefer the
+   player's role-owned parameter when one exists.
 
-3. **Special abilities** — one-shot, dramatic, group-discussion-generating. Offered only
-   in rising or climax phases, when narratively earned.
+3. **Special abilities** — one-shot, dramatic, group-discussion-generating. Offered
+   only in rising or climax phases, when narratively earned.
+
+4. **Phase 3.5 candidate — whispers** (whisper_to_player tool, hold-to-reveal UX,
+   wounded / ghost roles). On hold pending playtest of layers 1-3 with friends.
 
 Each layer works on its own; together they create multi-dimensional pressure.
 
@@ -218,9 +247,25 @@ Each phase = one PR, one deploy, playable. After each phase, **success criterion
 with friends, learn, next phase or iteration. *No 3-month closed beta.* Time estimates
 are session-hours (~2-3h), not calendar days.
 
-### ⏳ Phase 3 — Secrets + wounded + ghost (~3-5 sessions)
+### ✅ Phase 2.5 — Prompts refactor + secrets MVP + scene-slug UI (2026-04-24, shipped)
 
-- Tool: `whisper_to_player(playerIndex, message)` — private info to one player
+- Decomposed prompts.ts into `src/game/prompts/` modules (CRAFT/CONTRACT/META separated)
+- Reframed empty-choices contract as "two narrative shapes, no third option"
+- Expanded archetype palette from 3 fixed to 11 (genre-fitting)
+- Added archetype + ownerRoleId to parameter schema (AI declares both)
+- Built secrets MVP: 6 archetypes, pass-the-phone ritual at start + reveal at end,
+  client-only scoring. Keeper/Sacrificer link to role-owned parameter
+- Replaced param-pill progress bars with scene-slug italic typography (per-archetype tone)
+- Added 2-retry escalating + gameOver coercion safety net (proxy)
+- Added rotating loading hints (Estonian/English) so 30s waits feel purposeful
+- **Success criterion**: pass-the-phone game with friends generates the room friction
+  the secrets are designed for. **NOT YET TESTED at the table** — see "Next step".
+
+### ⏳ Phase 3 — Whispers + wounded + ghost (~3-5 sessions, gated by Phase 2.5 playtest)
+
+Defer until Phase 2.5 has been played with friends and we know what's alive vs dead.
+
+- Tool: `whisper_to_player(playerIndex, message)` — private info mid-scene to one player
 - Tool: `transition_player_state(playerIndex, "wounded" | "ghost")`
 - **Hold-to-reveal UX** (`WhisperOverlay`): blurred text, hold to read, release to hide
 - **GhostView**: exclusive whispers, limited choices ("whisper to the living")
@@ -320,5 +365,23 @@ Considered but currently out of scope — with reasons.
 
 ## Next step
 
-**Phase 3 — secrets + wounded + ghost.** Information asymmetry is the biggest
-differentiator the game doesn't yet offer.
+**Play one full pass-the-phone game with 2-3 friends.** Engineering ships keep
+landing — the prompt refactor + secrets MVP + scene-slug UI are all in prod —
+but no version has been played at the table since the redesign. *Game-feel
+cannot be measured by code.* Until a played game answers what's alive vs dead,
+further phases are speculation.
+
+What to watch in the room:
+- Does the group **argue** about choices, or quietly optimize math?
+- Does the secret-reveal at game's end land as a twist, or feel anticlimactic?
+- Do the scene-slug state-phrases get read, or skipped past to the prose?
+- Does Estonian editor pass make the prose feel native, or still translator-y?
+- Does anyone ask to play again?
+
+Phase 3 (whispers / wounded / ghost) waits on those answers.
+
+If Phase 2.5 lands well: lightest next step is **climax-hint + hidden-truth** at
+story-gen. AI generates a destination ("the story ends when X happens") and one
+spoiler the AI knows but the group doesn't. Both feed into every turn so the AI
+foreshadows + pays off. ~2-3 hours' work, additive, low-risk. Designed but not
+built.
