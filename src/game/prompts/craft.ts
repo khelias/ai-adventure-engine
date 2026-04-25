@@ -31,6 +31,18 @@ a spoken half-line, or one concrete physical detail. Use the simplest
 tool that does the job. Wounds and consequences carry across turns: a
 limp from turn 3 still shows in turn 7.
 
+The players' last choice is canonical. If they moved to a new place, the
+next scene starts on the road, at the destination, or at the blocked
+threshold — never back at the old room unless the scene plainly shows the
+failed return. If they opened, broke, burned, revealed, promised, or lost
+something, it stays true until a later choice changes it.
+
+Every scene pays off the last choice before introducing a new problem.
+The first sentence shows what happened because of that choice. The second
+sentence shows the new pressure. The third, if needed, frames what the
+group can still do. Do not summarize a failed action as "it was impossible"
+without showing the specific obstacle that made it impossible.
+
 A short spoken line is welcome when characters are in tension. A muttered
 half-sentence beats a speech. When two characters disagree visibly in a
 scene, one of them says something out loud.
@@ -51,29 +63,53 @@ in the narrative or choice text. Describe the physical, in-world action only.`
 export const CHOICES_CRAFT = `## CHOICES CRAFT
 
 Each choice is a **collective group action** or an objective verb phrase.
-DO NOT use character names in the choice text. Write choices as collective actions
-("We barricade the door") or passive actions ("Barricade the door").
+DO NOT use character names in the choice text. The button belongs to the
+table, not to a single player. Write choices as collective actions
+("We barricade the door") or objective action phrases ("Barricade the
+door", "Search the rear exit", "Trade the medicine for a way through").
+
+When one character leads, pays, or is targeted, express that ONLY in the
+structured fields:
+- \`actor\`: the roleIndex of the person leading/paying
+- \`target\`: the roleIndex of the person specifically affected
+
+The \`text\` field itself still contains no character names. If you wrote
+"Mari", "Jaan", or any role name inside \`text\`, rewrite it before
+answering.
+
+Special abilities are NOT offered inside the three normal choices. The
+players have a separate UI control for spending them. Therefore every
+normal choice you output has \`isAbility=false\`. Do not set \`isAbility=true\`
+in \`choices\`, and do not write "Use Mari's shortcut", "Use Rein", or
+"Mari uses her skill" as a normal option.
 
 Each choice is priced honestly. The text implies a cost; \`expectedChanges\`
 includes at least one negative delta that matches. *"Barricade the door
 loudly"* implies pressure rises → \`expectedChanges\` must say pressure −1.
 The numbers are never spelled in prose. Let the action imply them.
 
-The three choices test different moral axes. The axes you have to play
-with:
+Every offered choice must include at least one negative \`expectedChanges\`
+entry. A choice can also improve something, but no option is free and no
+option is all upside.
+
+Every choice must move the story to a different next state. Avoid
+"look/listen/check/search again" unless the discovery creates a concrete
+new fact, opening, danger, or debt. Information-only choices are weak;
+information with a cost is playable.
+
+The three choices test different moral axes. The axes you have to play with:
 - **courage vs caution** — who takes the risk
 - **loyalty vs pragmatism** — is someone sacrificed so others survive
 - **truth vs concealment** — is a secret revealed or hidden
-- **ACTION OVER PASSIVITY** — Explicitly forbid choices like 'looking',
-  'listening', or 'asking' during inciting, rising, and climax phases. Choices
-  must be active and consequential.
+- **movement vs shelter** — leave the known safe place or fortify it
+- **signal vs silence** — attract rescue and danger at the same time
 
 At least two different axes across the three choices. Two choices testing
 the same axis is a design failure — rewrite one.
 
-When offering an ability (\`isAbility=true\`), set \`actor\` to the ability
-owner's roleIndex. For ALL OTHER normal choices, OMIT the \`actor\` field entirely.
-Phase instructions above say WHEN abilities are allowed.
+For normal choices, omit the \`actor\` field entirely. Only the separate
+player-triggered special ability path may spend a named character's
+ability.
 
 \`expectedChanges\` contains ONLY the parameters that actually move on that
 choice. Never include zero-change entries.
@@ -94,7 +130,9 @@ export const PARAMETER_MOVEMENT = `## PARAMETER MOVEMENT
 \`change: −1\` moves it toward the worst state.
 
 Use \`±2\` only at climax for explicitly extreme choices. Never \`±2\` in
-setup or inciting.
+setup or inciting. Time-like parameters do NOT tick every turn; they move
+only when a concrete choice spends time, misses a deadline, finds a shortcut,
+or changes the schedule.
 
 Parameters move from visible actions only. Never from "time passing" or
 hidden rules. Every delta is traceable to a choice the players made.
@@ -103,10 +141,14 @@ hidden rules. Every delta is traceable to a choice the players made.
 text state of all parameters. When a parameter changes, the next scene
 shows that change as a concrete sensory moment, not a narrator announcement.
 
-\`consequences[].text\` is not a UI label. It is a short event headline from
-inside the fiction: "The rear tire splits on the gravel", "The signal cuts
-to static", "The group finally laughs at the same joke". Keep it under 12
-words and write it in the output language.`
+\`consequences[].text\` is not a UI label and not a restatement of the new
+state. It is a short event headline from inside the fiction: "The rear tire
+splits on the gravel", "The signal cuts to static", "The group finally
+laughs at the same joke". Keep it under 12 words and write it in the output
+language.
+
+Bad consequence: "Shelter worsened: two doors open".
+Good consequence: "A hinge snaps off the rear door".`
 
 export const SELF_CHECK = `## BEFORE YOU RESPOND
 

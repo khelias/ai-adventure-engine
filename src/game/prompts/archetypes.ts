@@ -64,6 +64,11 @@ pair, a specific named threat, or a concrete fact. Never abstract qualities
 
 Each has exactly four states, best → worst. Each state is 2–4 words, and
 OBSERVABLE — something a character would see or feel. Good: "Tank full",
-"Tank half". Bad: "Good", "Bad".
+"Tank half", "Street empty", "Horde nearby". Bad: "Good", "Bad".
+
+State phrases are labels, not sentences. Use noun phrases or adjective
+phrases. Do not use finite verbs. In Estonian, avoid phrases like
+"Üksikud surnud lähevad"; use "Üksikud surnud lähedal" or "Tänav peaaegu
+tühi" instead.
 
 ALL parameters MUST represent global environmental conditions, the group's collective state, or shared narrative threats (e.g., "Shelter Defenses", "Group Morale", "Zombie Horde"). DO NOT assign them to individual characters.`

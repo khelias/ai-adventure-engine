@@ -29,14 +29,15 @@ Open on a concrete physical scene — what is happening, where, who is
 present. Introduce each character through one specific action, not
 exposition. End on a hook — a sound, a sight, a name spoken — that
 sets the threat in motion without yet naming it. Parameters are stable.
-No special abilities offered. Choices are exploratory — low-cost,
-information-gathering.`
+Choices are low-cost but still active: secure, move, hide, signal,
+bargain, open, split, or prepare.`
     case 'inciting':
       return `## PHASE — Inciting incident
 
 The central threat arrives. Make the stakes concrete — name what will be
 lost. At least one parameter begins to shift. Choices feel urgent but not
-yet desperate. No special abilities offered.`
+yet desperate. The story's central objective must still be reachable; if
+it is threatened, show the narrowing route, not its off-screen failure.`
     case 'rising':
       return `## PHASE — Rising action
 
@@ -45,14 +46,14 @@ development, a new face, a new angle, a new piece of information, a new
 location pressure — something the players have not yet faced. "The same
 threat, harder" is the boredom failure mode. At least one parameter
 shifts meaningfully this turn. Characters' specific natures shape the
-crisis. When an ability fits dramatically, a character may rise to
-their moment.`
+crisis. A major objective may fail only as an on-screen act break that
+creates an equally concrete new objective.`
     case 'climax':
       return `## PHASE — Climax
 
-The hinge-point. At least one parameter shifts dramatically. Any unused
-ability MUST be offered now — that character's moment has arrived. Choices
-feel heavy and irreversible.`
+The hinge-point. At least one parameter shifts dramatically. Choices feel
+heavy and irreversible. The players may choose to spend a special ability
+through the separate ability control; do not offer one inside \`choices\`.`
     case 'resolution':
       return `## PHASE — Resolution
 

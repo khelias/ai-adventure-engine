@@ -33,25 +33,28 @@ export type AiLangPack = {
 const et: AiLangPack = {
   instruction: `LANGUAGE: Write all player-facing text in natural, native-level Estonian (eesti keel).
 - Think and write in Estonian. Do NOT translate from English. Avoid anglicised sentence structure.
-- Choices MUST be in kolmandas isikus — name the acting character as the grammatical subject: "Mari avab ukse vaikselt." / "Jaan kustutab lambi ja ootab." / "Karin koputab uksele." NEVER meie-vorm ("Avame ukse"), NEVER teie-vorm ("Te avate ukse"), NEVER abstract "Grupp otsustab".
-- Parameter names: 1-3 words, noun/noun phrase. States: 2-4 words each, no full sentences.
+- Choices MUST be collective group actions or objective action phrases, WITHOUT character names: "Barrikadeerime ukse" / "Otsime tagumise väljapääsu" / "Süütame tänaval peibutustule". NEVER start a choice with a role name.
+- Prefer the verb-first form without explicit "me": "Otsime..." not "Me otsime...".
+- Normal offered choices MUST set \`isAbility=false\`. Special abilities are spent only by the separate player-triggered ability control, not by the AI's three choices.
+- If one named character is mechanically responsible, keep their name OUT of normal choice \`text\`. Normal choices should usually omit \`actor\`; ability actions arrive separately with \`isAbility=true\` and \`actor\` already set by the app.
+- Parameter names: 1-3 words, noun/noun phrase. States: 2-4 words each, noun phrases or adjective phrases. No finite verbs. Good: "Tänav tühi", "Kari nurga taga", "Koiduni pool tundi". Bad: "Üksikud surnud lähevad".
 - Character names (role.name) MUST be proper Estonian first names (e.g. Mari, Jaan, Karin, Mattis) — NOT job titles. Put the profession/role in role.description.
 - Prefer simple, common words over rare compounds. If unsure whether a compound exists, use two separate words instead.`,
 
-  fewShotExample: `EXAMPLE OF A GOOD TURN (match this style — especially scene length, sentence rhythm, and how each choice names a specific character as actor):
+  fewShotExample: `EXAMPLE OF A GOOD TURN (match this style — especially scene length, sentence rhythm, and how choices are group-facing):
 
 Scene:
 "Koridor lõpeb raudukse ees. Midagi kriibib seina taga metalli vastu — aeglaselt, nagu küüned, kes otsivad pragu. Mari taskulamp väriseb; ta hoiab seda kahe käega, aga käed ise ei pea."
 
-Choices (assume roles: 0=Mari, 1=Jaan, 2=Karin; parameters: "Mari jõud", "Mari ja Jaan usaldus", "Zombide laine"):
-- { text: "Mari avab ukse vaikselt ja astub esimesena ette.", actor: 0, expectedChanges: [{name:"Mari ja Jaan usaldus", change:+1}, {name:"Zombide laine", change:-1}] }
+Choices (assume roles: 0=Mari, 1=Jaan, 2=Karin; parameters: "Varjupaiga kaitse", "Mari ja Jaan usaldus", "Zombide laine"):
+- { text: "Avame ukse vaikselt ja laseme kõige kindlama inimese esimesena ette.", actor: 0, expectedChanges: [{name:"Mari ja Jaan usaldus", change:+1}, {name:"Zombide laine", change:-1}] }
   → courage axis: Mari takes the risk herself, shielding the others.
-- { text: "Jaan kustutab lambi ja jätab Mari pimedusse ukse ette.", actor: 1, target: 0, expectedChanges: [{name:"Mari ja Jaan usaldus", change:-1}, {name:"Zombide laine", change:+1}] }
+- { text: "Kustutame lambi ja jätame ukse ees seisja pimedusse ootama.", actor: 1, target: 0, expectedChanges: [{name:"Mari ja Jaan usaldus", change:-1}, {name:"Zombide laine", change:+1}] }
   → loyalty axis: Jaan sacrifices Mari's position for the group's concealment. Target is Mari.
-- { text: "Karin tunnistab kõigile, et kuulis seda häält juba pool tundi tagasi.", actor: 2, expectedChanges: [{name:"Mari ja Jaan usaldus", change:-1}, {name:"Zombide laine", change:-1}] }
+- { text: "Tunnistame lõpuks, et seda häält kuuldi juba pool tundi tagasi.", actor: 2, expectedChanges: [{name:"Mari ja Jaan usaldus", change:-1}, {name:"Zombide laine", change:-1}] }
   → truth axis: Karin reveals withheld information — pair trust drops, but the threat is newly understood.
 
-Note: 3 sentences total in the scene. Each choice names one character as grammatical subject AND sets actor. The three choices test three different moral axes (courage / loyalty / truth), not three variants of the same question. Parameter names anchor to named people ("Mari jõud", "Mari ja Jaan usaldus") or a specific threat ("Zombide laine") — never abstract ("Jõud", "Usaldus"). expectedChanges lists ONLY the parameters that actually move this turn — never include a zero-change entry. The choice TEXT does not spell numbers; the action implies the cost clearly.`,
+Note: 3 sentences total in the scene. Choice text is what the table weighs together, so it does NOT contain character names. Normal offered choices are always group-facing and \`isAbility=false\`; special abilities are spent from a separate player control. The three choices test three different moral axes (courage / loyalty / truth), not three variants of the same question. Parameter names anchor to a specific shared pressure or relation. expectedChanges lists ONLY the parameters that actually move this turn — never include a zero-change entry. The choice TEXT does not spell numbers; the action implies the cost clearly.`,
 
   turnReminder: 'LANGUAGE REMINDER: Scene and all choices MUST be written in Estonian (eesti keel). Natural, vivid, colloquial — not translated from English.\n\n',
 
@@ -62,7 +65,10 @@ Note: 3 sentences total in the scene. Each choice names one character as grammat
 
 const en: AiLangPack = {
   instruction: `LANGUAGE: Write all player-facing text in English.
-- Choices MUST be in third person with the acting character as the subject: "Mari opens the door." / "Jaan kills the light and waits." NEVER "We open the door." NEVER "The group decides".`,
+- Choices MUST be collective group actions or objective action phrases, WITHOUT character names: "Barricade the door", "Search the rear exit", "Light a decoy fire in the street".
+- Normal offered choices MUST set \`isAbility=false\`. Special abilities are spent only by the separate player-triggered ability control, not by the AI's three choices.
+- If one named character is mechanically responsible, keep their name OUT of normal choice \`text\`. Normal choices should usually omit \`actor\`; ability actions arrive separately with \`isAbility=true\` and \`actor\` already set by the app.
+- Parameter names and states must be short, concrete fragments. States are noun phrases or adjective phrases, not full sentences.`,
 
   fewShotExample: '',
   turnReminder: '',

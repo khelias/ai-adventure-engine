@@ -100,12 +100,12 @@ function fallbackConsequenceText(args: {
 }): string {
   if (args.language === 'et') {
     return args.direction === 'improved'
-      ? `${args.parameterName} paranes: ${args.toState}`
-      : `${args.parameterName} halvenes: ${args.toState}`
+      ? `Seis läks paremaks: ${args.toState}`
+      : `Seis läks halvemaks: ${args.toState}`
   }
   return args.direction === 'improved'
-    ? `${args.parameterName} improved: ${args.toState}`
-    : `${args.parameterName} worsened: ${args.toState}`
+    ? `State improved: ${args.toState}`
+    : `State worsened: ${args.toState}`
 }
 
 function buildParameterEvents(args: {
@@ -167,7 +167,7 @@ export async function generateStories(): Promise<void> {
         context: settings.context,
       }),
       storyGenerationSchema,
-      'claude',
+      settings.provider,
     )
     store.setAvailableStories(stories)
   } catch (err) {
@@ -192,7 +192,7 @@ export async function generateCustomStory(storyText: string): Promise<void> {
         language: settings.language,
       }),
       customStorySchema,
-      'gemini',
+      settings.provider,
     )
     const title = t().customStoryTitle.replace('...', '')
     store.initStory({
@@ -224,7 +224,7 @@ export async function generateSequel(sequelText: string): Promise<void> {
         language: settings.language,
       }),
       sequelSchema,
-      'gemini',
+      settings.provider,
     )
     state.initStory({
       title: LANG_PACKS[settings.language].sequelTitle,
@@ -299,17 +299,17 @@ export async function handlePlayerChoice(
         ? markAbilityUsedById(store.roles, abilityActorId)
         : store.roles
 
-    // For chosenChoice turns we know the deltas upfront — preview the
+    // For normal offered choices we know the deltas upfront — preview the
     // post-apply state and pass it to the AI as "current parameter states".
     // Without this, the prompt was self-contradictory: states block showed
     // pre-apply values while the APPLIED CHANGES block claimed they "already
     // reflect" the deltas. AI got contradictory information. For kickoff /
-    // free-text we can't preview (deltas come from the AI's own response),
-    // so we fall back to pre-apply and finalize after the call.
+    // free-text and player-triggered special abilities do not have declared
+    // deltas, so we fall back to pre-apply and finalize after the call.
     const parametersBefore = store.parameters
-    const choiceDeltas: ParameterCost[] =
-      opts.chosenChoice?.expectedChanges ?? []
-    const paramsForPrompt = opts.chosenChoice
+    const choiceDeltas: ParameterCost[] = opts.chosenChoice?.expectedChanges ?? []
+    const hasDeclaredChoiceDeltas = choiceDeltas.length > 0
+    const paramsForPrompt = hasDeclaredChoiceDeltas
       ? applyParameterChanges(store.parameters, choiceDeltas)
       : store.parameters
 
@@ -323,7 +323,8 @@ export async function handlePlayerChoice(
       roles: rolesAfterAbility,
       recentScenes: store.recentScenes,
       choiceText,
-      lastChoiceCost: opts.chosenChoice?.expectedChanges,
+      chosenChoice: opts.chosenChoice,
+      lastChoiceCost: hasDeclaredChoiceDeltas ? choiceDeltas : undefined,
       lastTurnChoices: store.lastTurnChoices,
       language: store.settings.language,
       context: store.settings.context,
@@ -335,15 +336,15 @@ export async function handlePlayerChoice(
     })
     const response = await callAI<TurnResponse>(user, turnSchema, store.settings.provider, system, store.settings.language)
 
-    // Authoritative deltas: chosenChoice.expectedChanges when we have a
-    // structured pick (the contract the choice signed when it was offered),
-    // otherwise the AI's response.parameters for kickoff / free-text.
+    // Authoritative deltas: chosenChoice.expectedChanges when an offered
+    // choice declared costs, otherwise the AI's response.parameters for
+    // kickoff / free-text / player-triggered special abilities.
     // Trusting response.parameters on chosenChoice turns is unsafe — the AI
     // sometimes silently zeroes them out, which produced parameter-frozen
     // playthroughs in the past.
     const authoritativeChanges: ParameterCost[] =
-      opts.chosenChoice?.expectedChanges ?? response.parameters ?? []
-    const parametersAfter = opts.chosenChoice
+      hasDeclaredChoiceDeltas ? choiceDeltas : response.parameters ?? []
+    const parametersAfter = hasDeclaredChoiceDeltas
       ? paramsForPrompt
       : applyParameterChanges(store.parameters, authoritativeChanges)
     const parameterEvents = buildParameterEvents({

@@ -88,6 +88,9 @@ const DURATION_OPTIONS: { value: Duration; labelKey: keyof typeof translations.e
   { value: 'Long', labelKey: 'durationLong' },
 ]
 
+const SETUP_STEPS = [1, 2, 3, 4] as const
+type SetupStep = typeof SETUP_STEPS[number]
+
 export function SetupScreen() {
   const settings = useGameStore((s) => s.settings)
   const setSetting = useGameStore((s) => s.setSetting)
@@ -96,7 +99,7 @@ export function SetupScreen() {
   const strings = translations[settings.language]
 
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const [step, setStep] = useState<1 | 2>(1)
+  const [step, setStep] = useState<SetupStep>(1)
   const swipeStartX = useRef<number | null>(null)
 
   const handleSwipeStart = (e: React.TouchEvent) => {
@@ -124,6 +127,12 @@ export function SetupScreen() {
   const duration = settings.duration
 
   const genreOption = GENRES.find((g) => g.value === genre) ?? GENRES[0]
+  const stepTitle = {
+    1: strings.step1Title,
+    2: strings.step2Title,
+    3: strings.step3Title,
+    4: strings.step4Title,
+  }[step]
 
   // First word of duration label (strips the parenthetical)
   const getDurationWord = (labelKey: keyof typeof translations.et) =>
@@ -132,14 +141,13 @@ export function SetupScreen() {
   return (
     <section className="setup-wrap">
       <span className="setup-eyebrow">{strings.adventureKicker}</span>
-      <div className="setup-progress" aria-label={strings.setupStepLabel(step, 2)}>
-        <span className={step === 1 ? 'active' : ''} />
-        <span className={step === 2 ? 'active' : ''} />
+      <div className="setup-progress" aria-label={strings.setupStepLabel(step, SETUP_STEPS.length)}>
+        {SETUP_STEPS.map((n) => (
+          <span key={n} className={step === n ? 'active' : ''} />
+        ))}
       </div>
-      <p className="setup-step-count">{strings.setupStepLabel(step, 2)}</p>
-      <h2 className="setup-step-title">
-        {step === 1 ? strings.step1Title : strings.step2Title}
-      </h2>
+      <p className="setup-step-count">{strings.setupStepLabel(step, SETUP_STEPS.length)}</p>
+      <h2 className="setup-step-title">{stepTitle}</h2>
 
       {step === 1 && (
         <>
@@ -171,41 +179,6 @@ export function SetupScreen() {
                 ))}
               </div>
             </div>
-
-            <div className="setup-section">
-              <span className="setup-label">{strings.playerCountQuestion}</span>
-              <div className="seg-group">
-                {[3, 4, 5, 6].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    className={`seg-btn seg-btn--num${players === n ? ' active' : ''}`}
-                    onClick={() => setSetting('players', n)}
-                    aria-pressed={players === n}
-                    aria-label={strings.playersAriaLabel(n)}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="setup-section">
-              <span className="setup-label">{strings.durationQuestion}</span>
-              <div className="seg-group">
-                {DURATION_OPTIONS.map((d) => (
-                  <button
-                    key={d.value}
-                    type="button"
-                    className={`seg-btn${duration === d.value ? ' active' : ''}`}
-                    onClick={() => setSetting('duration', d.value)}
-                    aria-pressed={duration === d.value}
-                  >
-                    {getDurationWord(d.labelKey)}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
 
           <button
@@ -219,14 +192,92 @@ export function SetupScreen() {
       )}
 
       {step === 2 && (
-        <div className="setup-step-content fade-in">
+        <div className="setup-step-content setup-step-content--context fade-in">
+          <div className="context-form-card">
+            <div>
+              <h3 className="setup-tell-header">{strings.playerNamesHeader}</h3>
+              <p className="setup-context-hint">{strings.playerNamesHint}</p>
+            </div>
+
+            <div className="setup-mini-grid">
+              <div className="setup-section setup-section--inline">
+                <span className="setup-label">{strings.playerCountQuestion}</span>
+                <div className="seg-group">
+                  {[3, 4, 5, 6].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      className={`seg-btn seg-btn--num${players === n ? ' active' : ''}`}
+                      onClick={() => setSetting('players', n)}
+                      aria-pressed={players === n}
+                      aria-label={strings.playersAriaLabel(n)}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="setup-section setup-section--inline">
+                <span className="setup-label">{strings.durationQuestion}</span>
+                <div className="seg-group">
+                  {DURATION_OPTIONS.map((d) => (
+                    <button
+                      key={d.value}
+                      type="button"
+                      className={`seg-btn${duration === d.value ? ' active' : ''}`}
+                      onClick={() => setSetting('duration', d.value)}
+                      aria-pressed={duration === d.value}
+                    >
+                      {getDurationWord(d.labelKey)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="ctx-field ctx-field--primary">
+              <span className="ctx-label">{strings.playersDescLabel}</span>
+              <input
+                type="text"
+                value={ctx.playersDesc}
+                placeholder={strings.playersDescPlaceholder}
+                onChange={(e) => setCtx({ playersDesc: e.target.value })}
+                className="input-page"
+              />
+            </div>
+          </div>
+
+          <p className="setup-context-note">{strings.playerNamesNote}</p>
+
+          <div className="setup-nav-row">
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => setStep(1)}
+            >
+              {strings.prevStepBtn}
+            </button>
+            <button
+              type="button"
+              className="btn-begin ready"
+              onClick={() => setStep(3)}
+            >
+              {strings.nextStepBtn}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div className="setup-step-content setup-step-content--context fade-in">
           <div className="context-form-card">
             <div>
               <h3 className="setup-tell-header">{strings.groupSectionHeader}</h3>
               <p className="setup-context-hint">{strings.groupSectionHint}</p>
             </div>
 
-            <div className="ctx-field">
+            <div className="ctx-field ctx-field--primary">
               <span className="ctx-label">{strings.locationLabel}</span>
               <input
                 type="text"
@@ -237,18 +288,7 @@ export function SetupScreen() {
               />
             </div>
 
-            <div className="ctx-field">
-              <span className="ctx-label">{strings.playersDescLabel}</span>
-              <input
-                type="text"
-                value={ctx.playersDesc}
-                placeholder={strings.playersDescPlaceholder}
-                onChange={(e) => setCtx({ playersDesc: e.target.value })}
-                className="input-page"
-              />
-            </div>
-
-            <div className="ctx-field">
+            <div className="ctx-field ctx-field--mood">
               <span className="ctx-label">{strings.vibeLabel}</span>
               <div className="seg-group">
                 {(
@@ -270,8 +310,38 @@ export function SetupScreen() {
                 ))}
               </div>
             </div>
+          </div>
 
-            <div className="ctx-field">
+          <p className="setup-context-note">{strings.locationNote}</p>
+
+          <div className="setup-nav-row">
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => setStep(2)}
+            >
+              {strings.prevStepBtn}
+            </button>
+            <button
+              type="button"
+              className="btn-begin ready"
+              onClick={() => setStep(4)}
+            >
+              {strings.nextStepBtn}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 4 && (
+        <div className="setup-step-content setup-step-content--context fade-in">
+          <div className="context-form-card">
+            <div>
+              <h3 className="setup-tell-header">{strings.ideaSectionHeader}</h3>
+              <p className="setup-context-hint">{strings.ideaSectionHint}</p>
+            </div>
+
+            <div className="ctx-field ctx-field--primary">
               <span className="ctx-label">{strings.insideJokeLabel}</span>
               <input
                 type="text"
@@ -289,7 +359,7 @@ export function SetupScreen() {
             <button
               type="button"
               className="btn-ghost"
-              onClick={() => setStep(1)}
+              onClick={() => setStep(3)}
             >
               {strings.prevStepBtn}
             </button>
@@ -310,39 +380,40 @@ export function SetupScreen() {
             </div>
           ) : null}
 
-          <button
-            type="button"
-            className="setup-advanced-toggle"
-            onClick={() => setShowAdvanced((v) => !v)}
-          >
-            {showAdvanced ? '▴' : '▾'} {strings.experimentalSettings}
-          </button>
-
-          {showAdvanced && (
-            <div className="ctx-section">
-              <div className="ctx-provider">
-                <span className="ctx-label">{strings.providerLabel}</span>
-                <div className="seg-group ctx-provider-options">
-                  {(['claude', 'gemini'] as const).map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      className={`seg-btn${settings.provider === p ? ' active' : ''}`}
-                      onClick={() => setSetting('provider', p)}
-                    >
-                      {p === 'claude' ? 'Claude' : 'Gemini'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
           {error ? (
             <p className="setup-error">{error}</p>
           ) : null}
         </div>
       )}
+
+      <div className="model-corner">
+        {showAdvanced ? (
+          <div className="model-corner__panel">
+            <span className="ctx-label">{strings.providerLabel}</span>
+            <div className="seg-group ctx-provider-options">
+              {(['claude', 'gemini'] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className={`seg-btn${settings.provider === p ? ' active' : ''}`}
+                  onClick={() => setSetting('provider', p)}
+                >
+                  {p === 'claude' ? strings.providerClaude : strings.providerGemini}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        <button
+          type="button"
+          className="model-corner__toggle"
+          onClick={() => setShowAdvanced((v) => !v)}
+          aria-label={strings.experimentalSettings}
+          aria-expanded={showAdvanced}
+        >
+          AI
+        </button>
+      </div>
     </section>
   )
 }

@@ -19,8 +19,8 @@ export type Screen =
 
 export type SecretArchetype =
   | 'optimist'    // all three params end top half
-  | 'traitor'     // parametric end (2+ params at worst)
-  | 'survivor'    // narrative end, regardless of state
+  | 'traitor'     // 2+ params at worst, regardless of ending label
+  | 'survivor'    // narrative end without collapse
   | 'keeper'      // a specific param stays top half
   | 'sacrificer'  // a specific param ends at worst
   | 'guardian'    // zero params at worst
@@ -87,9 +87,11 @@ export interface ParameterEvent {
 
 export interface Choice {
   text: string
+  // Normal AI-offered choices are always false. true is reserved for the
+  // separate player-triggered special ability action.
   isAbility: boolean
-  // Who performs this action. Role index (0-based). For ability choices this
-  // is also the ability owner.
+  // Who performs this action. Role index (0-based). For special abilities this
+  // is the ability owner.
   actor?: number | null
   // Who concretely pays / is affected (if the action targets a specific person
   // other than the actor). Example: "Mari jätab Jaane maja ette" → actor=Mari,

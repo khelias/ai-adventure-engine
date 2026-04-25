@@ -12,6 +12,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { createHmac } from 'node:crypto'
 import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
 
@@ -52,7 +53,7 @@ const { values } = parseArgs({
     duration: { type: 'string', default: 'Medium' },
     players: { type: 'string', default: '3' },
     language: { type: 'string', default: 'et' },
-    provider: { type: 'string', default: 'claude' },
+    provider: { type: 'string', default: 'gemini' },
     strategy: { type: 'string', default: 'balanced' },
     endpoint: { type: 'string', default: 'https://games.khe.ee/adventure/api/generate' },
     out: { type: 'string' },
@@ -70,7 +71,7 @@ Usage: npx tsx scripts/playtest.ts [options]
   --duration=<Short|Medium|Long>   Default: Medium   (8 / 15 / 20 turns)
   --players=<1..6>            Default: 3
   --language=<et|en>          Default: et
-  --provider=<claude|gemini>  Default: claude
+  --provider=<claude|gemini>  Default: gemini
   --strategy=<first|random|balanced|protect-threat>
                               Default: balanced  (see README)
   --endpoint=<url>            Default: https://games.khe.ee/adventure/api/generate
@@ -92,6 +93,7 @@ const strategy = values.strategy as StrategyName
 const endpoint = values.endpoint!
 const skipParametricEnd = Boolean(values['skip-parametric-end'])
 const maxTurns = durationToMaxTurns(duration)
+const apiSecret = process.env.API_SECRET || process.env.VITE_API_SECRET || ''
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const transcriptsDir = path.join(repoRoot, 'playtest-transcripts')
@@ -111,15 +113,22 @@ async function callAI<T>(
 ): Promise<{ data: T; model: string }> {
   const body: Record<string, unknown> = { prompt, schema, provider: providerArg, language }
   if (systemPrompt) body.systemPrompt = systemPrompt
+  const payload = JSON.stringify(body)
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    // Proxy's origin allowlist permits https://games.khe.ee; the playtest
+    // script identifies itself as that origin so it isn't rejected as abuse.
+    Origin: 'https://games.khe.ee',
+  }
+  if (apiSecret) {
+    headers['x-adventure-signature'] = createHmac('sha256', apiSecret)
+      .update(payload)
+      .digest('hex')
+  }
   const res = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      // Proxy's origin allowlist permits https://games.khe.ee; the playtest
-      // script identifies itself as that origin so it isn't rejected as abuse.
-      Origin: 'https://games.khe.ee',
-    },
-    body: JSON.stringify(body),
+    headers,
+    body: payload,
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
@@ -197,7 +206,7 @@ async function main() {
   const ctx: ContextInput = { location: '', playersDesc: '', vibe: '', insideJoke: '' }
   const t0 = Date.now()
   const storyPrompt = storyGenerationPrompt({ players, genre, duration, language, context: ctx })
-  const storyResp = await callAI<{ stories: Story[] }>(storyPrompt, storyGenerationSchema, 'claude')
+  const storyResp = await callAI<{ stories: Story[] }>(storyPrompt, storyGenerationSchema, provider)
   const story = storyResp.data.stories[0]
   log(`_model: ${storyResp.model} · ${Date.now() - t0}ms_`)
   log('')

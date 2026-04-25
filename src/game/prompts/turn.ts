@@ -48,6 +48,7 @@ export function turnPrompt(args: {
   roles: Role[]
   recentScenes: string[]
   choiceText: string
+  chosenChoice?: Choice
   // The declared cost of the choice the players just picked. Engine applies
   // this directly; we pass it to the AI so the scene it writes NEXT visibly
   // embodies exactly these deltas rather than inventing new ones.
@@ -66,7 +67,7 @@ export function turnPrompt(args: {
 }): TurnPromptResult {
   const {
     currentTurn, maxTurns, genre, title, summary,
-    parameters, roles, recentScenes, choiceText, lastChoiceCost,
+    parameters, roles, recentScenes, choiceText, chosenChoice, lastChoiceCost,
     lastTurnChoices,
     language, context, isFreeText, forceEnd,
   } = args
@@ -151,8 +152,8 @@ ${SELF_CHECK}${exampleBlock}`
 
   const availableAbilities = roles.filter((r) => !r.used)
   const abilitiesLine = availableAbilities.length > 0
-    ? `## AVAILABLE ABILITIES\n\n${availableAbilities.map((r) => `- **${r.name}** (actor: ${r.id}) — *${r.ability}*`).join('\n')}`
-    : '*All special abilities have been used.*'
+    ? `## PLAYER-TRIGGERED SPECIAL ABILITIES\n\nThese are player-controlled one-time actions. Do NOT offer them inside the three normal \`choices\`. If the players spend one, it will arrive as LAST CHOICE with \`isAbility=true\` and an actor.\n\n${availableAbilities.map((r) => `- **${r.name}** (actor: ${r.id}) — *${r.ability}*`).join('\n')}`
+    : '## PLAYER-TRIGGERED SPECIAL ABILITIES\n\n*All special abilities have been used.*'
 
   // Render the previous turn's offered set so the AI can see its own last
   // choice-shape and explicitly differ from it. Skipped on turn 1 (nothing
@@ -169,20 +170,44 @@ words. Different actors, different stakes, different verbs.
 
 ${lastTurnChoices
   .map((c, i) => {
-    const actorName = typeof c.actor === 'number' ? (roles[c.actor]?.name ?? `role ${c.actor}`) : 'The group'
+    const actorLabel = typeof c.actor === 'number' ? `actor=${c.actor}` : 'group action'
     const costSummary = c.expectedChanges
       .filter((e) => e.change !== 0)
       .map((e) => `${e.name} ${e.change > 0 ? '+' : ''}${e.change}`)
       .join(', ')
-    return `${i + 1}. **${actorName}** — "${c.text}"${costSummary ? ` *(cost: ${costSummary})*` : ''}`
+    return `${i + 1}. **${actorLabel}** — "${c.text}"${costSummary ? ` *(cost: ${costSummary})*` : ''}`
   })
   .join('\n')}
 `
       : ''
 
+  const chosenActor =
+    typeof chosenChoice?.actor === 'number'
+      ? roles.find((r) => r.id === chosenChoice.actor)
+      : undefined
+  const chosenTarget =
+    typeof chosenChoice?.target === 'number'
+      ? roles.find((r) => r.id === chosenChoice.target)
+      : undefined
+  const choiceMeta = chosenChoice && currentTurn !== 1
+    ? [
+        chosenChoice.isAbility && chosenActor
+          ? `This selected option spent **${chosenActor.name}**'s one-time special ability.`
+          : null,
+        chosenActor ? `Leading actor: roleIndex ${chosenActor.id} (${chosenActor.name}).` : null,
+        chosenTarget ? `Specific target: roleIndex ${chosenTarget.id} (${chosenTarget.name}).` : null,
+        chosenChoice.isAbility
+          ? 'Do not write meta-language like "used an ability" or "used a skill"; narrate the concrete in-world action from LAST CHOICE and let the actor lead it.'
+          : null,
+        chosenChoice.isAbility
+          ? 'A spent special ability is a payoff moment. Show a clear local advantage before introducing new pressure. It may still create a tradeoff, but it must not feel wasted: include at least one positive parameter change when the action logically improves or protects something.'
+          : null,
+      ].filter(Boolean).join('\n')
+    : ''
+
   const choiceLine = currentTurn === 1
     ? '## LAST CHOICE\n\n*Open the story.*'
-    : `## LAST CHOICE\n\nThe players chose: **"${choiceText}"**`
+    : `## LAST CHOICE\n\nThe players chose: **"${choiceText}"**${choiceMeta ? `\n\n${choiceMeta}` : ''}\n\nThis choice is canonical. Your next scene must begin by showing its concrete result. Do not undo it, skip over it, teleport back to the old location, or declare it impossible without showing the specific obstacle.`
 
   const freeTextNote = isFreeText
     ? '\n\n*NOTE: The players typed a custom action. Interpret it within the current phase. If the action would abruptly end the story, offer dramatic in-story consequences instead.*'

@@ -23,7 +23,7 @@ Then add a `playtest` script to `package.json` if you want shorter invocation:
 ## Running
 
 ```bash
-# Default: Zombies / Medium / Estonian / Claude / balanced strategy
+# Default: Zombies / Medium / Estonian / Gemini / balanced strategy
 npx tsx scripts/playtest.ts
 
 # Push through to the endgame even if engine tries to force-end early
@@ -46,7 +46,7 @@ Transcripts land in `playtest-transcripts/<timestamp>__<genre>-<duration>-<strat
 | `--duration` | `Medium` | `Short`(8) \| `Medium`(15) \| `Long`(20) turns |
 | `--players` | `3` | Role count |
 | `--language` | `et` | `et` \| `en` |
-| `--provider` | `claude` | `claude` \| `gemini` — which model handles turns |
+| `--provider` | `gemini` | `gemini` \| `claude` — which model handles story generation and turns |
 | `--strategy` | `balanced` | See below |
 | `--endpoint` | `https://games.khe.ee/adventure/api/generate` | Override for local dev |
 | `--skip-parametric-end` | off | Continue past the engine's auto-end when one parameter hits worst state. Needed to see climax/resolution phase while the parametric-end bug is unfixed. |
@@ -77,13 +77,11 @@ At end: reason (narrative / parametric / maxTurns / api-error) and final paramet
 
 ## Cost
 
-Each turn is one Claude or Gemini API call. Claude Sonnet 4.6 turn is ~4-8k tokens. Ballpark:
+Each turn is one Gemini or Claude API call. Gemini is the product default; Claude is for opt-in quality checks. Ballpark:
 
-- Short (8 turns) ≈ $0.20-0.40 on Claude
-- Medium (15 turns) ≈ $0.40-0.80
-- Long (20 turns) ≈ $0.50-1.00
-
-Gemini Flash is roughly 10× cheaper.
+- Short (8 turns) on Gemini Flash is usually cents, depending on retries/editor passes.
+- Claude Sonnet 4.6 is roughly 10× more expensive and should be used deliberately.
+- See `docs/model-strategy.md` for the model decision record.
 
 ## When to run
 

@@ -8,7 +8,7 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const API_SECRET = process.env.API_SECRET || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
-const DEFAULT_PROVIDER = process.env.DEFAULT_PROVIDER || 'claude';
+const DEFAULT_PROVIDER = process.env.DEFAULT_PROVIDER || 'gemini';
 const PORT = Number(process.env.PORT) || 3000;
 const UPSTREAM_TIMEOUT_MS = 115_000; // slightly under nginx proxy_read_timeout (120s)
 
@@ -158,8 +158,9 @@ app.post('/generate', async (req, res) => {
     let result = await callOnce();
 
     // Turn responses have { scene, choices, parameters, gameOver }. For those:
-    //   1) Validate choice costs: reject silently by logging, caller trusts AI.
-    //   2) If language is Estonian, run scene + gameOverText through Gemini editor.
+    //   1) Normalize malformed choice arrays.
+    //   2) Retry invalid empty-choice / free-choice contracts.
+    //   3) If language is Estonian, run scene + gameOverText through Gemini editor.
     // A turn-shaped response may arrive with a malformed `choices` field
     // (object, null, or even a string) if the model drifts off-schema at
     // climax / gameOver moments. Normalise here so frontend `.map()` and
@@ -214,8 +215,42 @@ app.post('/generate', async (req, res) => {
           : 'The story breaks off here — the narrator ran out of words. What happens next is yours to imagine.');
       }
     }
+    const COST_RETRY_REMINDERS = [
+      '\n\n⚠ CHOICE COST CONTRACT: Your previous response offered at least one choice with no real downside. Every continuing-turn choice MUST include at least one negative `expectedChanges` entry. A choice may also improve something, but no option can be all upside. Retry now with exactly 3 choices; each choice has at least one negative delta that clearly follows from the action.',
+      '\n\n⚠ FINAL CHOICE-COST ATTEMPT: The offered choices still had free/all-upside options. This breaks the game economy. Rewrite the choices only by producing a full valid turn response: exactly 3 choices, and every choice includes at least one negative `expectedChanges` entry. Keep choice text free of character names.',
+    ];
+    const choiceCostContractViolations = () =>
+      isTurnShape && result.data.gameOver !== true && Array.isArray(result.data.choices) && result.data.choices.length > 0
+        ? getChoiceCostViolations(result.data)
+        : [];
+    let costRetried = 0;
+    for (const reminder of COST_RETRY_REMINDERS) {
+      const violations = choiceCostContractViolations();
+      if (violations.length === 0) break;
+      costRetried += 1;
+      console.warn(`choice-cost contract violation attempt ${costRetried} (provider=${provider}): ${violations.join(' | ')}; retrying`);
+      try {
+        const retryResult = await callOnce(`${reminder}\n\nViolations to fix:\n- ${violations.join('\n- ')}`);
+        if (retryResult?.data && typeof retryResult.data.scene === 'string' && !Array.isArray(retryResult.data.choices)) {
+          retryResult.data.choices = [];
+        }
+        result = retryResult;
+        isTurnShape = result?.data && typeof result.data.scene === 'string' && Array.isArray(result.data.choices);
+      } catch (e) {
+        console.warn(`choice-cost retry ${costRetried} failed: ${e.message || e}`);
+      }
+    }
     let editorMs = 0;
     let editorApplied = false;
+    if (!isTurnShape && language === 'et' && GEMINI_API_KEY) {
+      const te = Date.now();
+      try {
+        editorApplied = await estonianStructuredTextEditorPass(result.data);
+      } catch (e) {
+        console.warn(`editor-pass structured text failed (continuing with unedited): ${e.message || e}`);
+      }
+      editorMs = Date.now() - te;
+    }
     if (isTurnShape) {
       logChoiceCostViolations(result.data, provider);
       if (language === 'et' && GEMINI_API_KEY) {
@@ -234,7 +269,7 @@ app.post('/generate', async (req, res) => {
     const cacheHit = result.cacheHit;
     const tokens = result.tokens || { in: 0, out: 0 };
     console.log(
-      `proxy ok: provider=${provider} model=${result.model} ms=${ms} in=${tokens.in} out=${tokens.out}${cacheHit != null ? ` cache=${cacheHit}` : ''}${editorApplied ? ` editor=${editorMs}ms` : ''}${retried ? ` retried=${retried}` : ''}${coercedGameOver ? ' coerced-gameover' : ''}`,
+      `proxy ok: provider=${provider} model=${result.model} ms=${ms} in=${tokens.in} out=${tokens.out}${cacheHit != null ? ` cache=${cacheHit}` : ''}${editorApplied ? ` editor=${editorMs}ms` : ''}${retried ? ` retried=${retried}` : ''}${costRetried ? ` cost-retried=${costRetried}` : ''}${coercedGameOver ? ' coerced-gameover' : ''}`,
     );
     res.json({ provider, model: result.model, data: result.data });
   } catch (err) {
@@ -252,17 +287,25 @@ app.post('/generate', async (req, res) => {
 // or if a choice is missing expectedChanges entirely. Does not block — the AI
 // self-check is primary; this is telemetry so we can spot drift.
 function logChoiceCostViolations(turn, provider) {
-  if (!Array.isArray(turn.choices)) return;
+  const violations = getChoiceCostViolations(turn);
+  if (violations.length > 0) {
+    console.warn(`choice-cost violations (provider=${provider}): ${violations.join(' | ')}`);
+  }
+}
+
+function getChoiceCostViolations(turn) {
+  if (!Array.isArray(turn.choices)) return [];
   const violations = [];
   turn.choices.forEach((c, i) => {
+    if (c?.isAbility === true) {
+      violations.push(`choice[${i}] is marked isAbility=true; abilities must be spent through the separate player action`);
+    }
     const changes = Array.isArray(c.expectedChanges) ? c.expectedChanges : [];
     if (changes.length === 0) { violations.push(`choice[${i}] has no expectedChanges`); return; }
     const hasNegative = changes.some((ch) => typeof ch.change === 'number' && ch.change < 0);
     if (!hasNegative) violations.push(`choice[${i}] has no negative cost: ${JSON.stringify(changes)}`);
   });
-  if (violations.length > 0) {
-    console.warn(`choice-cost violations (provider=${provider}): ${violations.join(' | ')}`);
-  }
+  return violations;
 }
 
 // Estonian editor pass: send the scene (and optional gameOverText) through
@@ -277,6 +320,7 @@ PARANDA:
 - Kalque'd ja kohmakad lauseehitused (inglise-mõõtkavaline struktuur)
 - Ebaühtlane ajavorm ühe lõigu sees
 - Sõnajärje vead vastavalt allolevale reeglistikule — eelkõige V2-reegli rikkumised, eituspartikli "ei" lahutamine verbist, rõhumäärsõnade ("ka", "just", "isegi") vale asend
+- Erioskuse tekstides väljamõeldud pealkirjad ja kooloniga sildid. Muuda need üheks loomulikuks tegevuslauseks. Näiteks "Ostee: Kristo meenutab..." → "Kristo mäletab üht varjatud hooviteed ja juhatab grupi sealt läbi."
 
 ÄRA MUUDA:
 - Fakte, tegelaste nimesid, sündmuste sisu
@@ -295,7 +339,7 @@ const EDITOR_SCHEMA = {
   required: ['corrected'],
 };
 
-// Global budget for the entire editor pass (both scene + gameOverText together).
+// Global budget for each editor pass.
 // nginx proxy_read_timeout is 120s; upstream AI call can use up to 115s; we
 // keep editor-pass well under the remaining margin so the total stays ≤ 120s.
 const EDITOR_TOTAL_BUDGET_MS = 25_000;
@@ -330,8 +374,87 @@ async function estonianEditorPass(turnData) {
       }
     });
   }
+  if (Array.isArray(turnData.consequences)) {
+    turnData.consequences.forEach((consequence, idx) => {
+      if (consequence && typeof consequence.text === 'string' && consequence.text.trim().length > 5) {
+        tasks.push({
+          label: `consequence[${idx}]`,
+          text: consequence.text,
+          apply: (c) => { turnData.consequences[idx].text = c; },
+        });
+      }
+    });
+  }
   if (tasks.length === 0) return;
+  await runEditorTasks(tasks);
+}
 
+async function estonianStructuredTextEditorPass(data) {
+  const tasks = [];
+  addStoryTextTasks(tasks, data);
+  addCustomStoryTextTasks(tasks, data);
+  addSequelTextTasks(tasks, data);
+  if (tasks.length === 0) return false;
+  await runEditorTasks(tasks);
+  return true;
+}
+
+function addTextTask(tasks, label, text, apply, minLen = 5) {
+  if (typeof text !== 'string' || text.trim().length < minLen) return;
+  tasks.push({ label, text, apply });
+}
+
+function addStoryTextTasks(tasks, data) {
+  if (!Array.isArray(data?.stories)) return;
+  data.stories.forEach((story, storyIdx) => {
+    addTextTask(tasks, `story[${storyIdx}].title`, story.title, (c) => { story.title = c; });
+    addTextTask(tasks, `story[${storyIdx}].summary`, story.summary, (c) => { story.summary = c; }, 20);
+    addRoleTextTasks(tasks, story.roles, `story[${storyIdx}].roles`);
+    addParameterTextTasks(tasks, story.parameters, `story[${storyIdx}].parameters`);
+  });
+}
+
+function addCustomStoryTextTasks(tasks, data) {
+  addRoleTextTasks(tasks, data?.roles, 'roles');
+  addParameterTextTasks(tasks, data?.parameters, 'parameters');
+}
+
+function addSequelTextTasks(tasks, data) {
+  if (Array.isArray(data?.newAbilities)) {
+    data.newAbilities.forEach((ability, idx) => {
+      addTextTask(tasks, `newAbilities[${idx}]`, ability, (c) => { data.newAbilities[idx] = c; }, 10);
+    });
+  }
+  addParameterTextTasks(tasks, data?.newParameters, 'newParameters');
+}
+
+function addRoleTextTasks(tasks, roles, labelPrefix) {
+  if (!Array.isArray(roles)) return;
+  roles.forEach((role, idx) => {
+    // Do not edit role.name; names are identifiers and should remain stable.
+    addTextTask(tasks, `${labelPrefix}[${idx}].description`, role.description, (c) => { role.description = c; }, 10);
+    addTextTask(tasks, `${labelPrefix}[${idx}].ability`, role.ability, (c) => { role.ability = c; }, 10);
+  });
+}
+
+function addParameterTextTasks(tasks, parameters, labelPrefix) {
+  if (!Array.isArray(parameters)) return;
+  parameters.forEach((param, paramIdx) => {
+    addTextTask(tasks, `${labelPrefix}[${paramIdx}].name`, param.name, (c) => { param.name = c; });
+    if (Array.isArray(param.states)) {
+      param.states.forEach((state, stateIdx) => {
+        addTextTask(
+          tasks,
+          `${labelPrefix}[${paramIdx}].states[${stateIdx}]`,
+          state,
+          (c) => { param.states[stateIdx] = c; },
+        );
+      });
+    }
+  });
+}
+
+async function runEditorTasks(tasks) {
   const sharedController = new AbortController();
   const budgetTimer = setTimeout(() => sharedController.abort(), EDITOR_TOTAL_BUDGET_MS);
 

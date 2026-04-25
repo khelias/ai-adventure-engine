@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { handlePlayerChoice } from '../game/actions'
+import { formatAbilityForDisplay } from '../game/abilityText'
 import type {
   Choice,
   Parameter,
   ParameterArchetype,
   ParameterEvent,
+  Role,
 } from '../game/types'
 import { LoadingWithHint } from './LoadingDots'
 
@@ -161,6 +163,7 @@ export function GameScreen() {
   const strings = translations[language]
 
   const [showCustomInput, setShowCustomInput] = useState(false)
+  const [showAbilityPanel, setShowAbilityPanel] = useState(false)
   const [customText, setCustomText] = useState('')
 
   useEffect(() => {
@@ -169,30 +172,44 @@ export function GameScreen() {
 
   const onChoice = (choice: Choice) => {
     setShowCustomInput(false)
+    setShowAbilityPanel(false)
     setCustomText('')
     if (choice.isAbility && typeof choice.actor === 'number') {
       const role = roles[choice.actor]
       if (!role || role.used) return
-      const abilityText =
-        language === 'et'
-          ? `[${role.name}] Kasuta erioskust: ${role.ability}`
-          : `[${role.name}] Use special ability: ${role.ability}`
-      void handlePlayerChoice(abilityText, { chosenChoice: choice })
+      void handlePlayerChoice(choice.text, { chosenChoice: choice })
     } else {
       void handlePlayerChoice(choice.text, { chosenChoice: choice })
     }
+  }
+
+  const onAbilityChoice = (role: Role) => {
+    if (role.used) return
+    setShowCustomInput(false)
+    setShowAbilityPanel(false)
+    setCustomText('')
+    void handlePlayerChoice(role.ability, {
+      chosenChoice: {
+        text: role.ability,
+        isAbility: true,
+        actor: role.id,
+        expectedChanges: [],
+      },
+    })
   }
 
   const onCustomSubmit = () => {
     const text = customText.trim()
     if (!text) return
     setShowCustomInput(false)
+    setShowAbilityPanel(false)
     setCustomText('')
     void handlePlayerChoice(text, { isFreeText: true })
   }
 
   const paragraphs = sceneText.split('\n').filter(Boolean)
   const waitingForScene = isLoading && sceneText.length > 0
+  const unusedAbilities = roles.filter((role) => !role.used)
 
   return (
     <section>
@@ -260,23 +277,71 @@ export function GameScreen() {
                         <span className="choice__text">
                           {choice.text}{isUsed ? ` — ${strings.usedLabel}` : ''}
                         </span>
+                        {choice.isAbility && actorRole ? (
+                          <span className="choice__actor" title={actorRole.ability}>
+                            {strings.abilityChoiceMeta(actorRole.name)}
+                          </span>
+                        ) : null}
                       </span>
                     </button>
                   )
                 })}
               </div>
 
+              <div className="choice-tools">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAbilityPanel((v) => !v)
+                    setShowCustomInput(false)
+                  }}
+                  className="btn-secondary ability-toggle"
+                  disabled={unusedAbilities.length === 0}
+                  aria-expanded={showAbilityPanel}
+                >
+                  {unusedAbilities.length > 0 ? strings.abilityActionBtn : strings.abilityUsedAll}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCustomInput(true)
+                    setShowAbilityPanel(false)
+                  }}
+                  className="btn-ghost"
+                >
+                  {strings.customChoiceLink}…
+                </button>
+              </div>
+
+              {showAbilityPanel ? (
+                <div className="ability-panel" aria-label={strings.abilityPanelTitle}>
+                  <div className="ability-panel__head">
+                    <span className="ability-panel__title">{strings.abilityPanelTitle}</span>
+                    <span className="ability-panel__hint">{strings.abilityPanelHint}</span>
+                  </div>
+                  <div className="ability-list">
+                    {roles.map((role) => (
+                      <button
+                        key={role.id}
+                        type="button"
+                        className={`ability-card${role.used ? ' is-used' : ''}`}
+                        disabled={role.used}
+                        onClick={() => onAbilityChoice(role)}
+                      >
+                        <span className="ability-card__owner">{role.name}</span>
+                        <span className="ability-card__text">{formatAbilityForDisplay(role)}</span>
+                        <span className="ability-card__action">
+                          {role.used ? strings.usedLabel : strings.abilityUseBtn}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               {/* Custom input */}
               <div className="mt-4">
-                {!showCustomInput ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowCustomInput(true)}
-                    className="btn-ghost"
-                  >
-                    {strings.customChoiceLink}…
-                  </button>
-                ) : (
+                {showCustomInput ? (
                   <div className="space-y-2">
                     <textarea
                       value={customText}
@@ -309,7 +374,7 @@ export function GameScreen() {
                       </button>
                     </div>
                   </div>
-                )}
+                ) : null}
               </div>
             </>
           )}

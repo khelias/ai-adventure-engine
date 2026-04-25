@@ -6,6 +6,11 @@
 // Design constraint: every archetype's win condition must be evaluable from
 // end-state alone. No per-turn history tracking in v1 — that doubles the
 // implementation surface for a prototype.
+//
+// "Narrative" vs "parametric" is an engine route, not enough by itself to
+// decide social-deduction outcomes. A final-turn narrative can still be a
+// collapse if multiple parameters end at worst. Score secrets from the final
+// parameter state first, then use gameOverKind only where it adds meaning.
 
 import type { GameOverKind, Parameter, Role, Secret, SecretArchetype } from './types'
 
@@ -78,15 +83,21 @@ function isAtWorst(p: Parameter): boolean {
   return p.currentStateIndex === p.states.length - 1
 }
 
+function worstCount(parameters: Parameter[]): number {
+  return parameters.filter(isAtWorst).length
+}
+
 export function evaluateSecret(secret: Secret, end: EndState): 'won' | 'lost' {
   const { parameters, gameOverKind } = end
+  const collapsed = worstCount(parameters) >= 2
+  const contained = worstCount(parameters) === 0
   switch (secret.archetype) {
     case 'optimist':
       return parameters.every(isBestState) ? 'won' : 'lost'
     case 'traitor':
-      return gameOverKind === 'parametric' ? 'won' : 'lost'
+      return collapsed || gameOverKind === 'parametric' ? 'won' : 'lost'
     case 'survivor':
-      return gameOverKind === 'narrative' ? 'won' : 'lost'
+      return gameOverKind === 'narrative' && !collapsed ? 'won' : 'lost'
     case 'keeper': {
       const p = parameters.find((x) => x.name === secret.paramName)
       return p && isTopHalf(p) ? 'won' : 'lost'
@@ -96,7 +107,7 @@ export function evaluateSecret(secret: Secret, end: EndState): 'won' | 'lost' {
       return p && isAtWorst(p) ? 'won' : 'lost'
     }
     case 'guardian':
-      return parameters.every((p) => !isAtWorst(p)) ? 'won' : 'lost'
+      return contained ? 'won' : 'lost'
   }
 }
 

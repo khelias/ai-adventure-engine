@@ -55,6 +55,12 @@ Generate one adventure story for ${players} players in the ${genre}
 genre, suitable for a ${duration} duration game. Provide a compelling
 title, a vivid 2–3 sentence summary, and exactly ${players} unique roles.
 
+The story needs a clear table objective that can survive most of the game:
+reach a place, protect a person, keep a lie hidden, hold a shelter, expose
+a truth, or escape a closing trap. Do not make the objective a timer that
+can simply expire halfway through unless that failure creates a concrete
+second objective in the summary.
+
 The summary and the initial scene MUST already embody the TONE above if
 one was provided — a 'light' story opens with a ridiculous human detail,
 a 'dark' story opens with dread, a 'tense' story opens with measured
@@ -64,10 +70,22 @@ pressure.
 
 - \`name\` is a PROPER FIRST NAME appropriate to the target language — not
   a job title, not a description. Just a single first name.
+- If GROUP CONTEXT names real players and the count matches, prefer using
+  those names as role names. This makes the generated cast feel like the
+  people at the table instead of random strangers.
 - \`description\` is one sentence describing who this person is and their
   relevant skill or background.
-- \`ability\` is a single powerful one-time-use special ability. Name it
-  clearly and say what it does.
+- \`ability\` is a single powerful one-time-use special ability written as
+  one natural sentence. Do NOT invent an ability title, label, or colon
+  prefix. Do NOT start the ability with the role's name; the UI already
+  displays the owner separately. Good Estonian shape: "Mäletab üht varjatud
+  hooldusväravat ja juhatab grupi sealt läbi." Bad: "Ostee: Kristo meenutab...".
+- Every ability must be special in THIS story, not generically useful.
+  It should clearly help with one of the story's three parameters, protect
+  against one named pressure, restore one concrete resource, reveal one
+  hidden route/fact, or create one costly shortcut. Avoid generic healing,
+  strength, leadership, or "notices details" unless the parameters make
+  that ability mechanically meaningful.
 
 ${ARCHETYPE_PALETTE}
 
@@ -92,8 +110,16 @@ export function customStoryPrompt(args: {
 Based on this custom story idea: "${storyText}", generate ${players}
 thematically appropriate roles and 3 unique parameters for a ${genre} game.
 
+Preserve or infer one clear table objective that can carry a full game.
+If an objective fails, it must create a concrete second objective rather
+than leaving the group with only generic survival.
+
 Each role needs a PROPER FIRST NAME (not a title), a one-sentence
-description, and a one-time-use ability.
+description, and a one-time-use ability written as one natural sentence.
+Do NOT invent an ability title, label, or colon prefix. Do NOT start the
+ability with the role's name; the UI already displays the owner separately.
+Every ability must clearly matter to one parameter or one named pressure
+in the generated story; avoid generic useful talents.
 
 ${ARCHETYPE_PALETTE}
 
@@ -117,11 +143,17 @@ summary: "${sequelText}".
 
 The returning characters are: ${JSON.stringify(oldRoles)}.
 
+The sequel needs one concrete objective that can carry the next game. Do
+not reduce the continuation to a vague "survive whatever comes next".
+
 Generate:
 
 1. A new, unique, one-time-use special ability for EACH returning
-   character. The list of abilities must be in the same order as the
-   characters above.
+   character, written as one natural sentence with no title, label, or
+   colon prefix. Do NOT start abilities with the character name. The list
+   of abilities must be in the same order as the characters above.
+   Each ability must clearly matter to one of the sequel's parameters or
+   named pressures; avoid generic useful talents.
 2. Three completely new, unique parameters suitable for this sequel
    story.
 

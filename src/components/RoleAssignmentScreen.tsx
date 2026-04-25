@@ -1,6 +1,7 @@
 import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { prepareSecretsAndTransition } from '../game/actions'
+import { formatAbilityForDisplay } from '../game/abilityText'
 import { LoadingDots } from './LoadingDots'
 
 export function RoleAssignmentScreen() {
@@ -114,7 +115,7 @@ export function RoleAssignmentScreen() {
                   fontStyle: 'italic',
                   lineHeight: 1.55,
                 }}>
-                  {role.ability}
+                  {formatAbilityForDisplay(role)}
                 </p>
               </div>
             </div>

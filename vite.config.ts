@@ -6,6 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig(({ command }) => {
   const apiTarget = process.env.VITE_API_TARGET || 'https://games.khe.ee'
   const apiOrigin = process.env.VITE_API_ORIGIN || 'https://games.khe.ee'
+  const apiRewrite = process.env.VITE_API_REWRITE === 'true'
 
   return {
     base: command === 'build' ? '/adventure/' : '/',
@@ -23,6 +24,9 @@ export default defineConfig(({ command }) => {
           headers: {
             Origin: apiOrigin,
           },
+          ...(apiRewrite
+            ? { rewrite: (path) => path.replace(/^\/adventure\/api/, '') }
+            : {}),
         },
       },
     },
