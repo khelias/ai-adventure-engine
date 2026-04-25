@@ -4,7 +4,7 @@
 //   storyGenerationSchema → "stories"
 //   customStorySchema     → "parameters,roles"
 //   sequelSchema          → "newAbilities,newParameters"
-//   turnSchema            → "choices,gameOver,gameOverText,parameters,scene"
+//   turnSchema            → "choices,consequences,gameOver,gameOverText,parameters,scene"
 // Do not rename top-level keys without also updating ALLOWED_SCHEMA_SHAPES
 // in proxy/server.js.
 
@@ -16,7 +16,6 @@ const parameterItem: JsonSchema = {
     name: { type: 'STRING' },
     states: { type: 'ARRAY', items: { type: 'STRING' } },
     archetype: { type: 'STRING' },
-    ownerRoleId: { type: 'INTEGER' },
   },
   required: ['name', 'states', 'archetype'],
 }
@@ -108,16 +107,28 @@ export const turnSchema: JsonSchema = {
         required: ['text', 'isAbility', 'expectedChanges'],
       },
     },
+    consequences: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          parameterName: { type: 'STRING' },
+          text: { type: 'STRING' },
+        },
+        required: ['parameterName', 'text'],
+      },
+    },
     gameOver: { type: 'BOOLEAN' },
     gameOverText: { type: 'STRING' },
   },
-  required: ['scene', 'parameters', 'choices', 'gameOver'],
+  required: ['scene', 'parameters', 'choices', 'consequences', 'gameOver'],
 }
 
 export interface TurnResponse {
   scene: string
   parameters: { name: string; change: number }[]
   choices: import('../types').Choice[]
+  consequences: { parameterName: string; text: string }[]
   gameOver: boolean
   gameOverText?: string
 }

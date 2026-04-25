@@ -3,6 +3,7 @@ import type {
   Choice,
   GameOverKind,
   Parameter,
+  ParameterEvent,
   Role,
   Screen,
   Secret,
@@ -57,6 +58,7 @@ interface GameState {
   maxTurns: number
   sceneText: string
   choices: Choice[]
+  parameterEvents: ParameterEvent[]
   // The choices the AI offered on the PREVIOUS turn (= the set the player
   // just picked from). Sent back to the AI on the next turn so it can
   // avoid paraphrasing the same shape — "Mari investigates / Jaan retreats
@@ -99,6 +101,7 @@ interface GameActions {
     parameters: Parameter[]
     roles: Role[]
     currentTurn: number
+    parameterEvents?: ParameterEvent[]
   }): void
   setGameOver(kind: GameOverKind, title: string, text: string): void
   pushFinalScene(scene: string): void
@@ -121,6 +124,7 @@ const initialGameSlice = {
   maxTurns: 0,
   sceneText: '',
   choices: [] as Choice[],
+  parameterEvents: [] as ParameterEvent[],
   lastTurnChoices: [] as Choice[],
   recentScenes: [] as string[],
   allScenes: [] as string[],
@@ -207,14 +211,23 @@ export const useGameStore = create<GameState & GameActions>()((set) => ({
         currentTurn: 1,
         maxTurns,
         screen: 'game',
+        parameterEvents: [],
         transcript,
       }
     }),
 
-  setTurnResult: ({ sceneText, choices, parameters, roles, currentTurn }) =>
+  setTurnResult: ({
+    sceneText,
+    choices,
+    parameters,
+    roles,
+    currentTurn,
+    parameterEvents = [],
+  }) =>
     set((state) => ({
       sceneText,
       choices,
+      parameterEvents,
       // Capture the OUTGOING choices (what the player just decided from)
       // so the next turn's AI call can see them and avoid paraphrasing.
       // The very first setTurnResult (turn 1, kickoff) has state.choices=[],

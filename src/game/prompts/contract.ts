@@ -17,6 +17,8 @@ Your response resolves to ONE of two shapes. There is no third shape.
 
 - \`scene\`: your 2–5 sentences
 - \`parameters\`: the deltas you narrated this turn
+- \`consequences\`: one short, concrete in-world consequence for every
+  parameter that moved; empty if no parameter moved
 - \`choices\`: **exactly three** choices for the group to weigh
 - \`gameOver\`: **false**
 - \`gameOverText\`: omit
@@ -25,6 +27,8 @@ Your response resolves to ONE of two shapes. There is no third shape.
 
 - \`scene\`: the final beat, kept short — the ending carries the weight
 - \`parameters\`: the deltas you narrated this turn (may be empty)
+- \`consequences\`: one short, concrete in-world consequence for every
+  parameter that moved; empty if no parameter moved
 - \`choices\`: empty array
 - \`gameOver\`: **true**
 - \`gameOverText\`: a 3–5 paragraph ending that names which parameters

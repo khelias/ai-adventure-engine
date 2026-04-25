@@ -27,28 +27,32 @@ function shuffle<T>(xs: T[]): T[] {
   return out
 }
 
-// Pick N distinct archetypes for N players. If N exceeds pool size, repeats
-// are allowed — unlikely at ≤6 players and 6 archetypes, but we guard anyway.
+// Pick N distinct archetypes for N players. Ensure that the core three
+// agendas are always distributed if N >= 3: collapse, neutral survival, and
+// perfect-state finish.
 function pickArchetypes(n: number): SecretArchetype[] {
-  const shuffled = shuffle(ARCHETYPE_POOL)
-  if (n <= shuffled.length) return shuffled.slice(0, n)
-  const out: SecretArchetype[] = [...shuffled]
-  while (out.length < n) out.push(shuffled[Math.floor(Math.random() * shuffled.length)])
-  return out
+  const base: SecretArchetype[] = ['traitor', 'survivor', 'optimist']
+  const shuffledBase = shuffle(base)
+  if (n <= shuffledBase.length) return shuffledBase.slice(0, n)
+
+  const others = shuffle(ARCHETYPE_POOL.filter(a => !base.includes(a)))
+  const combined = [...shuffledBase, ...others]
+  const out = combined.slice(0, n)
+
+  // Fill if we have more players than the total pool (unlikely)
+  while (out.length < n) out.push(ARCHETYPE_POOL[Math.floor(Math.random() * ARCHETYPE_POOL.length)])
+
+  return shuffle(out)
 }
 
 export function assignSecrets(roles: Role[], parameters: Parameter[]): Secret[] {
+  if (parameters.length === 0) return []
   const archetypes = pickArchetypes(roles.length)
   return roles.map((role, i) => {
     const archetype = archetypes[i]
     const secret: Secret = { ownerRoleId: role.id, archetype }
     if (archetype === 'keeper' || archetype === 'sacrificer') {
-      // Prefer the parameter this role OWNS (ownerRoleId match). Makes the
-      // secret feel personal — "your own thing to protect / sacrifice". If
-      // the role owns no parameter (e.g. bond/threat-only game), fall back to
-      // a random parameter so the secret still has a scoring target.
-      const owned = parameters.find((p) => p.ownerRoleId === role.id)
-      const chosen = owned ?? parameters[Math.floor(Math.random() * parameters.length)]
+      const chosen = parameters[Math.floor(Math.random() * parameters.length)]
       secret.paramName = chosen.name
     }
     return secret
@@ -66,6 +70,10 @@ function isTopHalf(p: Parameter): boolean {
   return p.currentStateIndex < Math.ceil(p.states.length / 2)
 }
 
+function isBestState(p: Parameter): boolean {
+  return p.currentStateIndex === 0
+}
+
 function isAtWorst(p: Parameter): boolean {
   return p.currentStateIndex === p.states.length - 1
 }
@@ -74,7 +82,7 @@ export function evaluateSecret(secret: Secret, end: EndState): 'won' | 'lost' {
   const { parameters, gameOverKind } = end
   switch (secret.archetype) {
     case 'optimist':
-      return parameters.every(isTopHalf) ? 'won' : 'lost'
+      return parameters.every(isBestState) ? 'won' : 'lost'
     case 'traitor':
       return gameOverKind === 'parametric' ? 'won' : 'lost'
     case 'survivor':

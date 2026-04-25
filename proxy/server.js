@@ -46,7 +46,8 @@ const ALLOWED_SCHEMA_SHAPES = new Set([
   'stories',                                         // storyGenerationSchema
   'parameters,roles',                                // customStorySchema
   'newAbilities,newParameters',                      // sequelSchema
-  'choices,gameOver,gameOverText,parameters,scene',  // turnSchema
+  'choices,gameOver,gameOverText,parameters,scene',  // legacy turnSchema (pre-consequences)
+  'choices,consequences,gameOver,gameOverText,parameters,scene',  // turnSchema
 ]);
 
 function schemaFingerprint(schema) {

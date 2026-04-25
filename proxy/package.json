@@ -4,6 +4,9 @@
   "private": true,
   "description": "Provider-agnostic AI proxy for ai-adventure-engine (Claude + Gemini adapters)",
   "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "engines": {
     "node": ">=22"
   },

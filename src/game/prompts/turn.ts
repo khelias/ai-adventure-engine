@@ -85,7 +85,6 @@ export function turnPrompt(args: {
     .map((p) => {
       const meta = [
         p.archetype ? `archetype=${p.archetype}` : null,
-        typeof p.ownerRoleId === 'number' ? `owned by role ${p.ownerRoleId}` : null,
       ].filter(Boolean).join(', ')
       const metaStr = meta ? ` *(${meta})*` : ''
       return `- **${p.name}**${metaStr}: ${p.states.join(' → ')}`

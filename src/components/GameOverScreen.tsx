@@ -5,8 +5,6 @@ import { generateSequel } from '../game/actions'
 import { LoadingDots } from './LoadingDots'
 import { downloadTranscript } from '../game/transcript'
 
-type RevealPhase = 'prompt' | 'reveal'
-
 export function GameOverScreen() {
   const language = useGameStore((s) => s.settings.language)
   const kind = useGameStore((s) => s.gameOverKind)
@@ -14,6 +12,7 @@ export function GameOverScreen() {
   const text = useGameStore((s) => s.gameOverText)
   const allScenes = useGameStore((s) => s.allScenes)
   const roles = useGameStore((s) => s.roles)
+  const parameters = useGameStore((s) => s.parameters)
   const secrets = useGameStore((s) => s.secrets)
   const transcript = useGameStore((s) => s.transcript)
   const reset = useGameStore((s) => s.reset)
@@ -25,32 +24,10 @@ export function GameOverScreen() {
   const [showFullStory, setShowFullStory] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  // Secret reveal flow state: 'idle' = not started, index = current player,
-  // phase = pass-phone prompt vs revealed card, 'done' = all seen.
-  const [revealIdx, setRevealIdx] = useState<number | 'idle' | 'done'>('idle')
-  const [revealPhase, setRevealPhase] = useState<RevealPhase>('prompt')
-
   const hasSecrets = secrets.length > 0
-  const currentRevealRole =
-    typeof revealIdx === 'number' ? roles[revealIdx] : null
-  const currentRevealSecret = currentRevealRole
-    ? secrets.find((s) => s.ownerRoleId === currentRevealRole.id)
-    : null
-
-  const onStartReveal = () => {
-    setRevealIdx(0)
-    setRevealPhase('prompt')
-  }
-  const onRevealTap = () => setRevealPhase('reveal')
-  const onNextPlayer = () => {
-    if (typeof revealIdx !== 'number') return
-    if (revealIdx === roles.length - 1) {
-      setRevealIdx('done')
-    } else {
-      setRevealIdx(revealIdx + 1)
-      setRevealPhase('prompt')
-    }
-  }
+  const winningRoleNames = roles
+    .filter((role) => secrets.find((secret) => secret.ownerRoleId === role.id)?.result === 'won')
+    .map((role) => role.name)
 
   const fullStoryText = [...allScenes, text].join('\n\n—\n\n')
 
@@ -61,24 +38,15 @@ export function GameOverScreen() {
   }
 
   return (
-    <section className="space-y-7">
-      <div className="text-center">
-        <p className="type-caps" style={{ marginBottom: '0.5rem' }}>
+    <section className="gameover-screen space-y-7">
+      <div className="secret-header">
+        <p className="type-caps">
           {strings.storyToldKicker}
         </p>
-        <h2
-          style={{
-            fontFamily: "'Fraunces', Georgia, serif",
-            fontVariationSettings: "'opsz' 72",
-            fontSize: '2rem',
-            fontWeight: 300,
-            color: 'var(--text)',
-            lineHeight: 1.2,
-          }}
-        >
+        <h2 className="screen-title screen-title--large">
           {title}
         </h2>
-        <div style={{ width: '2rem', height: '1px', background: 'var(--line-accent)', margin: '0.75rem auto', opacity: 0.5 }} />
+        <div className="title-rule" />
       </div>
 
       <div className="text-left space-y-4">
@@ -89,94 +57,55 @@ export function GameOverScreen() {
         ))}
       </div>
 
-      {/* Secret reveal flow — pass-the-phone ritual after the public finale */}
-      {hasSecrets && revealIdx === 'idle' && (
-        <div className="text-center" style={{ borderTop: '1px solid var(--line)', paddingTop: '1.25rem' }}>
-          <button onClick={onStartReveal} className="btn-secondary">
-            {strings.secretsShowResultsBtn}
-          </button>
-        </div>
-      )}
-
-      {hasSecrets && typeof revealIdx === 'number' && currentRevealRole && currentRevealSecret && (
-        <div className="space-y-5" style={{ borderTop: '1px solid var(--line)', paddingTop: '1.25rem' }}>
-          <p className="type-caps text-center">{strings.secretsRevealKicker}</p>
-          {revealPhase === 'prompt' ? (
-            <div className="space-y-4 text-center">
-              <p style={{ fontFamily: "'Fraunces', Georgia, serif", fontStyle: 'italic', color: 'var(--text-dim)' }}>
-                {strings.secretsPassPhoneTo(currentRevealRole.name)}
-              </p>
-              <p className="type-caps" style={{ fontSize: '0.75rem', color: 'var(--text-faint)' }}>
-                {revealIdx + 1} / {roles.length}
-              </p>
-              <button onClick={onRevealTap} className="btn-primary w-full py-3">
-                {strings.secretsRevealBtn(currentRevealRole.name)}
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div style={{
-                border: '1px solid var(--line-accent)',
-                borderRadius: '4px',
-                padding: '1.5rem',
-              }}>
-                <p className="type-caps" style={{ fontSize: '0.6875rem', marginBottom: '0.5rem', color: 'var(--accent)' }}>
-                  {currentRevealRole.name} · {strings.secretArchetypeName(currentRevealSecret.archetype)}
-                </p>
-                <p style={{
-                  fontFamily: "'Fraunces', Georgia, serif",
-                  fontSize: '0.9375rem',
-                  lineHeight: 1.6,
-                  color: 'var(--text-dim)',
-                  margin: '0 0 1rem 0',
-                }}>
-                  {strings.secretDescription(currentRevealSecret.archetype, currentRevealSecret.paramName)}
-                </p>
-                <p style={{
-                  fontFamily: "'Fraunces', Georgia, serif",
-                  fontSize: '1.25rem',
-                  fontWeight: 500,
-                  color: currentRevealSecret.result === 'won' ? 'var(--accent)' : 'var(--state-failing)',
-                  margin: 0,
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase' as const,
-                }}>
-                  {currentRevealSecret.result === 'won' ? strings.secretsResultWon : strings.secretsResultLost}
-                </p>
+      {parameters.length > 0 && (
+        <div className="final-panel fade-in">
+          <p className="type-caps">{strings.finalParametersTitle}</p>
+          <div className="final-parameter-grid">
+            {parameters.map((parameter) => (
+              <div key={parameter.name} className="final-parameter">
+                <span className="final-parameter__name">{parameter.name}</span>
+                <span className="final-parameter__state">
+                  {parameter.states[parameter.currentStateIndex]}
+                </span>
               </div>
-              <button onClick={onNextPlayer} className="btn-primary w-full py-3">
-                {revealIdx === roles.length - 1 ? strings.secretsHideBtn : strings.secretsRememberBtn}
-              </button>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       )}
 
-      {hasSecrets && revealIdx === 'done' && (
-        <div className="space-y-3" style={{ borderTop: '1px solid var(--line)', paddingTop: '1.25rem' }}>
-          <p className="type-caps text-center">{strings.secretsRevealKicker}</p>
-          <div className="space-y-2">
+      {hasSecrets && (
+        <div className="final-panel fade-in">
+          <div className="text-center">
+            <p className="type-caps">{strings.secretsRevealKicker}</p>
+            <h3 className="final-panel-title">{strings.secretsRevealIntro}</h3>
+            <p className="type-caps winner-kicker">{strings.winnersTitle}</p>
+            <p className="winner-line">
+              {winningRoleNames.length > 0
+                ? strings.winnersList(winningRoleNames.join(', '))
+                : strings.noSecretWinners}
+            </p>
+          </div>
+          <div className="space-y-3">
             {roles.map((r) => {
               const s = secrets.find((x) => x.ownerRoleId === r.id)
               if (!s) return null
               return (
-                <div key={r.id} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                  padding: '0.5rem 0',
-                  borderBottom: '1px solid var(--line)',
-                  fontSize: '0.9375rem',
-                }}>
-                  <span style={{ color: 'var(--text)' }}>
-                    {r.name} · <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>{strings.secretArchetypeName(s.archetype)}</span>
-                  </span>
-                  <span className="type-caps" style={{
-                    fontSize: '0.6875rem',
-                    color: s.result === 'won' ? 'var(--accent)' : 'var(--state-failing)',
-                  }}>
-                    {s.result === 'won' ? strings.secretsResultWon : strings.secretsResultLost}
-                  </span>
+                <div
+                  key={r.id}
+                  className={`secret-result-card ${s.result === 'won' ? 'secret-result-card--won' : ''}`}
+                >
+                  <div className="secret-result-card__head">
+                    <span className="secret-result-card__name">{r.name}</span>
+                    <span className={`type-caps secret-result-card__result ${s.result === 'won' ? 'won' : 'lost'}`}>
+                      {s.result === 'won' ? strings.secretsResultWon : strings.secretsResultLost}
+                    </span>
+                  </div>
+                  <div className="secret-result-card__role">
+                    {strings.secretArchetypeName(s.archetype)}
+                  </div>
+                  <div className="secret-result-card__desc">
+                    {strings.secretDescription(s.archetype, s.paramName)}
+                  </div>
                 </div>
               )
             })}
@@ -187,21 +116,19 @@ export function GameOverScreen() {
       {/* Full story toggle */}
       {allScenes.length > 0 && (
         <div className="text-left space-y-3">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderTop: '1px solid var(--line)', paddingTop: '1rem', flexWrap: 'wrap' }}>
+          <div className="story-tools">
             <button
               type="button"
               onClick={() => setShowFullStory((v) => !v)}
-              className="btn-ghost type-caps"
-              style={{ fontStyle: 'normal', fontSize: '0.6875rem' }}
+              className="btn-ghost btn-ghost--caps"
             >
               {showFullStory ? strings.hideFullStoryBtn : strings.showFullStoryBtn}
             </button>
-            <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
+            <div className="story-tools__rule" />
             <button
               type="button"
               onClick={copyToClipboard}
-              className="btn-ghost type-caps"
-              style={{ fontStyle: 'normal', fontSize: '0.6875rem', color: copied ? 'var(--accent)' : undefined }}
+              className={`btn-ghost btn-ghost--caps ${copied ? 'is-copied' : ''}`}
             >
               {copied ? strings.copiedMsg : strings.copyStoryBtn}
             </button>
@@ -209,8 +136,7 @@ export function GameOverScreen() {
               <button
                 type="button"
                 onClick={() => downloadTranscript(transcript)}
-                className="btn-ghost type-caps"
-                style={{ fontStyle: 'normal', fontSize: '0.6875rem' }}
+                className="btn-ghost btn-ghost--caps"
               >
                 {strings.downloadTranscriptBtn}
               </button>
@@ -225,14 +151,7 @@ export function GameOverScreen() {
                     {strings.sceneLabel} {String(i + 1).padStart(2, '0')}
                   </div>
                   {scene.split('\n').filter(Boolean).map((p, j) => (
-                    <p key={j} style={{
-                      fontFamily: "'Fraunces', Georgia, serif",
-                      fontVariationSettings: "'opsz' 14",
-                      fontSize: '0.9375rem',
-                      color: 'var(--text-dim)',
-                      lineHeight: 1.65,
-                      marginBottom: '0.2em',
-                    }}>{p}</p>
+                    <p key={j} className="full-story-prose">{p}</p>
                   ))}
                 </div>
               ))}

@@ -63,6 +63,20 @@ npm run dev
 
 The dev build proxies `/adventure/api/` to the production endpoint at `games.khe.ee` by default. To run a local proxy, see the [`proxy/`](./proxy) directory in this repo. You will need to sync `VITE_API_SECRET` and `API_SECRET` in your local `.env` files for the HMAC signatures to work.
 
+For a one-off signed smoke test against the live proxy without writing secrets
+to disk:
+
+```bash
+API_SECRET="$(ssh khe@192.168.0.11 'cd /home/khe/homelab/services/apps/games && set -a && . ./.env && printf %s "$API_SECRET"')" npm run proxy:smoke
+```
+
+To run the local frontend against the live proxy, pass the same secret only to
+the Vite process:
+
+```bash
+VITE_API_SECRET="$(ssh khe@192.168.0.11 'cd /home/khe/homelab/services/apps/games && set -a && . ./.env && printf %s "$API_SECRET"')" npm run dev
+```
+
 ## What's next
 
 - **Whispers** — the AI privately messages one player mid-scene (`whisper_to(player)` tool). Creates information asymmetry without the group knowing. The player reads silently, hands the phone back, and the story continues.

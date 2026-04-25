@@ -2,31 +2,147 @@ import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { handlePlayerChoice } from '../game/actions'
-import type { Choice, Parameter } from '../game/types'
+import type {
+  Choice,
+  Parameter,
+  ParameterArchetype,
+  ParameterEvent,
+} from '../game/types'
 import { LoadingWithHint } from './LoadingDots'
 
-// Scene slug: three current state-phrases rendered as a single italic line,
-// separated by middots. Replaces the former meter-pill dashboard. The state
-// phrase itself IS the information — no dots, no bars. Parameters that moved
-// this turn flash to the accent colour briefly; parameters at worst state
-// render uppercase in red. Drama lives in typography, not in progress bars.
-function SceneSlug({ parameters }: { parameters: Parameter[] }) {
+function ParameterIcon({ archetype }: { archetype?: ParameterArchetype }) {
+  const kind = archetype ?? 'pressure'
   return (
-    <div className="scene-slug" role="status" aria-label="parameter states">
+    <svg
+      className={`parameter-icon parameter-icon--${kind}`}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      {kind === 'resource' || kind === 'hunger' ? (
+        <>
+          <path d="M7 19h10" />
+          <path d="M8 19l1-12h6l1 12" />
+          <path d="M9 10h6" />
+        </>
+      ) : kind === 'bond' || kind === 'promise' ? (
+        <>
+          <path d="M7.5 12.5 12 17l4.5-4.5" />
+          <path d="M7.5 12.5a3 3 0 0 1 0-4.2 3 3 0 0 1 4.5.4 3 3 0 0 1 4.5-.4 3 3 0 0 1 0 4.2" />
+        </>
+      ) : kind === 'time' ? (
+        <>
+          <circle cx="12" cy="12" r="7" />
+          <path d="M12 8v4l3 2" />
+        </>
+      ) : kind === 'proof' || kind === 'secret' ? (
+        <>
+          <path d="M5 12c2-3.5 4.3-5.2 7-5.2S17 8.5 19 12c-2 3.5-4.3 5.2-7 5.2S7 15.5 5 12Z" />
+          <circle cx="12" cy="12" r="2.2" />
+        </>
+      ) : kind === 'guilt' || kind === 'debt' ? (
+        <>
+          <path d="M12 4v16" />
+          <path d="M7 8h10" />
+          <path d="M8 8l-3 6h6l-3-6Z" />
+          <path d="M16 8l-3 6h6l-3-6Z" />
+        </>
+      ) : (
+        <>
+          <path d="M12 3 20 18H4L12 3Z" />
+          <path d="M12 8v4" />
+          <path d="M12 16h.01" />
+        </>
+      )}
+    </svg>
+  )
+}
+
+function ParameterBoard({
+  parameters,
+  strings,
+}: {
+  parameters: Parameter[]
+  strings: typeof translations.et
+}) {
+  return (
+    <div className="parameter-board" role="status" aria-label={strings.parametersTitle}>
       {parameters.map((p) => {
         const atWorst = p.currentStateIndex === p.states.length - 1
-        const classes = ['scene-slug__phrase']
-        if (p.archetype) classes.push(`scene-slug__phrase--${p.archetype}`)
-        if (atWorst) classes.push('scene-slug__phrase--worst')
-        if (p.justBroke) classes.push('scene-slug__phrase--just-broke')
-        else if (p.justMoved) classes.push('scene-slug__phrase--moved')
+        const progress = 1 - p.currentStateIndex / Math.max(1, p.states.length - 1)
+
+        let statusClass = 'param-good'
+        if (progress <= 0.33) statusClass = 'param-bad'
+        else if (progress <= 0.66) statusClass = 'param-warn'
+
         return (
-          <span key={p.name} className={classes.join(' ')}>
-            <span className="scene-slug__name">{p.name}: </span>
-            {p.states[p.currentStateIndex]}
-          </span>
+          <div
+            key={p.name}
+            className={`parameter-card ${p.justMoved ? 'param-pulse' : ''} ${atWorst ? 'param-shake' : ''}`}
+            aria-label={strings.parameterStatusAria(p.name, p.states[p.currentStateIndex])}
+          >
+            <div className={`parameter-meter ${statusClass}`}>
+              <ParameterIcon archetype={p.archetype} />
+            </div>
+            <div className="param-copy">
+              <div className="param-header">
+                <span className="param-name">{p.name}</span>
+                <span className={`param-state-text ${statusClass}`}>
+                  {p.states[p.currentStateIndex]}
+                </span>
+              </div>
+              <div className="param-bar-wrap" aria-hidden="true">
+                <div
+                  className={`param-bar-fill ${statusClass}`}
+                  style={{ width: `${Math.max(5, progress * 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
         )
       })}
+    </div>
+  )
+}
+
+function ParameterToast({
+  events,
+  strings,
+}: {
+  events: ParameterEvent[]
+  strings: typeof translations.et
+}) {
+  const [activeEvents, setActiveEvents] = useState<ParameterEvent[]>([])
+
+  useEffect(() => {
+    if (events.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveEvents(events)
+      const timer = setTimeout(() => setActiveEvents([]), 4500)
+      return () => clearTimeout(timer)
+    }
+  }, [events])
+
+  if (activeEvents.length === 0) return null
+
+  return (
+    <div className="param-toast-overlay" aria-live="polite">
+      {activeEvents.map((event) => (
+        <div
+          key={`${event.parameterName}-${event.toState}-${event.text}`}
+          className={`param-toast-card slide-down toast-${event.severity}`}
+        >
+          <div className="toast-icon" aria-hidden="true">
+            {event.direction === 'improved' ? '+' : '-'}
+          </div>
+          <div className="toast-content">
+            <span className="toast-title">{strings.parameterEventTitle(event.parameterName)}</span>
+            <span className="toast-desc">{event.text}</span>
+            <span className="toast-meta">
+              {strings.parameterStateChange(event.fromState, event.toState)}
+            </span>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -36,6 +152,7 @@ export function GameScreen() {
   const currentTurn = useGameStore((s) => s.currentTurn)
   const maxTurns = useGameStore((s) => s.maxTurns)
   const parameters = useGameStore((s) => s.parameters)
+  const parameterEvents = useGameStore((s) => s.parameterEvents)
   const roles = useGameStore((s) => s.roles)
   const sceneText = useGameStore((s) => s.sceneText)
   const choices = useGameStore((s) => s.choices)
@@ -75,9 +192,12 @@ export function GameScreen() {
   }
 
   const paragraphs = sceneText.split('\n').filter(Boolean)
+  const waitingForScene = isLoading && sceneText.length > 0
 
   return (
     <section>
+      <ParameterToast events={parameterEvents} strings={strings} />
+
       {/* Top bar: turn counter only — parameters have moved into the scene slug */}
       <div className="topbar">
         <div className="topbar__turn">
@@ -88,13 +208,17 @@ export function GameScreen() {
         </div>
       </div>
 
-      {/* Scene slug — parameter state-phrases as italic typography */}
-      {parameters.length > 0 && <SceneSlug parameters={parameters} />}
+      {/* Parameter Board */}
+      {parameters.length > 0 && <ParameterBoard parameters={parameters} strings={strings} />}
 
       {/* Scene text */}
       <div key={currentTurn} className="space-y-0">
         {isLoading && !sceneText ? (
           <div className="py-10 text-center">
+            <LoadingWithHint />
+          </div>
+        ) : waitingForScene ? (
+          <div className="scene-waiting">
             <LoadingWithHint />
           </div>
         ) : (
@@ -107,7 +231,7 @@ export function GameScreen() {
       </div>
 
       {/* Choices / turn loading */}
-      {choices.length > 0 ? (
+      {choices.length > 0 && !waitingForScene ? (
         <div className="mt-8">
           {isLoading ? (
             <div className="turn-loading">
@@ -133,9 +257,6 @@ export function GameScreen() {
                     >
                       <span className="choice__num">{String(i + 1).padStart(2, '0')}</span>
                       <span className="choice__body">
-                        {actorRole && (
-                          <span className="choice__actor">{actorRole.name}</span>
-                        )}
                         <span className="choice__text">
                           {choice.text}{isUsed ? ` — ${strings.usedLabel}` : ''}
                         </span>
@@ -203,4 +324,3 @@ export function GameScreen() {
     </section>
   )
 }
-

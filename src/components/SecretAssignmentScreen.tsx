@@ -11,7 +11,6 @@ export function SecretAssignmentScreen() {
   const language = useGameStore((s) => s.settings.language)
   const roles = useGameStore((s) => s.roles)
   const secrets = useGameStore((s) => s.secrets)
-  const parameters = useGameStore((s) => s.parameters)
   const isLoading = useGameStore((s) => s.isLoading)
   const strings = translations[language]
 
@@ -22,8 +21,8 @@ export function SecretAssignmentScreen() {
 
   const currentRole = roles[index]
   const currentSecret = secrets.find((s) => s.ownerRoleId === currentRole?.id)
-  const ownedParam = parameters.find((p) => p.ownerRoleId === currentRole?.id)
   const isLast = index === roles.length - 1
+  const nextButtonLabel = isLast ? strings.startGameBtn : strings.secretsRememberBtn
 
   const onReveal = () => setRevealed(true)
 
@@ -43,41 +42,27 @@ export function SecretAssignmentScreen() {
   }
 
   return (
-    <section className="space-y-7">
-      <div className="text-center">
-        <p className="type-caps" style={{ marginBottom: '0.5rem' }}>
+    <section className="secret-screen space-y-7">
+      <div className="secret-header">
+        <p className="type-caps">
           {strings.secretsKicker}
         </p>
-        <h2
-          style={{
-            fontFamily: "'Fraunces', Georgia, serif",
-            fontVariationSettings: "'opsz' 72",
-            fontSize: '1.75rem',
-            fontWeight: 300,
-            color: 'var(--text)',
-            lineHeight: 1.25,
-          }}
-        >
+        <h2 className="screen-title">
           {strings.secretsAssignIntro}
         </h2>
-        <div style={{ width: '2rem', height: '1px', background: 'var(--line-accent)', margin: '0.75rem auto', opacity: 0.5 }} />
+        <div className="title-rule" />
       </div>
 
       {!revealed ? (
         <div className="space-y-6 text-center">
-          <p className="setup-hint" style={{ margin: 0 }}>
+          <p className="secret-warning">
             {strings.secretsAssignWarning}
           </p>
-          <div style={{
-            fontFamily: "'Fraunces', Georgia, serif",
-            fontSize: '1.0625rem',
-            color: 'var(--text-dim)',
-            fontStyle: 'italic',
-          }}>
+          <div className="secret-pass-to">
             {strings.secretsPassPhoneTo(currentRole.name)}
           </div>
           <div className="flex justify-center">
-            <span className="type-caps" style={{ fontSize: '0.75rem', color: 'var(--text-faint)' }}>
+            <span className="secret-progress type-caps">
               {index + 1} / {roles.length}
             </span>
           </div>
@@ -86,60 +71,27 @@ export function SecretAssignmentScreen() {
           </button>
         </div>
       ) : (
-        <div className="space-y-5">
-          <div style={{
-            border: '1px solid var(--line-accent)',
-            borderRadius: '4px',
-            padding: '1.5rem',
-            background: 'var(--surface, rgba(255,255,255,0.02))',
-          }}>
-            <p className="type-caps" style={{ fontSize: '0.6875rem', marginBottom: '0.5rem', color: 'var(--accent)' }}>
-              {currentRole.name} · {strings.secretsYourGoalLabel}
+        <div className="space-y-5 fade-in">
+          <div className="secret-document-card">
+            <div className="secret-stamp">{strings.secretsDocumentStamp}</div>
+
+            <p className="secret-document-kicker type-caps">
+              {strings.secretsGoalFor(currentRole.name)}
             </p>
-            <h3 style={{
-              fontFamily: "'Fraunces', Georgia, serif",
-              fontVariationSettings: "'opsz' 72",
-              fontSize: '1.5rem',
-              fontWeight: 300,
-              color: 'var(--text)',
-              margin: '0 0 1rem 0',
-            }}>
+            <h3 className="secret-document-title">
               {strings.secretArchetypeName(currentSecret.archetype)}
             </h3>
-            <p style={{
-              fontFamily: "'Fraunces', Georgia, serif",
-              fontVariationSettings: "'opsz' 14, 'SOFT' 50",
-              fontSize: '1rem',
-              lineHeight: 1.65,
-              color: 'var(--text-dim)',
-              margin: 0,
-            }}>
+            <p className="secret-document-body">
               {strings.secretDescription(currentSecret.archetype, currentSecret.paramName)}
             </p>
-            {ownedParam && (
-              <p style={{
-                marginTop: '0.75rem',
-                paddingTop: '0.75rem',
-                borderTop: '1px dashed var(--line)',
-                fontFamily: "'Fraunces', Georgia, serif",
-                fontStyle: 'italic',
-                fontSize: '0.8125rem',
-                color: 'var(--text-muted)',
-                margin: '0.75rem 0 0 0',
-              }}>
-                {language === 'et'
-                  ? `Sinu rolli panus loos: «${ownedParam.name}».`
-                  : `Your role's stake in the story: «${ownedParam.name}».`}
-              </p>
-            )}
           </div>
           <button
             onClick={onRememberAndPass}
             disabled={isLoading}
             className="btn-primary w-full py-3"
-            aria-label={isLoading ? strings.loading : strings.secretsRememberBtn}
+            aria-label={isLoading ? strings.loading : nextButtonLabel}
           >
-            {isLoading ? <LoadingDots /> : (isLast ? strings.startGameBtn : strings.secretsRememberBtn)}
+            {isLoading ? <LoadingDots /> : nextButtonLabel}
           </button>
         </div>
       )}

@@ -20,7 +20,15 @@ import {
   isUnrecoverable,
   markAbilityUsedById,
 } from './engine'
-import type { Choice, Parameter, ParameterCost, Role, Story } from './types'
+import type {
+  Choice,
+  Language,
+  Parameter,
+  ParameterCost,
+  ParameterEvent,
+  Role,
+  Story,
+} from './types'
 import type { TurnRecord } from './transcript'
 
 function t() {
@@ -75,6 +83,73 @@ function describeTrigger(args: {
   }
   // Defensive — shouldn't happen given the call sites, but record it cleanly.
   return { kind: 'free-text', text: args.choiceText }
+}
+
+function eventSeverity(p: Parameter): ParameterEvent['severity'] {
+  const progress = 1 - p.currentStateIndex / Math.max(1, p.states.length - 1)
+  if (progress <= 0.33) return 'bad'
+  if (progress <= 0.66) return 'warn'
+  return 'good'
+}
+
+function fallbackConsequenceText(args: {
+  language: Language
+  parameterName: string
+  direction: ParameterEvent['direction']
+  toState: string
+}): string {
+  if (args.language === 'et') {
+    return args.direction === 'improved'
+      ? `${args.parameterName} paranes: ${args.toState}`
+      : `${args.parameterName} halvenes: ${args.toState}`
+  }
+  return args.direction === 'improved'
+    ? `${args.parameterName} improved: ${args.toState}`
+    : `${args.parameterName} worsened: ${args.toState}`
+}
+
+function buildParameterEvents(args: {
+  before: Parameter[]
+  after: Parameter[]
+  changes: ParameterCost[]
+  consequences?: TurnResponse['consequences']
+  language: Language
+}): ParameterEvent[] {
+  const consequenceByName = new Map(
+    (args.consequences ?? [])
+      .filter((c) => c.parameterName && c.text)
+      .map((c) => [c.parameterName, c.text] as const),
+  )
+
+  return args.changes
+    .filter((change) => change.change !== 0)
+    .map((change) => {
+      const before = args.before.find((p) => p.name === change.name)
+      const after = args.after.find((p) => p.name === change.name)
+      if (!before || !after || before.currentStateIndex === after.currentStateIndex) {
+        return null
+      }
+      const direction: ParameterEvent['direction'] =
+        after.currentStateIndex < before.currentStateIndex ? 'improved' : 'worsened'
+      const toState = after.states[after.currentStateIndex]
+      return {
+        parameterName: after.name,
+        change: change.change,
+        fromState: before.states[before.currentStateIndex],
+        toState,
+        direction,
+        severity: eventSeverity(after),
+        text:
+          consequenceByName.get(after.name) ??
+          fallbackConsequenceText({
+            language: args.language,
+            parameterName: after.name,
+            direction,
+            toState,
+          }),
+      }
+    })
+    .filter((event): event is ParameterEvent => event !== null)
 }
 
 export async function generateStories(): Promise<void> {
@@ -231,6 +306,7 @@ export async function handlePlayerChoice(
     // reflect" the deltas. AI got contradictory information. For kickoff /
     // free-text we can't preview (deltas come from the AI's own response),
     // so we fall back to pre-apply and finalize after the call.
+    const parametersBefore = store.parameters
     const choiceDeltas: ParameterCost[] =
       opts.chosenChoice?.expectedChanges ?? []
     const paramsForPrompt = opts.chosenChoice
@@ -270,6 +346,13 @@ export async function handlePlayerChoice(
     const parametersAfter = opts.chosenChoice
       ? paramsForPrompt
       : applyParameterChanges(store.parameters, authoritativeChanges)
+    const parameterEvents = buildParameterEvents({
+      before: parametersBefore,
+      after: parametersAfter,
+      changes: authoritativeChanges,
+      consequences: response.consequences,
+      language: store.settings.language,
+    })
 
     const triggeredBy = describeTrigger({
       isFirstTurn: opts.isFirstTurn,
@@ -362,6 +445,7 @@ export async function handlePlayerChoice(
       parameters: parametersAfter,
       roles: rolesAfterAbility,
       currentTurn: upcomingTurn,
+      parameterEvents,
     })
   } catch (err) {
     store.setError(t().errorApi(errorMessage(err)))

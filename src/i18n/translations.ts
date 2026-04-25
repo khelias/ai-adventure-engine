@@ -17,6 +17,13 @@ interface StringTable {
   vibeBtnTense: string
   vibeBtnDark: string
   advancedToggle: string
+  experimentalSettings: string
+  nextStepBtn: string
+  prevStepBtn: string
+  step1Title: string
+  step2Title: string
+  setupStepLabel: (step: number, total: number) => string
+  setupContextNote: string
   groupSectionHeader: string
   groupSectionHint: string
   locationLabel: string
@@ -78,6 +85,13 @@ interface StringTable {
   copyStoryBtn: string
   copiedMsg: string
   downloadTranscriptBtn: string
+  finalParametersTitle: string
+  winnersTitle: string
+  winnersList: (names: string) => string
+  noSecretWinners: string
+  parameterEventTitle: (name: string) => string
+  parameterStateChange: (from: string, to: string) => string
+  parameterStatusAria: (name: string, state: string) => string
   endNarrative: string
   endParametric: string
   endGenericText: string
@@ -101,6 +115,8 @@ interface StringTable {
   secretsResultWon: string
   secretsResultLost: string
   secretsYourGoalLabel: string
+  secretsDocumentStamp: string
+  secretsGoalFor: (name: string) => string
   secretArchetypeName: (archetype: string) => string
   secretDescription: (archetype: string, paramName?: string) => string
   // Rotating hints shown during the between-turns wait so 20-30s feels
@@ -112,9 +128,9 @@ export const translations: Record<Language, StringTable> = {
   et: {
     appTitle: 'AI Seiklusmootor',
     playerCountLabel: 'Mängijate arv:',
-    playerCountQuestion: 'Mitu mängijat',
-    durationQuestion: 'Kui kaua',
-    adventureKicker: 'seiklus',
+    playerCountQuestion: 'Mängijate arv',
+    durationQuestion: 'Mängu kestvus',
+    adventureKicker: 'mängu seadistus',
     castKicker: 'rollid',
     yourAdventureKicker: 'teie seiklus',
     storyToldKicker: 'lugu on räägitud',
@@ -126,19 +142,26 @@ export const translations: Record<Language, StringTable> = {
     vibeBtnTense: 'pingeline',
     vibeBtnDark: 'tume',
     advancedToggle: 'Tehniline',
-    groupSectionHeader: 'Räägi oma õhtust',
-    groupSectionHint: 'Kõik vabatahtlik — aga mida rohkem räägid, seda rohkem tundub lugu teie enda oma.',
+    experimentalSettings: 'Eksperimentaalne',
+    nextStepBtn: 'Järgmine samm →',
+    prevStepBtn: '← Tagasi',
+    step1Title: 'Vali mängu algus',
+    step2Title: 'Lisa päris kontekst',
+    setupStepLabel: (step, total) => `${step} / ${total}`,
+    setupContextNote: 'Võid ka tühjaks jätta. Päris koht ja inimesed teevad alguse kohe huvitavamaks.',
+    groupSectionHeader: 'Vabatahtlik, aga soovitatav',
+    groupSectionHint: 'Lisa mõni päris detail, mille AI saab seikluseks keerata.',
     locationLabel: 'Kus te praegu olete?',
-    locationPlaceholder: 'nt buss, köök, rannakuur, kontor...',
-    playersDescLabel: 'Kes on ruumis?',
-    playersDescPlaceholder: 'nt Mart, Mari ja Jaan — vanad koolikaaslased',
+    locationPlaceholder: 'nt köögis, kontoris, bussis, saunas...',
+    playersDescLabel: 'Kes mängivad?',
+    playersDescPlaceholder: 'nt Mart, Mari ja Jaan',
     vibeLabel: 'Mängu meeleolu',
     vibeAny: 'Mis tuleb, see tuleb',
     vibeLight: 'Kerge & naljakas',
     vibeTense: 'Pingeline & tõsine',
     vibeDark: 'Tume & atmosfäärne',
-    insideJokeLabel: 'Midagi täna juhtus? (inside joke)',
-    insideJokePlaceholder: 'nt Mari kukkus täna jalgrattalt, Mart unustas sünnipäeva...',
+    insideJokeLabel: 'Detail, mida võiks loos kasutada',
+    insideJokePlaceholder: 'nt keegi unustas täna võtmed maha',
     customChoiceLink: 'Kirjuta oma valik',
     customChoicePlaceholder: 'Mida grupp teeb?',
     customChoiceSubmit: 'Kinnita',
@@ -157,7 +180,7 @@ export const translations: Record<Language, StringTable> = {
     providerLabel: 'AI mudel:',
     providerClaude: 'Claude (parem kvaliteet)',
     providerGemini: 'Gemini (kiire, odav)',
-    generateStoryBtn: 'Alustame lugu →',
+    generateStoryBtn: 'Alusta mängu →',
     storyChoiceTitle: 'Sinu seiklus',
     regenerateBtn: 'Genereeri uus',
     customStoryTitle: 'Kirjuta oma stsenaarium',
@@ -188,6 +211,13 @@ export const translations: Record<Language, StringTable> = {
     copyStoryBtn: 'Kopeeri tekst',
     copiedMsg: 'Kopeeritud!',
     downloadTranscriptBtn: 'Lae alla JSON',
+    finalParametersTitle: 'Lõppseis',
+    winnersTitle: 'Salajased võitjad',
+    winnersList: (names) => `Võitsid: ${names}`,
+    noSecretWinners: 'Seekord ei täitnud keegi oma salajast eesmärki.',
+    parameterEventTitle: (name) => `${name} muutus`,
+    parameterStateChange: (from, to) => `${from} → ${to}`,
+    parameterStatusAria: (name, state) => `${name}: ${state}`,
     endNarrative: 'Narratiivne lõpp',
     endParametric: 'Parameetriline kaotus',
     endGenericText: 'Seiklus on jõudnud ootamatu lõpuni.',
@@ -211,8 +241,10 @@ export const translations: Record<Language, StringTable> = {
     secretsResultWon: 'Võitsid',
     secretsResultLost: 'Kaotasid',
     secretsYourGoalLabel: 'Sinu salajane eesmärk',
+    secretsDocumentStamp: 'SALAJANE',
+    secretsGoalFor: (name) => `${name} salajane eesmärk`,
     secretArchetypeName: (a) => ({
-      optimist: 'Optimist',
+      optimist: 'Perfektsionist',
       traitor: 'Reetur',
       survivor: 'Ellujääja',
       keeper: 'Hoidja',
@@ -220,20 +252,20 @@ export const translations: Record<Language, StringTable> = {
       guardian: 'Saladuse kaitsja',
     }[a] ?? a),
     secretDescription: (a, paramName) => ({
-      optimist: 'Sa näed kõiges head. Kõik kolm parameetrit peavad mängu lõpuks olema ülemises pooles — mitte kriitilises olekus.',
-      traitor: 'Sa oled salaja kaotuse poolel. Mäng peab lõppema kollapsist — kaks parameetrit halvimas olekus.',
+      optimist: 'Sinu eesmärk on täiuslik lõpp. Kõik grupi parameetrid peavad mängu lõpuks olema parimas olekus.',
+      traitor: 'Sa töötad salaja grupile vastu. Võidad siis, kui lugu lõpeb kollapsiga — vähemalt kaks parameetrit on halvimasse olekusse langenud.',
       survivor: 'Peaasi, et me lõpuni jõuame. Mäng peab lõppema loo kaudu, mitte mõõturite varisemisest.',
       keeper: `Sul on üks asi, mida hoida. «${paramName}» peab mängu lõpuks olema hea olukorras — ülemises pooles.`,
       sacrificer: `Üks asi peab minema pihta — muidu sa ei võida. «${paramName}» peab jõudma halvimasse olekusse.`,
       guardian: 'Mitte midagi ei tohi lõplikult kaotsi minna. Ükski parameeter ei tohi mängu lõpuks halvimasse olekusse jõuda.',
     }[a] ?? a),
     loadingHints: [
+      'AI ragistab ajusid...',
+      'Kududes narratiivi lõngu...',
+      'Karakterite saatused on otsustamisel...',
       'Järgmine stseen kirjutatakse',
       'Tegelased arutavad',
       'Eelmise valiku tagajärjed joonistuvad',
-      'Sõnad leitakse ükshaaval',
-      'Loo lõng pingutub',
-      'Pliiats liigub paberil',
     ],
   },
   en: {
@@ -253,8 +285,15 @@ export const translations: Record<Language, StringTable> = {
     vibeBtnTense: 'tense',
     vibeBtnDark: 'dark',
     advancedToggle: 'Technical',
+    experimentalSettings: 'Experimental',
+    nextStepBtn: 'Next Step →',
+    prevStepBtn: '← Back',
+    step1Title: 'Story Framework',
+    step2Title: 'Adventure Context',
+    setupStepLabel: (step, total) => `${step} / ${total}`,
+    setupContextNote: 'You can start now. A few details make the story feel more personal.',
     groupSectionHeader: 'Tell us about tonight',
-    groupSectionHint: 'All optional — the more you share, the more the story feels like yours.',
+    groupSectionHint: 'Add only what you want the story to remember.',
     locationLabel: 'Where are you right now?',
     locationPlaceholder: 'e.g. bus, kitchen, beach house, office...',
     playersDescLabel: 'Who is in the room?',
@@ -315,6 +354,13 @@ export const translations: Record<Language, StringTable> = {
     copyStoryBtn: 'Copy text',
     copiedMsg: 'Copied!',
     downloadTranscriptBtn: 'Download JSON',
+    finalParametersTitle: 'Final state',
+    winnersTitle: 'Secret winners',
+    winnersList: (names) => `Winners: ${names}`,
+    noSecretWinners: 'No one completed their secret goal this time.',
+    parameterEventTitle: (name) => `${name} changed`,
+    parameterStateChange: (from, to) => `${from} → ${to}`,
+    parameterStatusAria: (name, state) => `${name}: ${state}`,
     endNarrative: 'Narrative End',
     endParametric: 'Parametric Loss',
     endGenericText: 'The adventure has come to an unexpected end.',
@@ -342,8 +388,10 @@ export const translations: Record<Language, StringTable> = {
     secretsResultWon: 'You Won',
     secretsResultLost: 'You Lost',
     secretsYourGoalLabel: 'Your secret goal',
+    secretsDocumentStamp: 'SECRET',
+    secretsGoalFor: (name) => `${name}'s secret goal`,
     secretArchetypeName: (a) => ({
-      optimist: 'Optimist',
+      optimist: 'Perfectionist',
       traitor: 'Traitor',
       survivor: 'Survivor',
       keeper: 'Keeper',
@@ -351,20 +399,20 @@ export const translations: Record<Language, StringTable> = {
       guardian: 'Guardian',
     }[a] ?? a),
     secretDescription: (a, paramName) => ({
-      optimist: 'You see the good in things. All three parameters must end in the top half — nothing near-worst.',
-      traitor: 'You secretly want collapse. The game must end by parameter collapse — two parameters at worst state.',
+      optimist: 'You want a perfect finish. Every group parameter must end at its best state.',
+      traitor: 'You are secretly working against the group. You win if the story ends in collapse — at least two parameters at their worst state.',
       survivor: 'Just get us to the end. The game must end narratively, not by parameter collapse.',
       keeper: `You hold one thing dear. «${paramName}» must end in the top half.`,
       sacrificer: `One thing must fall — or you don't win. «${paramName}» must reach its worst state.`,
       guardian: 'Nothing may be lost for good. No parameter may end at its worst state.',
     }[a] ?? a),
     loadingHints: [
+      'AI is racking its brains...',
+      'Weaving narrative threads...',
+      'Character fates are being decided...',
       'Writing the next scene',
       'Characters are talking',
       'The last choice lands',
-      'Words arrive one by one',
-      'The thread of the story tightens',
-      'Pen moves across paper',
     ],
   },
 }

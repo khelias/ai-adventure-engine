@@ -4,7 +4,7 @@ import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
 import { generateStories } from '../game/actions'
 import type { Duration, Genre, Vibe } from '../game/types'
-import { LoadingDots } from './LoadingDots'
+import { LoadingWithHint } from './LoadingDots'
 
 interface GenreOption {
   value: Genre
@@ -96,6 +96,7 @@ export function SetupScreen() {
   const strings = translations[settings.language]
 
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [step, setStep] = useState<1 | 2>(1)
   const swipeStartX = useRef<number | null>(null)
 
   const handleSwipeStart = (e: React.TouchEvent) => {
@@ -124,13 +125,6 @@ export function SetupScreen() {
 
   const genreOption = GENRES.find((g) => g.value === genre) ?? GENRES[0]
 
-  const hasPersonalContext = !!(
-    ctx.vibe ||
-    ctx.location.trim() ||
-    ctx.playersDesc.trim() ||
-    ctx.insideJoke.trim()
-  )
-
   // First word of duration label (strips the parenthetical)
   const getDurationWord = (labelKey: keyof typeof translations.et) =>
     (strings[labelKey] as string).split(' ')[0]
@@ -138,184 +132,217 @@ export function SetupScreen() {
   return (
     <section className="setup-wrap">
       <span className="setup-eyebrow">{strings.adventureKicker}</span>
-
-      {/* The Circle */}
-      <div
-        className="circle-wrap"
-        onTouchStart={handleSwipeStart}
-        onTouchEnd={handleSwipeEnd}
-      >
-        <div className={`circle-beam${genre ? ' active' : ''}`} />
-        <div className={`circle${genre ? ' active' : ''}`}>
-          <span className={`circle__icon${genre ? ' visible' : ''}`}>
-            {genreOption.icon}
-          </span>
-        </div>
-        <p className={`circle-genre-name${genre ? ' active' : ''}`}>
-          {strings[genreOption.labelKey] as string}
-        </p>
-        <div className="genre-dots" role="group" aria-label={strings.genreLabel}>
-          {GENRES.map((g) => (
-            <button
-              key={g.value}
-              type="button"
-              className={`genre-dot${genre === g.value ? ' active' : ''}`}
-              aria-label={strings[g.labelKey] as string}
-              aria-pressed={genre === g.value}
-              onClick={() => setSetting('genre', g.value)}
-            />
-          ))}
-        </div>
+      <div className="setup-progress" aria-label={strings.setupStepLabel(step, 2)}>
+        <span className={step === 1 ? 'active' : ''} />
+        <span className={step === 2 ? 'active' : ''} />
       </div>
+      <p className="setup-step-count">{strings.setupStepLabel(step, 2)}</p>
+      <h2 className="setup-step-title">
+        {step === 1 ? strings.step1Title : strings.step2Title}
+      </h2>
 
-      {/* Players */}
-      <div className="setup-section">
-        <span className="setup-label">{strings.playerCountQuestion}</span>
-        <div className="seg-group">
-          {[3, 4, 5, 6].map((n) => (
-            <button
-              key={n}
-              type="button"
-              className={`seg-btn seg-btn--num${players === n ? ' active' : ''}`}
-              onClick={() => setSetting('players', n)}
-              aria-pressed={players === n}
-              aria-label={strings.playersAriaLabel(n)}
+      {step === 1 && (
+        <>
+          <div className="setup-step-content fade-in">
+            <div
+              className="circle-wrap"
+              onTouchStart={handleSwipeStart}
+              onTouchEnd={handleSwipeEnd}
             >
-              {n}
-            </button>
-          ))}
-        </div>
-      </div>
+              <div className={`circle-beam${genre ? ' active' : ''}`} />
+              <div className={`circle${genre ? ' active' : ''}`}>
+                <span className={`circle__icon${genre ? ' visible' : ''}`}>
+                  {genreOption.icon}
+                </span>
+              </div>
+              <p className={`circle-genre-name${genre ? ' active' : ''}`}>
+                {strings[genreOption.labelKey] as string}
+              </p>
+              <div className="genre-dots" role="group" aria-label={strings.genreLabel}>
+                {GENRES.map((g) => (
+                  <button
+                    key={g.value}
+                    type="button"
+                    className={`genre-dot${genre === g.value ? ' active' : ''}`}
+                    aria-label={strings[g.labelKey] as string}
+                    aria-pressed={genre === g.value}
+                    onClick={() => setSetting('genre', g.value)}
+                  />
+                ))}
+              </div>
+            </div>
 
-      {/* Duration */}
-      <div className="setup-section">
-        <span className="setup-label">{strings.durationQuestion}</span>
-        <div className="seg-group">
-          {DURATION_OPTIONS.map((d) => (
-            <button
-              key={d.value}
-              type="button"
-              className={`seg-btn${duration === d.value ? ' active' : ''}`}
-              onClick={() => setSetting('duration', d.value)}
-              aria-pressed={duration === d.value}
-            >
-              {getDurationWord(d.labelKey)}
-            </button>
-          ))}
-        </div>
-      </div>
+            <div className="setup-section">
+              <span className="setup-label">{strings.playerCountQuestion}</span>
+              <div className="seg-group">
+                {[3, 4, 5, 6].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className={`seg-btn seg-btn--num${players === n ? ' active' : ''}`}
+                    onClick={() => setSetting('players', n)}
+                    aria-pressed={players === n}
+                    aria-label={strings.playersAriaLabel(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-      {/* Personal context — merged section (vibe + location + players) that
-          makes the story feel like theirs. Formal uppercase label replaced
-          with an italic Fraunces header — reads as an invitation, not a form. */}
-      <div className="setup-section setup-section--tell">
-        <h3 className="setup-tell-header">{strings.groupSectionHeader}</h3>
-        <p className="setup-hint">{strings.groupSectionHint}</p>
-
-        <div className="ctx-field">
-          <span className="ctx-label">{strings.locationLabel}</span>
-          <input
-            type="text"
-            value={ctx.location}
-            placeholder={strings.locationPlaceholder}
-            onChange={(e) => setCtx({ location: e.target.value })}
-            className="input-page"
-          />
-        </div>
-        <div className="ctx-field">
-          <span className="ctx-label">{strings.playersDescLabel}</span>
-          <input
-            type="text"
-            value={ctx.playersDesc}
-            placeholder={strings.playersDescPlaceholder}
-            onChange={(e) => setCtx({ playersDesc: e.target.value })}
-            className="input-page"
-          />
-        </div>
-        <div className="ctx-field">
-          <span className="ctx-label">{strings.vibeLabel}</span>
-          <div className="seg-group">
-            {(
-              [
-                { value: '' as Vibe, label: strings.vibeBtnAny },
-                { value: 'light' as Vibe, label: strings.vibeBtnLight },
-                { value: 'tense' as Vibe, label: strings.vibeBtnTense },
-                { value: 'dark' as Vibe, label: strings.vibeBtnDark },
-              ] as const
-            ).map((v) => (
-              <button
-                key={v.value}
-                type="button"
-                className={`seg-btn${ctx.vibe === v.value ? ' active' : ''}`}
-                onClick={() => setCtx({ vibe: v.value })}
-              >
-                {v.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="ctx-field">
-          <span className="ctx-label">{strings.insideJokeLabel}</span>
-          <input
-            type="text"
-            value={ctx.insideJoke}
-            placeholder={strings.insideJokePlaceholder}
-            onChange={(e) => setCtx({ insideJoke: e.target.value })}
-            className="input-page"
-          />
-        </div>
-      </div>
-
-      {/* CTA */}
-      {/* The "ready" (filled violet) state triggers once the user has made a
-          personal choice — any vibe, location text, or players description.
-          Empty defaults keep the button in ghost state as a subtle nudge that
-          more context makes a better story. Fast-path still works — ghost
-          button is still clickable and produces a playable game. */}
-      <button
-        className={`btn-begin${hasPersonalContext && !isLoading ? ' ready' : ''}`}
-        onClick={() => generateStories()}
-        disabled={isLoading}
-        aria-label={isLoading ? strings.loading : strings.generateStoryBtn}
-      >
-        {isLoading ? <LoadingDots /> : strings.generateStoryBtn}
-      </button>
-
-      {/* Advanced — inside joke + provider only */}
-      <button
-        type="button"
-        className="setup-advanced-toggle"
-        onClick={() => setShowAdvanced((v) => !v)}
-      >
-        {showAdvanced ? '▴' : '▾'} {strings.advancedToggle}
-      </button>
-
-      {showAdvanced && (
-        <div className="ctx-section">
-          {/* Provider — technical, just here for debugging a stuck game */}
-          <div className="ctx-provider">
-            <span className="ctx-label">{strings.providerLabel}</span>
-            <div className="seg-group" style={{ maxWidth: '16rem' }}>
-              {(['claude', 'gemini'] as const).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  className={`seg-btn${settings.provider === p ? ' active' : ''}`}
-                  onClick={() => setSetting('provider', p)}
-                >
-                  {p === 'claude' ? 'Claude' : 'Gemini'}
-                </button>
-              ))}
+            <div className="setup-section">
+              <span className="setup-label">{strings.durationQuestion}</span>
+              <div className="seg-group">
+                {DURATION_OPTIONS.map((d) => (
+                  <button
+                    key={d.value}
+                    type="button"
+                    className={`seg-btn${duration === d.value ? ' active' : ''}`}
+                    onClick={() => setSetting('duration', d.value)}
+                    aria-pressed={duration === d.value}
+                  >
+                    {getDurationWord(d.labelKey)}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+
+          <button
+            type="button"
+            className="btn-begin ready"
+            onClick={() => setStep(2)}
+          >
+            {strings.nextStepBtn}
+          </button>
+        </>
       )}
 
-      {error ? (
-        <p style={{ color: 'var(--state-failing)', fontSize: '0.85rem', marginTop: '1rem', textAlign: 'center' }}>{error}</p>
-      ) : null}
+      {step === 2 && (
+        <div className="setup-step-content fade-in">
+          <div className="context-form-card">
+            <div>
+              <h3 className="setup-tell-header">{strings.groupSectionHeader}</h3>
+              <p className="setup-context-hint">{strings.groupSectionHint}</p>
+            </div>
+
+            <div className="ctx-field">
+              <span className="ctx-label">{strings.locationLabel}</span>
+              <input
+                type="text"
+                value={ctx.location}
+                placeholder={strings.locationPlaceholder}
+                onChange={(e) => setCtx({ location: e.target.value })}
+                className="input-page"
+              />
+            </div>
+
+            <div className="ctx-field">
+              <span className="ctx-label">{strings.playersDescLabel}</span>
+              <input
+                type="text"
+                value={ctx.playersDesc}
+                placeholder={strings.playersDescPlaceholder}
+                onChange={(e) => setCtx({ playersDesc: e.target.value })}
+                className="input-page"
+              />
+            </div>
+
+            <div className="ctx-field">
+              <span className="ctx-label">{strings.vibeLabel}</span>
+              <div className="seg-group">
+                {(
+                  [
+                    { value: '' as Vibe, label: strings.vibeBtnAny },
+                    { value: 'light' as Vibe, label: strings.vibeBtnLight },
+                    { value: 'tense' as Vibe, label: strings.vibeBtnTense },
+                    { value: 'dark' as Vibe, label: strings.vibeBtnDark },
+                  ] as const
+                ).map((v) => (
+                  <button
+                    key={v.value}
+                    type="button"
+                    className={`seg-btn${ctx.vibe === v.value ? ' active' : ''}`}
+                    onClick={() => setCtx({ vibe: v.value })}
+                  >
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="ctx-field">
+              <span className="ctx-label">{strings.insideJokeLabel}</span>
+              <input
+                type="text"
+                value={ctx.insideJoke}
+                placeholder={strings.insideJokePlaceholder}
+                onChange={(e) => setCtx({ insideJoke: e.target.value })}
+                className="input-page"
+              />
+            </div>
+          </div>
+
+          <p className="setup-context-note">{strings.setupContextNote}</p>
+
+          <div className="setup-nav-row">
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => setStep(1)}
+            >
+              {strings.prevStepBtn}
+            </button>
+            <button
+              type="button"
+              className={`btn-begin${!isLoading ? ' ready' : ''}`}
+              onClick={() => generateStories()}
+              disabled={isLoading}
+              aria-label={isLoading ? strings.loading : strings.generateStoryBtn}
+            >
+              {isLoading ? strings.loading : strings.generateStoryBtn}
+            </button>
+          </div>
+
+          {isLoading ? (
+            <div className="setup-loading" role="status">
+              <LoadingWithHint />
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            className="setup-advanced-toggle"
+            onClick={() => setShowAdvanced((v) => !v)}
+          >
+            {showAdvanced ? '▴' : '▾'} {strings.experimentalSettings}
+          </button>
+
+          {showAdvanced && (
+            <div className="ctx-section">
+              <div className="ctx-provider">
+                <span className="ctx-label">{strings.providerLabel}</span>
+                <div className="seg-group ctx-provider-options">
+                  {(['claude', 'gemini'] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      className={`seg-btn${settings.provider === p ? ' active' : ''}`}
+                      onClick={() => setSetting('provider', p)}
+                    >
+                      {p === 'claude' ? 'Claude' : 'Gemini'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {error ? (
+            <p className="setup-error">{error}</p>
+          ) : null}
+        </div>
+      )}
     </section>
   )
 }
-

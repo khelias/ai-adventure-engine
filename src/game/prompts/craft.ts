@@ -50,14 +50,12 @@ in the narrative or choice text. Describe the physical, in-world action only.`
 
 export const CHOICES_CRAFT = `## CHOICES CRAFT
 
-Each choice is **one named person's move** or a **collective group action**.
-For individual moves, set \`actor\` to that character's roleIndex (0-based).
-Allow a mix of individual character moves ("Mari opens the door") and collective
-group actions ("We barricade the door"). If it's a collective action, OMIT the
-\`actor\` field entirely.
+Each choice is a **collective group action** or an objective verb phrase.
+DO NOT use character names in the choice text. Write choices as collective actions
+("We barricade the door") or passive actions ("Barricade the door").
 
 Each choice is priced honestly. The text implies a cost; \`expectedChanges\`
-includes at least one negative delta that matches. *"Mari opens the door
+includes at least one negative delta that matches. *"Barricade the door
 loudly"* implies pressure rises → \`expectedChanges\` must say pressure −1.
 The numbers are never spelled in prose. Let the action imply them.
 
@@ -73,13 +71,9 @@ with:
 At least two different axes across the three choices. Two choices testing
 the same axis is a design failure — rewrite one.
 
-When one choice puts ANOTHER named character at cost — leaves them
-behind, sends them forward, exposes their secret, sacrifices one to
-protect another — set \`target\` to that person's roleIndex. A turn with
-zero targets in rising or climax is almost always a missed opportunity.
-
 When offering an ability (\`isAbility=true\`), set \`actor\` to the ability
-owner's roleIndex. Phase instructions above say WHEN abilities are allowed.
+owner's roleIndex. For ALL OTHER normal choices, OMIT the \`actor\` field entirely.
+Phase instructions above say WHEN abilities are allowed.
 
 \`expectedChanges\` contains ONLY the parameters that actually move on that
 choice. Never include zero-change entries.
@@ -107,7 +101,12 @@ hidden rules. Every delta is traceable to a choice the players made.
 
 **STATE ADHERENCE:** The scene narrative must flawlessly match the current
 text state of all parameters. When a parameter changes, the next scene
-shows that change as a concrete sensory moment, not a narrator announcement.`
+shows that change as a concrete sensory moment, not a narrator announcement.
+
+\`consequences[].text\` is not a UI label. It is a short event headline from
+inside the fiction: "The rear tire splits on the gravel", "The signal cuts
+to static", "The group finally laughs at the same joke". Keep it under 12
+words and write it in the output language.`
 
 export const SELF_CHECK = `## BEFORE YOU RESPOND
 
