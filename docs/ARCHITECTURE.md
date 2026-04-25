@@ -124,6 +124,11 @@ as deadline context, not personal win-condition targets, because progress clocks
 can move in the opposite direction from the engine's best-to-worst parameter
 contract.
 
+Transcripts are browser-local analysis artifacts. The app persists the last 10
+started games to `localStorage`, updates the active transcript after each turn,
+and exposes a JSON download on the game-over screen. There is no centralized
+gameplay logging unless an explicit opt-in pipeline is added later.
+
 ## Prompt And Schema Structure
 
 Prompts live in `src/game/prompts/`.
@@ -245,3 +250,4 @@ prompts, schemas, and documentation.
 - [API contract](./api-contract.md)
 - [Model strategy](./model-strategy.md)
 - [Prompt audit](./prompt-audit.md)
+- [Game systems audit](./game-systems-audit.md)

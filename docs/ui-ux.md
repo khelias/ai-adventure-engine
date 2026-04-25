@@ -91,11 +91,18 @@ The generated story choices should help the group pick a premise quickly. The
 screen should avoid implying that players are editing a prompt; they are choosing
 which adventure to enter.
 
+The screen previews generated parameters and cast names because those are the
+first clues that the adventure has a playable mechanical shape, not just a title.
+
 ### Role Assignment
 
 Role and name assignment is deterministic app behavior. The AI may supply story
 material, but the app owns player identity, ability-used state, and secret goal
 scoring.
+
+Role cards show each ability and its parameter anchor. This is intentional:
+players should see that an ability belongs to this story, not that it is a
+generic bonus action.
 
 ### Secrets
 
@@ -162,10 +169,12 @@ Strong:
 - Parameter changes appear as in-world consequence events.
 - Game over shows winners and final parameters before the long final narration.
 - The final setup screen gives useful review before generation.
+- Story selection now previews both premise and mechanics.
+- Role assignment now reads as cast setup instead of a plain form.
 
 Needs continued playtest attention:
 
-- Parameter board density on small screens.
+- Parameter board density and comprehension on small screens.
 - Whether secrets are immediately understandable when the phone is passed.
 - Whether game-over summaries create a satisfying table discussion.
 - Whether the generated choices create disagreement instead of obvious

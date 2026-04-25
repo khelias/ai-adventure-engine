@@ -89,6 +89,11 @@ pressure.
   hidden route/fact, or create one costly shortcut. Avoid generic healing,
   strength, leadership, or "notices details" unless the parameters make
   that ability mechanically meaningful.
+- Every ability must contain one concrete story-specific noun: a named place,
+  route, tool, code, person, debt, ritual object, vehicle, document, or threat
+  from THIS premise. Bad generic ability: "notices details", "calms the group",
+  "binds a wound", "knows back roads". Good: "finds the maintenance badge under
+  the bus station kiosk and opens the staff corridor".
 
 ${ARCHETYPE_PALETTE}
 
@@ -124,7 +129,9 @@ ability with the role's name; the UI already displays the owner separately.
 Every role also needs \`abilityParameter\`: the exact \`name\` of one of the
 three generated parameters the ability is designed to affect. Every ability
 must clearly matter to that parameter or one named pressure in the generated
-story; avoid generic useful talents.
+story; avoid generic useful talents. Every ability must contain one concrete
+story-specific noun: a named place, route, tool, code, person, debt, ritual
+object, vehicle, document, or threat from THIS premise.
 
 ${ARCHETYPE_PALETTE}
 
@@ -158,7 +165,8 @@ Generate:
    colon prefix. Do NOT start abilities with the character name. The list
    of abilities must be in the same order as the characters above.
    Each ability must clearly matter to one of the sequel's parameters or
-   named pressures; avoid generic useful talents.
+   named pressures; avoid generic useful talents. Every ability must contain
+   one concrete story-specific noun from the sequel premise.
 2. \`newAbilityParameters\`: one exact parameter \`name\` per returning
    character, in the same order as \`newAbilities\`. Each value must match one
    of the three generated sequel parameters exactly.

@@ -22,68 +22,50 @@ export function RoleAssignmentScreen() {
   }
 
   return (
-    <section className="space-y-7">
-      <button type="button" onClick={reset} disabled={isLoading} className="btn-ghost" style={{ fontStyle: 'normal', fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.5rem 0' }}>
+    <section className="cast-screen">
+      <button
+        type="button"
+        onClick={reset}
+        disabled={isLoading}
+        className="btn-ghost btn-ghost--caps story-back"
+      >
         ← {strings.backToSetup}
       </button>
-      <div className="space-y-2">
+
+      <div className="cast-header">
         <p className="type-caps">{strings.castKicker}</p>
-        <h2
-          style={{
-            fontFamily: "'Fraunces', Georgia, serif",
-            fontVariationSettings: "'opsz' 72",
-            fontSize: '1.75rem',
-            fontWeight: 300,
-            color: 'var(--text)',
-            lineHeight: 1.25,
-          }}
-        >
-          {title}
-        </h2>
-        <p style={{
-          fontFamily: "'Fraunces', Georgia, serif",
-          fontVariationSettings: "'opsz' 14, 'SOFT' 50",
-          fontSize: '0.9375rem',
-          color: 'var(--text-muted)',
-          fontStyle: 'italic',
-        }}>
-          {summary}
-        </p>
-        <div style={{ width: '2rem', height: '1px', background: 'var(--line-accent)', marginTop: '0.25rem', opacity: 0.5 }} />
+        <h2 className="screen-title screen-title--large">{title}</h2>
+        <p className="cast-summary">{summary}</p>
+        <div className="title-rule title-rule--left" />
       </div>
 
-      <div className="flex justify-end">
+      <div className="cast-actions">
         <button
           type="button"
           onClick={fillDefaultNames}
-          className="btn-ghost type-caps"
-          style={{ fontStyle: 'normal', fontSize: '0.6875rem' }}
+          className="btn-ghost btn-ghost--caps"
         >
           {strings.defaultNamesBtn}
         </button>
       </div>
 
-      <div className="space-y-5">
+      <div className="cast-grid">
         {roles.map((role, index) => (
           <div
             key={role.id}
-            style={{ borderBottom: '1px solid var(--line)', paddingBottom: '1.25rem' }}
+            className="role-card"
           >
-            <div className="space-y-3">
-              <div className="flex items-baseline gap-3">
+            <div className="role-card__index" aria-hidden="true">
+              {String(index + 1).padStart(2, '0')}
+            </div>
+
+            <div className="role-card__body">
+              <div className="role-name-row">
                 <label
                   htmlFor={`role-name-${role.id}`}
-                  style={{
-                    color: 'var(--accent)',
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    minWidth: '1.2rem',
-                    flexShrink: 0,
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
+                  className="sr-only"
                 >
-                  {String(index + 1).padStart(2, '0')}
-                  <span className="sr-only"> — {strings.playerName} {index + 1}</span>
+                  {strings.playerName} {index + 1}
                 </label>
                 <input
                   id={`role-name-${role.id}`}
@@ -91,32 +73,21 @@ export function RoleAssignmentScreen() {
                   value={role.name}
                   placeholder={strings.playerNamePlaceholder}
                   onChange={(e) => setRoleName(index, e.target.value)}
-                  className="input-page flex-1"
-                  style={{ fontWeight: 500, fontSize: '1.0625rem' }}
+                  className="input-page role-name-input"
                 />
               </div>
-              <p style={{
-                fontFamily: "'Fraunces', Georgia, serif",
-                fontVariationSettings: "'opsz' 14",
-                fontSize: '0.9375rem',
-                color: 'var(--text-dim)',
-                paddingLeft: '2rem',
-                lineHeight: 1.6,
-              }}>
+              <p className="role-description">
                 {role.description}
               </p>
-              <div style={{ paddingLeft: '2rem', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                <span style={{ color: 'var(--accent)', fontSize: '0.875rem', flexShrink: 0, lineHeight: 1.6, opacity: 0.7 }}>◈</span>
-                <p style={{
-                  fontFamily: "'Fraunces', Georgia, serif",
-                  fontVariationSettings: "'opsz' 14",
-                  fontSize: '0.875rem',
-                  color: 'var(--text-muted)',
-                  fontStyle: 'italic',
-                  lineHeight: 1.55,
-                }}>
-                  {formatAbilityForDisplay(role)}
-                </p>
+              <div className="role-ability">
+                <span className="role-ability__mark" aria-hidden="true">◈</span>
+                <div>
+                  <span className="role-ability__label">{strings.abilityLabel}</span>
+                  <p>{formatAbilityForDisplay(role)}</p>
+                  {role.abilityParameter ? (
+                    <span className="role-ability__anchor">{role.abilityParameter}</span>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>
@@ -126,14 +97,14 @@ export function RoleAssignmentScreen() {
       <button
         onClick={prepareSecretsAndTransition}
         disabled={isLoading}
-        className="w-full btn-primary py-3"
+        className="btn-primary cast-start"
         aria-label={isLoading ? strings.loading : strings.startGameBtn}
       >
         {isLoading ? <LoadingDots /> : strings.startGameBtn}
       </button>
 
       {error ? (
-        <p style={{ color: 'var(--state-failing)', fontSize: '0.85rem' }}>{error}</p>
+        <p className="setup-error">{error}</p>
       ) : null}
     </section>
   )

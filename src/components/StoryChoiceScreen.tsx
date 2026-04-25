@@ -19,60 +19,64 @@ export function StoryChoiceScreen() {
   const story = stories[0]
 
   return (
-    <section className="space-y-8">
-      <button type="button" onClick={reset} disabled={isLoading} className="btn-ghost" style={{ fontStyle: 'normal', fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.5rem 0' }}>
+    <section className="story-choice-screen">
+      <button
+        type="button"
+        onClick={reset}
+        disabled={isLoading}
+        className="btn-ghost btn-ghost--caps story-back"
+      >
         ← {strings.backToSetup}
       </button>
-      <div>
-        <p className="type-caps" style={{ marginBottom: '0.5rem' }}>
-          {strings.yourAdventureKicker}
-        </p>
-        <h2
-          style={{
-            fontFamily: "'Fraunces', Georgia, serif",
-            fontVariationSettings: "'opsz' 72",
-            fontSize: isLoading ? '1.4rem' : '1.75rem',
-            fontWeight: 300,
-            color: 'var(--text)',
-            lineHeight: 1.25,
-            minHeight: '2rem',
-            transition: 'font-size 0.2s',
-          }}
-        >
-          {isLoading
-            ? strings.loadingStoryTitle
-            : story?.title ?? ''}
-        </h2>
-        <div style={{ width: '2rem', height: '1px', background: 'var(--line-accent)', marginTop: '0.75rem', opacity: 0.6 }} />
+
+      <div className="story-choice-hero">
+        <div>
+          <p className="type-caps">{strings.yourAdventureKicker}</p>
+          <h2 className={`screen-title screen-title--large${isLoading ? ' is-loading' : ''}`}>
+            {isLoading ? strings.loadingStoryTitle : story?.title ?? ''}
+          </h2>
+          <div className="title-rule title-rule--left" />
+        </div>
       </div>
 
       {isLoading ? (
-        <div className="space-y-2">
+        <div className="story-skeleton" aria-hidden="true">
           {[100, 85, 70].map((w, i) => (
             <div
               key={i}
-              style={{
-                height: '1.1em',
-                width: `${w}%`,
-                background: 'var(--line-strong)',
-                borderRadius: '2px',
-                opacity: 0.4 - i * 0.08,
-              }}
+              style={{ width: `${w}%` }}
             />
           ))}
         </div>
       ) : story ? (
-        <div className="space-y-5">
-          <p style={{
-            fontFamily: "'Fraunces', Georgia, serif",
-            fontVariationSettings: "'opsz' 14, 'SOFT' 50",
-            fontSize: '1.0625rem',
-            lineHeight: 1.7,
-            color: 'var(--text-dim)',
-          }}>
-            {story.summary}
-          </p>
-          <div className="flex gap-3 items-center">
+        <div className="story-premise-card">
+          <div className="story-premise-main">
+            <p className="story-summary">{story.summary}</p>
+            <div className="story-meta-grid">
+              <div className="story-meta-block">
+                <span className="story-meta-label">{strings.parametersTitle}</span>
+                <div className="story-token-row">
+                  {story.parameters.map((parameter) => (
+                    <span key={parameter.name} className="story-token">
+                      {parameter.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="story-meta-block">
+                <span className="story-meta-label">{strings.castKicker}</span>
+                <div className="story-token-row">
+                  {story.roles.map((role) => (
+                    <span key={role.name} className="story-token story-token--muted">
+                      {role.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="story-action-row">
             <button
               className="btn-primary"
               onClick={() => initStory(story)}
@@ -92,17 +96,17 @@ export function StoryChoiceScreen() {
         </div>
       ) : null}
 
-      <div style={{ borderTop: '1px solid var(--line)', paddingTop: '1.25rem' }}>
+      <div className="custom-premise-panel">
         {!showCustom ? (
           <button
             type="button"
             onClick={() => setShowCustom(true)}
-            className="btn-ghost"
+            className="btn-ghost custom-premise-toggle"
           >
             {strings.customStoryTitle}…
           </button>
         ) : (
-          <div className="space-y-3">
+          <div className="custom-premise-form">
             <textarea
               value={customText}
               onChange={(e) => setCustomText(e.target.value)}
@@ -115,7 +119,7 @@ export function StoryChoiceScreen() {
               <button
                 onClick={() => generateCustomStory(customText)}
                 disabled={isLoading || !customText.trim()}
-                className="btn-primary text-xs py-1.5 px-4"
+                className="btn-primary"
                 aria-label={isLoading ? strings.loading : strings.useCustomStoryBtn}
               >
                 {isLoading ? <LoadingDots /> : strings.useCustomStoryBtn}
@@ -133,7 +137,7 @@ export function StoryChoiceScreen() {
       </div>
 
       {error ? (
-        <p style={{ color: 'var(--state-failing)', fontSize: '0.85rem' }} className="type-caps">{error}</p>
+        <p className="setup-error type-caps">{error}</p>
       ) : null}
     </section>
   )

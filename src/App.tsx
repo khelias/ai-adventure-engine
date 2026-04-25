@@ -9,6 +9,10 @@ import { GameOverScreen } from './components/GameOverScreen'
 
 export default function App() {
   const screen = useGameStore((s) => s.screen)
+  const contentClassName =
+    screen === 'game' || screen === 'gameOver'
+      ? 'w-full max-w-2xl'
+      : 'w-full max-w-3xl'
 
   return (
     <div className="min-h-dvh flex flex-col">
@@ -38,7 +42,7 @@ export default function App() {
         {screen === 'setup' ? (
           <SetupScreen />
         ) : (
-          <div className="w-full max-w-xl">
+          <div className={contentClassName}>
             {screen === 'storyChoice' && <StoryChoiceScreen />}
             {screen === 'roleAssignment' && <RoleAssignmentScreen />}
             {screen === 'secretAssignment' && <SecretAssignmentScreen />}

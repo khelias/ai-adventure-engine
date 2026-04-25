@@ -1,7 +1,7 @@
-// Full game transcript — captured opportunistically during play, exported
-// at game-end as a single JSON document. Used to analyze playtests after
-// the fact ("why did the loop feel boring", "did parameters actually move",
-// "did the AI honor expectedChanges").
+// Full game transcript — captured opportunistically during play and exported
+// as a single JSON document. Used to analyze playtests after the fact
+// ("why did the loop feel boring", "did parameters actually move", "did the
+// AI honor expectedChanges").
 //
 // The transcript is intentionally lossless: it captures both what the
 // engine applied (authoritative) AND what the AI claimed (often differs),
@@ -9,7 +9,7 @@
 // players DID NOT pick — useful to see which forks the AI offered.
 //
 // Two persistence channels:
-//   - localStorage (last N games) — loaded by analysis tooling later.
+//   - localStorage (last N started games) — loaded by analysis tooling later.
 //   - download button on GameOverScreen — for sharing a single transcript
 //     out of band (e.g. paste into a Claude chat for postmortem).
 
@@ -102,13 +102,16 @@ export function newTranscript(args: {
 }
 
 // Persist to localStorage. Keeps the most recent STORAGE_LIMIT games.
+// Re-persisting the same startedAt updates the existing entry, which lets us
+// safely save every turn without filling storage with duplicate partial games.
 // Older entries are dropped — this is a debug tool, not a save system.
 export function persistTranscript(transcript: GameTranscript): void {
   if (typeof window === 'undefined') return
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     const list: GameTranscript[] = raw ? (JSON.parse(raw) as GameTranscript[]) : []
-    const next = [transcript, ...list].slice(0, STORAGE_LIMIT)
+    const rest = list.filter((item) => item.startedAt !== transcript.startedAt)
+    const next = [transcript, ...rest].slice(0, STORAGE_LIMIT)
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   } catch {
     // localStorage write failures are non-fatal — the user can still download.

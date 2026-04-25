@@ -208,6 +208,7 @@ export const useGameStore = create<GameState & GameActions>()((set) => ({
       // tags — final scoring is captured on game-end, but the original
       // assignment snapshot would be lost.
       if (state.secrets.length > 0) transcript.secrets = state.secrets
+      persistTranscript(transcript)
       return {
         currentTurn: 1,
         maxTurns,
@@ -276,11 +277,13 @@ export const useGameStore = create<GameState & GameActions>()((set) => ({
   appendTurnRecord: (record) =>
     set((state) => {
       if (!state.transcript) return {}
+      const transcript = {
+        ...state.transcript,
+        turns: [...state.transcript.turns, record],
+      }
+      persistTranscript(transcript)
       return {
-        transcript: {
-          ...state.transcript,
-          turns: [...state.transcript.turns, record],
-        },
+        transcript,
       }
     }),
 
@@ -293,6 +296,7 @@ export const useGameStore = create<GameState & GameActions>()((set) => ({
       const transcript = state.transcript
         ? { ...state.transcript, secrets }
         : state.transcript
+      if (transcript) persistTranscript(transcript)
       return {
         secrets,
         transcript,

@@ -19,6 +19,8 @@ explain how the system is shaped and why.
    when Claude is acceptable, and how candidates should be evaluated.
 6. [Prompt audit](./prompt-audit.md) — current prompt risks, gameplay rubric,
    and what to inspect in transcripts.
+7. [Game systems audit](./game-systems-audit.md) — hardcoded genres,
+   archetypes, secrets, parameter baselines, abilities, and logging risks.
 
 The product roadmap remains at the repo root: [ROADMAP.md](../ROADMAP.md).
 

@@ -19,10 +19,12 @@ Shipped:
 - Gemini 2.5 Flash default model with Estonian editor pass
 - Claude Sonnet 4.6 hidden quality mode
 - exact schema hash guard in the proxy
-- headless playtest runner and transcript export
+- headless playtest runner, local started-game transcripts, and transcript export
 
 The live architecture is described in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 Screen-level UX principles are described in [docs/ui-ux.md](docs/ui-ux.md).
+Hardcoded game-system risks are tracked in
+[docs/game-systems-audit.md](docs/game-systems-audit.md).
 
 ## Product Invariants
 
@@ -95,6 +97,8 @@ transcripts show the rule is ineffective or redundant.
 
 ### Gameplay
 
+- Add schema-backed parameter starting baselines so some pressures can be built
+  up without breaking best-to-worst semantics or secret fairness.
 - Add stronger climax planning: generated destination, hidden truth, or final
   confrontation seed that the turn prompt can foreshadow.
 - Improve special ability payoff if playtests show abilities still feel generic.
