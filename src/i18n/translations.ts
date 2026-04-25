@@ -28,6 +28,11 @@ interface StringTable {
   setupBasicsHeader: string
   setupBasicsHint: string
   setupStageLabel: string
+  previousGenreBtn: string
+  nextGenreBtn: string
+  showGenreListBtn: string
+  hideGenreListBtn: string
+  genrePosition: (current: number, total: number) => string
   genreTeaser: (genre: string) => string
   durationTeaser: (duration: string) => string
   setupReviewHeader: string
@@ -182,9 +187,14 @@ export const translations: Record<Language, StringTable> = {
     step3Title: 'Kus seiklus algab?',
     step4Title: 'Viimane detail',
     setupStepLabel: (step, total) => `${step} / ${total}`,
-    setupBasicsHeader: 'Žanr ja tempo',
-    setupBasicsHint: 'Vali, mis tunne mängul on ja kui pikaks õhtuks see mõeldud on. Seltskonna paned paika järgmises sammus.',
+    setupBasicsHeader: 'Seikluse laad ja kestus',
+    setupBasicsHint: 'Vali žanr ja mängu kestus. Seltskonna paned paika järgmises sammus.',
     setupStageLabel: 'Seikluse signaal',
+    previousGenreBtn: 'Eelmine žanr',
+    nextGenreBtn: 'Järgmine žanr',
+    showGenreListBtn: 'Näita kõiki žanre',
+    hideGenreListBtn: 'Peida žanrite nimekiri',
+    genrePosition: (current, total) => `${current} / ${total}`,
     genreTeaser: (genre) => ({
       Zombies: 'Ellujäämine, surve ja otsused, mis lähevad kiiresti isiklikuks.',
       Fantasy: 'Võõrad jõud, vandetõotused ja valikud, mille hind kasvab.',
@@ -368,9 +378,14 @@ export const translations: Record<Language, StringTable> = {
     step3Title: 'Where does it start?',
     step4Title: 'Final detail',
     setupStepLabel: (step, total) => `${step} / ${total}`,
-    setupBasicsHeader: 'Genre and pace',
-    setupBasicsHint: 'Choose the feel of the game and how long it should run tonight. The group comes next.',
+    setupBasicsHeader: 'Adventure style and length',
+    setupBasicsHint: 'Choose the genre and game length. The group comes next.',
     setupStageLabel: 'Adventure signal',
+    previousGenreBtn: 'Previous genre',
+    nextGenreBtn: 'Next genre',
+    showGenreListBtn: 'Show all genres',
+    hideGenreListBtn: 'Hide genre list',
+    genrePosition: (current, total) => `${current} / ${total}`,
     genreTeaser: (genre) => ({
       Zombies: 'Survival, pressure, and decisions that get personal fast.',
       Fantasy: 'Strange powers, oaths, and choices whose price keeps rising.',

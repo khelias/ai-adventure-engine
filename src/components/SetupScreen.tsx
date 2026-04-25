@@ -99,6 +99,7 @@ export function SetupScreen() {
   const strings = translations[settings.language]
 
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showGenreList, setShowGenreList] = useState(false)
   const [step, setStep] = useState<SetupStep>(1)
   const swipeStartX = useRef<number | null>(null)
 
@@ -111,12 +112,7 @@ export function SetupScreen() {
     const dx = e.changedTouches[0].clientX - swipeStartX.current
     swipeStartX.current = null
     if (Math.abs(dx) < 40) return
-    const currentIdx = GENRES.findIndex((g) => g.value === genre)
-    const base = currentIdx < 0 ? 0 : currentIdx
-    const nextIdx = dx < 0
-      ? (base + 1) % GENRES.length
-      : (base - 1 + GENRES.length) % GENRES.length
-    setSetting('genre', GENRES[nextIdx].value)
+    selectGenreByOffset(dx < 0 ? 1 : -1)
   }
   const ctx = settings.context
   const setCtx = (patch: Partial<typeof ctx>) =>
@@ -127,6 +123,7 @@ export function SetupScreen() {
   const duration = settings.duration
 
   const genreOption = GENRES.find((g) => g.value === genre) ?? GENRES[0]
+  const genreIndex = Math.max(0, GENRES.findIndex((g) => g.value === genre))
   const durationOption = DURATION_OPTIONS.find((d) => d.value === duration) ?? DURATION_OPTIONS[0]
   const stepTitle = {
     1: strings.step1Title,
@@ -144,6 +141,13 @@ export function SetupScreen() {
     }
   }
   const selectedDurationParts = getDurationParts(durationOption.labelKey)
+
+  function selectGenreByOffset(offset: number) {
+    const currentIdx = GENRES.findIndex((g) => g.value === genre)
+    const base = currentIdx < 0 ? 0 : currentIdx
+    const nextIdx = (base + offset + GENRES.length) % GENRES.length
+    setSetting('genre', GENRES[nextIdx].value)
+  }
 
   return (
     <section className="setup-wrap">
@@ -169,6 +173,22 @@ export function SetupScreen() {
                 <span />
                 <span />
               </div>
+              <button
+                type="button"
+                className="setup-stage-nav setup-stage-nav--prev"
+                onClick={() => selectGenreByOffset(-1)}
+                aria-label={strings.previousGenreBtn}
+              >
+                <span aria-hidden="true">‹</span>
+              </button>
+              <button
+                type="button"
+                className="setup-stage-nav setup-stage-nav--next"
+                onClick={() => selectGenreByOffset(1)}
+                aria-label={strings.nextGenreBtn}
+              >
+                <span aria-hidden="true">›</span>
+              </button>
 
               <div className="setup-stage-core">
                 <span className="setup-stage-core__icon">
@@ -177,7 +197,15 @@ export function SetupScreen() {
               </div>
 
               <div className="setup-stage-copy">
-                <span className="setup-stage-label">{strings.setupStageLabel}</span>
+                <span className="setup-stage-kicker">
+                  <span className="setup-stage-label">{strings.setupStageLabel}</span>
+                  <span
+                    className="setup-stage-index"
+                    aria-label={strings.genrePosition(genreIndex + 1, GENRES.length)}
+                  >
+                    {strings.genrePosition(genreIndex + 1, GENRES.length)}
+                  </span>
+                </span>
                 <h3>{strings[genreOption.labelKey] as string}</h3>
                 <p>{strings.genreTeaser(genre)}</p>
               </div>
@@ -197,24 +225,42 @@ export function SetupScreen() {
                 <p className="setup-context-hint">{strings.setupBasicsHint}</p>
               </div>
 
-              <div className="setup-section setup-section--genre">
-                <span className="setup-label">{strings.genreLabel}</span>
-                <div className="genre-choice-grid" role="group" aria-label={strings.genreLabel}>
-                  {GENRES.map((g) => (
-                    <button
-                      key={g.value}
-                      type="button"
-                      className={`genre-choice${genre === g.value ? ' active' : ''}`}
-                      aria-pressed={genre === g.value}
-                      onClick={() => setSetting('genre', g.value)}
-                    >
-                      <span className="genre-choice__icon" aria-hidden="true">
-                        {g.icon}
-                      </span>
-                      <span>{strings[g.labelKey] as string}</span>
-                    </button>
-                  ))}
-                </div>
+              <div className="setup-genre-disclosure">
+                <button
+                  type="button"
+                  className="setup-genre-toggle"
+                  onClick={() => setShowGenreList((open) => !open)}
+                  aria-expanded={showGenreList}
+                  aria-controls="setup-genre-panel"
+                >
+                  <span>{showGenreList ? strings.hideGenreListBtn : strings.showGenreListBtn}</span>
+                  <span className="setup-genre-toggle__icon" aria-hidden="true">
+                    {showGenreList ? '−' : '+'}
+                  </span>
+                </button>
+                {showGenreList ? (
+                  <div
+                    id="setup-genre-panel"
+                    className="setup-section setup-section--genre setup-genre-panel"
+                  >
+                    <div className="genre-choice-grid" role="group" aria-label={strings.genreLabel}>
+                      {GENRES.map((g) => (
+                        <button
+                          key={g.value}
+                          type="button"
+                          className={`genre-choice${genre === g.value ? ' active' : ''}`}
+                          aria-pressed={genre === g.value}
+                          onClick={() => setSetting('genre', g.value)}
+                        >
+                          <span className="genre-choice__icon" aria-hidden="true">
+                            {g.icon}
+                          </span>
+                          <span>{strings[g.labelKey] as string}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div className="setup-section setup-section--inline">
