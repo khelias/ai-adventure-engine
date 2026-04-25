@@ -498,31 +498,6 @@ body {
   font: 400 0.96rem/1.55 'Inter', system-ui;
   color: var(--text-dim);
 }
-.setup-stage-meta {
-  margin-top: 1.4rem;
-  min-width: min(16rem, 100%);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  background: rgba(0,0,0,0.18);
-  padding: 0.85rem 1rem;
-  text-align: center;
-}
-.setup-stage-meta span,
-.setup-stage-meta small {
-  display: block;
-  font: 600 0.6rem/1 'Inter', system-ui;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-.setup-stage-meta strong {
-  display: block;
-  margin: 0.35rem 0 0.2rem;
-  font: 650 0.92rem/1.1 'Inter', system-ui;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-}
 .setup-showcase__controls {
   width: 100%;
   display: flex;
@@ -563,6 +538,10 @@ body {
 .setup-genre-toggle[aria-expanded="true"] {
   color: var(--accent-bright);
 }
+.setup-genre-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
 .setup-genre-toggle__icon {
   width: 1.35rem;
   height: 1.35rem;
@@ -577,6 +556,9 @@ body {
 .setup-genre-panel {
   border-top: 1px solid var(--line);
   padding: 0.65rem;
+}
+.setup-duration-intro {
+  margin-top: 0.15rem;
 }
 .genre-choice-grid {
   display: grid;
@@ -2506,9 +2488,6 @@ body {
     padding: 0.9rem;
     display: grid;
     grid-template-columns: 4.25rem minmax(0, 1fr);
-    grid-template-areas:
-      "core copy"
-      "meta meta";
     align-items: center;
     gap: 0.75rem 0.85rem;
     text-align: left;
@@ -2551,7 +2530,6 @@ body {
     right: 0.75rem;
   }
   .setup-stage-core {
-    grid-area: core;
     width: 4.25rem;
     height: 4.25rem;
     box-shadow:
@@ -2564,7 +2542,6 @@ body {
     height: 2rem;
   }
   .setup-stage-copy {
-    grid-area: copy;
     margin: 0;
     max-width: none;
     min-width: 0;
@@ -2592,22 +2569,12 @@ body {
     font-size: 0.84rem;
     line-height: 1.38;
   }
-  .setup-stage-meta {
-    grid-area: meta;
-    margin-top: 0;
-    max-width: none;
-    min-width: 0;
-    width: 100%;
-    padding: 0.62rem 0.72rem;
-    text-align: left;
-  }
-  .setup-stage-meta strong {
-    margin-top: 0.3rem;
-    font-size: 0.84rem;
-  }
   .setup-showcase__controls {
     gap: 0.78rem;
     padding: 0;
+  }
+  .setup-duration-intro {
+    margin-top: 0;
   }
   .setup-context-hint {
     max-width: 34rem;

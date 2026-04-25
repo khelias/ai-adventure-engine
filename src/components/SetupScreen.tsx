@@ -124,7 +124,6 @@ export function SetupScreen() {
 
   const genreOption = GENRES.find((g) => g.value === genre) ?? GENRES[0]
   const genreIndex = Math.max(0, GENRES.findIndex((g) => g.value === genre))
-  const durationOption = DURATION_OPTIONS.find((d) => d.value === duration) ?? DURATION_OPTIONS[0]
   const stepTitle = {
     1: strings.step1Title,
     2: strings.step2Title,
@@ -140,8 +139,6 @@ export function SetupScreen() {
       meta: match?.[1] ?? '',
     }
   }
-  const selectedDurationParts = getDurationParts(durationOption.labelKey)
-
   function selectGenreByOffset(offset: number) {
     const currentIdx = GENRES.findIndex((g) => g.value === genre)
     const base = currentIdx < 0 ? 0 : currentIdx
@@ -209,22 +206,9 @@ export function SetupScreen() {
                 <h3>{strings[genreOption.labelKey] as string}</h3>
                 <p>{strings.genreTeaser(genre)}</p>
               </div>
-
-              <div className="setup-stage-meta">
-                <span>{strings.durationQuestion}</span>
-                <strong>{selectedDurationParts.name}</strong>
-                {selectedDurationParts.meta ? (
-                  <small>{selectedDurationParts.meta}</small>
-                ) : null}
-              </div>
             </div>
 
             <div className="setup-showcase__controls">
-              <div>
-                <h3 className="setup-tell-header">{strings.setupBasicsHeader}</h3>
-                <p className="setup-context-hint">{strings.setupBasicsHint}</p>
-              </div>
-
               <div className="setup-genre-disclosure">
                 <button
                   type="button"
@@ -261,6 +245,11 @@ export function SetupScreen() {
                     </div>
                   </div>
                 ) : null}
+              </div>
+
+              <div className="setup-duration-intro">
+                <h3 className="setup-tell-header">{strings.setupBasicsHeader}</h3>
+                <p className="setup-context-hint">{strings.setupBasicsHint}</p>
               </div>
 
               <div className="setup-section setup-section--inline">
