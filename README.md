@@ -151,9 +151,9 @@ should be judged by transcripts and proxy telemetry, not by one attractive run.
 ## Deployment
 
 Every push to `main` triggers the self-hosted GitHub Actions runner on the
-homelab VM. The workflow builds the Vite app, publishes static assets to the
-games nginx mount, builds the proxy image, and restarts the `adventure-proxy`
-container.
+homelab VM. The workflow pins Node 24, installs with `npm ci`, runs the quality
+gate above, publishes static assets to the games nginx mount, builds the proxy
+image from its lockfile, and restarts the `adventure-proxy` container.
 
 Infrastructure orchestration lives in
 [khe-homelab](https://github.com/khelias/khe-homelab); this repo owns the app,

@@ -3,8 +3,8 @@ FROM node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY package.json ./
-RUN npm install --omit=dev --no-package-lock && npm cache clean --force
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
 
 COPY server.js et-style-guide.js ./
 
