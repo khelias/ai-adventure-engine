@@ -159,7 +159,11 @@ should be judged by transcripts and proxy telemetry, not by one attractive run.
 Every push to `main` triggers the self-hosted GitHub Actions runner on the
 homelab VM. The workflow pins Node 24, installs with `npm ci`, runs the quality
 gate above, publishes static assets to the games nginx mount, builds the proxy
-image from its lockfile, and restarts the `adventure-proxy` container.
+image from its lockfile, and restarts the `adventure-proxy` container. The UI
+smoke gate uses Playwright's bundled Chromium by default and installs the
+matching Linux browser dependencies in the workflow; set
+`PLAYWRIGHT_BROWSER_CHANNEL` only when deliberately testing a local browser
+channel such as Chrome.
 
 Infrastructure orchestration lives in
 [khe-homelab](https://github.com/khelias/khe-homelab); this repo owns the app,

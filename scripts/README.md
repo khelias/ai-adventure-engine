@@ -82,7 +82,9 @@ npm run ui:smoke
 
 It drives the real React app through the browser with the in-app `Mock`
 provider, covers the long six-player mobile flow, and compares visual baselines
-in `tests/__screenshots__`. To test an existing dev server, set
+in `tests/__screenshots__`. By default it uses Playwright's bundled Chromium;
+set `PLAYWRIGHT_BROWSER_CHANNEL=chrome` only when deliberately validating a
+local Chrome install. To test an existing dev server, set
 `PLAYWRIGHT_BASE_URL`, for example:
 
 ```bash
