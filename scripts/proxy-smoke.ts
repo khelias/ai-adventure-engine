@@ -38,13 +38,13 @@ Usage: API_SECRET=... npm run proxy:smoke -- [options]
   process.exit(0)
 }
 
-const endpoint = values.endpoint!
+const endpoint = values.endpoint
 const provider = values.provider as Provider
 const language = values.language as Language
 const genre = values.genre as Genre
 const duration = values.duration as Duration
 const players = Number(values.players)
-const origin = values.origin!
+const origin = values.origin
 const apiSecret = process.env.API_SECRET || process.env.VITE_API_SECRET || ''
 
 if (!Number.isInteger(players) || players < 1 || players > 6) {
@@ -91,7 +91,7 @@ const response = await fetch(endpoint, {
 const rawText = await response.text()
 let parsed: { provider?: string; model?: string; data?: { stories?: Story[] }; error?: string } | null = null
 try {
-  parsed = rawText ? JSON.parse(rawText) : null
+  parsed = rawText ? parseProxySmokeResponse(JSON.parse(rawText) as unknown) : null
 } catch {
   parsed = null
 }
@@ -114,3 +114,24 @@ console.log([
   `roles=${story.roles.length}`,
   `parameters=${story.parameters.length}`,
 ].join('\n'))
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object'
+}
+
+function parseProxySmokeResponse(
+  value: unknown,
+): { provider?: string; model?: string; data?: { stories?: Story[] }; error?: string } | null {
+  if (!isRecord(value)) return null
+
+  const stories = isRecord(value.data) && Array.isArray(value.data.stories)
+    ? value.data.stories as Story[]
+    : undefined
+
+  return {
+    provider: typeof value.provider === 'string' ? value.provider : undefined,
+    model: typeof value.model === 'string' ? value.model : undefined,
+    data: stories ? { stories } : undefined,
+    error: typeof value.error === 'string' ? value.error : undefined,
+  }
+}

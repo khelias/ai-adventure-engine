@@ -117,7 +117,7 @@ export function StoryChoiceScreen() {
             />
             <div className="custom-premise-actions">
               <button
-                onClick={() => generateCustomStory(customText)}
+                onClick={() => void generateCustomStory(customText)}
                 disabled={isLoading || !customText.trim()}
                 className="btn-primary"
                 aria-label={isLoading ? strings.loading : strings.useCustomStoryBtn}

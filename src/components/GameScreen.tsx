@@ -71,6 +71,7 @@ function ParameterBoard({
       {parameters.map((p) => {
         const atWorst = p.currentStateIndex === p.states.length - 1
         const progress = 1 - p.currentStateIndex / Math.max(1, p.states.length - 1)
+        const currentState = p.states[p.currentStateIndex] ?? p.states.at(-1) ?? ''
 
         let statusClass = 'param-good'
         if (progress <= 0.33) statusClass = 'param-bad'
@@ -80,7 +81,7 @@ function ParameterBoard({
           <div
             key={p.name}
             className={`parameter-card ${p.justMoved ? 'param-pulse' : ''} ${atWorst ? 'param-shake' : ''}`}
-            aria-label={strings.parameterStatusAria(p.name, p.states[p.currentStateIndex])}
+            aria-label={strings.parameterStatusAria(p.name, currentState)}
           >
             <div className={`parameter-meter ${statusClass}`}>
               <ParameterIcon archetype={p.archetype} />
@@ -89,7 +90,7 @@ function ParameterBoard({
               <div className="param-header">
                 <span className="param-name">{p.name}</span>
                 <span className={`param-state-text ${statusClass}`}>
-                  {p.states[p.currentStateIndex]}
+                  {currentState}
                 </span>
               </div>
               <div className="param-bar-wrap" aria-hidden="true">
@@ -122,6 +123,7 @@ function ParameterToast({
       const timer = setTimeout(() => setActiveEvents([]), 5600)
       return () => clearTimeout(timer)
     }
+    return undefined
   }, [events])
 
   if (activeEvents.length === 0) return null

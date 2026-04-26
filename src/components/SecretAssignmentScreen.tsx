@@ -141,7 +141,7 @@ export function SecretAssignmentScreen() {
               {strings.secretsHandoffMeta(index + 1, roles.length)}
             </span>
             <button
-              onClick={onRememberAndPass}
+              onClick={() => void onRememberAndPass()}
               disabled={isLoading}
               className="btn-primary secret-primary-action"
               aria-label={isLoading ? strings.loading : nextButtonLabel}

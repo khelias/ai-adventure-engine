@@ -27,7 +27,12 @@ function shuffle<T>(xs: T[]): T[] {
   const out = [...xs]
   for (let i = out.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[out[i], out[j]] = [out[j], out[i]]
+    const current = out[i]
+    const swap = out[j]
+    if (current !== undefined && swap !== undefined) {
+      out[i] = swap
+      out[j] = current
+    }
   }
   return out
 }
@@ -45,7 +50,9 @@ function pickArchetypes(n: number): SecretArchetype[] {
   const out = combined.slice(0, n)
 
   // Fill if we have more players than the total pool (unlikely)
-  while (out.length < n) out.push(ARCHETYPE_POOL[Math.floor(Math.random() * ARCHETYPE_POOL.length)])
+  while (out.length < n) {
+    out.push(ARCHETYPE_POOL[Math.floor(Math.random() * ARCHETYPE_POOL.length)] ?? 'survivor')
+  }
 
   return shuffle(out)
 }
@@ -55,10 +62,11 @@ export function assignSecrets(roles: Role[], parameters: Parameter[]): Secret[] 
   const goalParameters = secretEligibleParameters(parameters)
   const archetypes = pickArchetypes(roles.length)
   return roles.map((role, i) => {
-    const archetype = archetypes[i]
+    const archetype = archetypes[i] ?? 'survivor'
     const secret: Secret = { ownerRoleId: role.id, archetype }
     if (archetype === 'keeper' || archetype === 'sacrificer') {
-      const chosen = goalParameters[Math.floor(Math.random() * goalParameters.length)]
+      const chosen = goalParameters[Math.floor(Math.random() * goalParameters.length)] ?? goalParameters[0]
+      if (!chosen) return secret
       secret.paramName = chosen.name
     }
     return secret

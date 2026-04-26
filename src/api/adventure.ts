@@ -8,7 +8,16 @@ const API_URL = '/adventure/api/generate'
 // src/game/prompts/schemas.ts.
 export type JsonSchema = Record<string, unknown>
 
-const secret = import.meta.env.VITE_API_SECRET || ''
+const secret = import.meta.env.VITE_API_SECRET ?? ''
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object'
+}
+
+function errorMessageFromPayload(value: unknown): string | null {
+  if (!isRecord(value) || typeof value.error !== 'string') return null
+  return value.error
+}
 
 async function generateSignature(payloadStr: string): Promise<string> {
   if (!secret) return ''
@@ -55,14 +64,14 @@ export async function callAI<T = unknown>(
   })
 
   if (!response.ok) {
-    const errorData = await response
+    const errorData: unknown = await response
       .json()
       .catch(() => ({ error: 'Invalid JSON response from server' }))
-    throw new Error(errorData.error || `Request failed with status ${response.status}`)
+    throw new Error(errorMessageFromPayload(errorData) ?? `Request failed with status ${response.status}`)
   }
 
-  const result = await response.json()
-  if (!result || typeof result.data !== 'object' || result.data === null) {
+  const result: unknown = await response.json()
+  if (!isRecord(result) || !isRecord(result.data)) {
     throw new Error('Proxy returned an invalid or empty response structure.')
   }
   return result.data as T

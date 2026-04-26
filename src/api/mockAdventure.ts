@@ -281,8 +281,7 @@ function parseTurn(prompt: string) {
 
 function parseParameterNames(prompt: string, language: Language): string[] {
   const matches = [...prompt.matchAll(/- \*\*([^*]+)\*\*: "[^"]+"/g)]
-    .map((match) => match[1])
-    .filter(Boolean)
+    .flatMap((match) => match[1] ? [match[1]] : [])
   if (matches.length >= 3) return matches.slice(0, 3)
   return (language === 'et' ? ET_PARAMETERS : EN_PARAMETERS).map((p) => p.name)
 }
@@ -294,9 +293,10 @@ function parseChoiceText(prompt: string, language: Language): string {
 }
 
 function makeChoices(language: Language, params: string[], currentTurn: number) {
-  const p0 = params[0]
-  const p1 = params[1]
-  const p2 = params[2]
+  const fallbackParams = (language === 'et' ? ET_PARAMETERS : EN_PARAMETERS).map((p) => p.name)
+  const p0 = params[0] ?? fallbackParams[0] ?? 'First parameter'
+  const p1 = params[1] ?? fallbackParams[1] ?? p0
+  const p2 = params[2] ?? fallbackParams[2] ?? p1
   const cycle = currentTurn % 3
 
   if (language === 'et') {
@@ -418,12 +418,12 @@ function mockTurnResponse(prompt: string, language: Language) {
       }
 }
 
-export async function callMockAI<T>({
+export function callMockAI<T>({
   prompt,
   schema,
   systemPrompt,
   language,
-}: MockCallArgs): Promise<T> {
+}: MockCallArgs): T {
   const resolvedLanguage = inferLanguage({ prompt, schema, systemPrompt, language })
   const kind = schemaKind(schema)
 

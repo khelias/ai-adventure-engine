@@ -95,7 +95,7 @@ export function RoleAssignmentScreen() {
       </div>
 
       <button
-        onClick={prepareSecretsAndTransition}
+        onClick={() => void prepareSecretsAndTransition()}
         disabled={isLoading}
         className="btn-primary cast-start"
         aria-label={isLoading ? strings.loading : strings.startGameBtn}

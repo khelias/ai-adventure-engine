@@ -92,6 +92,10 @@ function eventSeverity(p: Parameter): ParameterEvent['severity'] {
   return 'good'
 }
 
+function parameterState(p: Parameter, index = p.currentStateIndex): string {
+  return p.states[index] ?? p.states.at(-1) ?? ''
+}
+
 function fallbackConsequenceText(args: {
   language: Language
   parameterName: string
@@ -131,11 +135,11 @@ function buildParameterEvents(args: {
       }
       const direction: ParameterEvent['direction'] =
         after.currentStateIndex < before.currentStateIndex ? 'improved' : 'worsened'
-      const toState = after.states[after.currentStateIndex]
+      const toState = parameterState(after)
       return {
         parameterName: after.name,
         change: change.change,
-        fromState: before.states[before.currentStateIndex],
+        fromState: parameterState(before),
         toState,
         direction,
         severity: eventSeverity(after),
@@ -485,6 +489,9 @@ async function narrateUnrecoverableEnd(args: {
   useGameStore.setState({ parameters, roles })
 
   const recentPlusLast = [...store.recentScenes, lastScene].slice(-3)
+  const firstBroken = findBrokenParameters(parameters)[0] ?? parameters[0]
+  const fallbackParamName = firstBroken?.name ?? strings.parametersTitle
+  const fallbackWorstState = firstBroken ? parameterState(firstBroken, firstBroken.states.length - 1) : ''
 
   try {
     const { system, user } = turnPrompt({
@@ -535,23 +542,16 @@ async function narrateUnrecoverableEnd(args: {
     store.setGameOver(
       'parametric',
       strings.endParametric,
-      endResponse.gameOverText ||
-        strings.endParametricText(
-          findBrokenParameters(parameters)[0].name,
-          findBrokenParameters(parameters)[0].states[
-            findBrokenParameters(parameters)[0].states.length - 1
-          ],
-        ),
+      endResponse.gameOverText || strings.endParametricText(fallbackParamName, fallbackWorstState),
     )
   } catch {
     // Fallback: hardcoded text (used to be the only path)
-    const first = findBrokenParameters(parameters)[0]
     store.setGameOver(
       'parametric',
       strings.endParametric,
       strings.endParametricText(
-        first.name,
-        first.states[first.states.length - 1],
+        fallbackParamName,
+        fallbackWorstState,
       ),
     )
   }

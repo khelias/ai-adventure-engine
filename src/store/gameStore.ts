@@ -90,13 +90,13 @@ interface GameState {
 }
 
 interface GameActions {
-  setSetting<K extends keyof Settings>(key: K, value: Settings[K]): void
-  setScreen(screen: Screen): void
-  setAvailableStories(stories: Story[]): void
-  initStory(story: Story): void
-  setRoleName(index: number, name: string): void
-  startGame(): void
-  setTurnResult(payload: {
+  setSetting<K extends keyof Settings>(this: void, key: K, value: Settings[K]): void
+  setScreen(this: void, screen: Screen): void
+  setAvailableStories(this: void, stories: Story[]): void
+  initStory(this: void, story: Story): void
+  setRoleName(this: void, index: number, name: string): void
+  startGame(this: void): void
+  setTurnResult(this: void, payload: {
     sceneText: string
     choices: Choice[]
     parameters: Parameter[]
@@ -104,14 +104,14 @@ interface GameActions {
     currentTurn: number
     parameterEvents?: ParameterEvent[]
   }): void
-  setGameOver(kind: GameOverKind, title: string, text: string): void
-  pushFinalScene(scene: string): void
-  appendTurnRecord(record: TurnRecord): void
-  assignSecrets(): void
-  scoreSecrets(): void
-  setLoading(loading: boolean): void
-  setError(error: string | null): void
-  reset(): void
+  setGameOver(this: void, kind: GameOverKind, title: string, text: string): void
+  pushFinalScene(this: void, scene: string): void
+  appendTurnRecord(this: void, record: TurnRecord): void
+  assignSecrets(this: void): void
+  scoreSecrets(this: void): void
+  setLoading(this: void, loading: boolean): void
+  setError(this: void, error: string | null): void
+  reset(this: void): void
 }
 
 const initialGameSlice = {

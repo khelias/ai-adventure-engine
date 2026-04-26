@@ -67,7 +67,7 @@ export function GameOverScreen() {
                 <div key={parameter.name} className="final-parameter">
                   <span className="final-parameter__name">{parameter.name}</span>
                   <span className="final-parameter__state">
-                    {parameter.states[parameter.currentStateIndex]}
+                    {parameter.states[parameter.currentStateIndex] ?? parameter.states.at(-1) ?? ''}
                   </span>
                 </div>
               ))}
@@ -146,7 +146,7 @@ export function GameOverScreen() {
             <div className="story-tools__rule" />
             <button
               type="button"
-              onClick={copyToClipboard}
+              onClick={() => void copyToClipboard()}
               className={`btn-ghost btn-ghost--caps ${copied ? 'is-copied' : ''}`}
             >
               {copied ? strings.copiedMsg : strings.copyStoryBtn}

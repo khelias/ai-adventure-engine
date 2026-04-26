@@ -139,6 +139,9 @@ npm run schema:hashes
 node --check proxy/server.js
 ```
 
+`npm run lint` uses type-aware TypeScript rules, and `npm run build` runs the
+strict app and Node TypeScript configs.
+
 For gameplay quality, use the headless runner:
 
 ```bash

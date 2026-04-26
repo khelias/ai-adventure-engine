@@ -12,7 +12,9 @@ interface GenreOption {
   icon: ReactNode
 }
 
-const GENRES: GenreOption[] = [
+type NonEmptyArray<T> = [T, ...T[]]
+
+const GENRES: NonEmptyArray<GenreOption> = [
   {
     value: 'Zombies',
     labelKey: 'genreZombies',
@@ -105,12 +107,16 @@ export function SetupScreen() {
   const swipeStartX = useRef<number | null>(null)
 
   const handleSwipeStart = (e: React.TouchEvent) => {
-    swipeStartX.current = e.touches[0].clientX
+    const touch = e.touches[0]
+    if (!touch) return
+    swipeStartX.current = touch.clientX
   }
 
   const handleSwipeEnd = (e: React.TouchEvent) => {
     if (swipeStartX.current === null) return
-    const dx = e.changedTouches[0].clientX - swipeStartX.current
+    const touch = e.changedTouches[0]
+    if (!touch) return
+    const dx = touch.clientX - swipeStartX.current
     swipeStartX.current = null
     if (Math.abs(dx) < 40) return
     selectGenreByOffset(dx < 0 ? 1 : -1)
@@ -144,7 +150,7 @@ export function SetupScreen() {
     const currentIdx = GENRES.findIndex((g) => g.value === genre)
     const base = currentIdx < 0 ? 0 : currentIdx
     const nextIdx = (base + offset + GENRES.length) % GENRES.length
-    setSetting('genre', GENRES[nextIdx].value)
+    setSetting('genre', (GENRES[nextIdx] ?? GENRES[0]).value)
   }
 
   return (
@@ -469,7 +475,7 @@ export function SetupScreen() {
             <button
               type="button"
               className={`btn-begin${!isLoading ? ' ready' : ''}`}
-              onClick={() => generateStories()}
+              onClick={() => void generateStories()}
               disabled={isLoading}
               aria-label={isLoading ? strings.loading : strings.generateStoryBtn}
             >
