@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test'
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:5173'
 const shouldStartServer = !process.env.PLAYWRIGHT_BASE_URL
-const browserChannel = process.env.PLAYWRIGHT_BROWSER_CHANNEL ?? 'chrome'
+const browserChannel = process.env.PLAYWRIGHT_BROWSER_CHANNEL
 
 export default defineConfig({
   testDir: './tests',
@@ -19,7 +19,7 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL,
-    channel: browserChannel,
+    ...(browserChannel ? { channel: browserChannel } : {}),
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
   },
