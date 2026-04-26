@@ -68,7 +68,13 @@ async function expectNoModelRequests(requests: string[], testInfo: TestInfo) {
 }
 
 async function gotoFreshSetup(page: Page) {
-  await page.addInitScript(() => window.localStorage.clear())
+  await page.addInitScript(() => {
+    window.localStorage.clear()
+    window.localStorage.setItem(
+      'khe.analyticsConsent.v1',
+      JSON.stringify({ value: 'denied', updatedAt: '2026-04-26T00:00:00.000Z' }),
+    )
+  })
   await page.goto('/?lang=et')
   await page.addStyleTag({ content: STABLE_RENDER_CSS })
   await expect(page.getByRole('heading', { name: 'Vali seikluse suund' })).toBeVisible()
