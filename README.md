@@ -134,13 +134,16 @@ Before shipping prompt, contract, or proxy changes:
 ```bash
 npm run lint
 npm run build
+npm run test:unit
 npm run ui:smoke
 npm run schema:hashes
 node --check proxy/server.js
 ```
 
 `npm run lint` uses type-aware TypeScript rules, and `npm run build` runs the
-strict app and Node TypeScript configs.
+strict app and Node TypeScript configs. `npm run test:unit` uses Node 24's
+native `node:test` runner through the existing `tsx` loader for deterministic
+engine, secret-goal, prompt, and schema checks.
 
 For gameplay quality, use the headless runner:
 

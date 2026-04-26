@@ -34,6 +34,7 @@ jobs:
           fi
           npm run lint
           npm run build
+          npm run test:unit
           npm run ui:smoke
           npm run schema:hashes
           node --check proxy/server.js
