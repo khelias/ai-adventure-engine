@@ -1,0 +1,48 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "labels": ["dependencies"],
+  "timezone": "Europe/Tallinn",
+  "schedule": ["every weekend"],
+  "dependencyDashboard": true,
+  "prConcurrentLimit": 5,
+  "pinDigests": true,
+  "packageRules": [
+    {
+      "description": "Major updates need manual review",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "labels": ["dependencies", "breaking"]
+    },
+    {
+      "description": "Automerge npm patch updates for stable packages",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["patch"],
+      "matchCurrentVersion": ">= 1.0.0",
+      "automerge": true
+    },
+    {
+      "description": "Automerge npm dev dependency minor updates for stable packages",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor"],
+      "matchCurrentVersion": ">= 1.0.0",
+      "automerge": true
+    },
+    {
+      "description": "Automerge GitHub Actions non-major updates",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
+    {
+      "description": "Automerge digest and pin updates",
+      "matchUpdateTypes": ["digest", "pin"],
+      "automerge": true
+    }
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  }
+}
