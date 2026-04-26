@@ -1,5 +1,8 @@
+import { useEffect } from 'react'
 import { useGameStore } from './store/gameStore'
 import { LangToggle } from './components/LangToggle'
+import { translations } from './i18n/translations'
+import { hrefWithLanguage, persistLanguagePreference } from './i18n/language'
 import { SetupScreen } from './components/SetupScreen'
 import { StoryChoiceScreen } from './components/StoryChoiceScreen'
 import { RoleAssignmentScreen } from './components/RoleAssignmentScreen'
@@ -9,36 +12,33 @@ import { GameOverScreen } from './components/GameOverScreen'
 
 export default function App() {
   const screen = useGameStore((s) => s.screen)
+  const language = useGameStore((s) => s.settings.language)
+  const strings = translations[language]
   const contentClassName =
     screen === 'game' || screen === 'gameOver'
-      ? 'w-full max-w-2xl'
-      : 'w-full max-w-3xl'
+      ? 'app-content app-content--play'
+      : 'app-content'
+  const homeHref = hrefWithLanguage('/', language)
+
+  useEffect(() => {
+    persistLanguagePreference(language, { syncUrl: false })
+    document.title = strings.appTitle
+  }, [language, strings.appTitle])
 
   return (
-    <div className="min-h-dvh flex flex-col">
-      <header
-        className="flex justify-between items-center px-4 sm:px-6 py-3"
-        style={{ borderBottom: '1px solid var(--line)' }}
-      >
+    <div className="app-shell">
+      <header className="app-header">
         <a
-          href="/"
-          style={{
-            fontSize: '0.6875rem',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'var(--text-muted)',
-            textDecoration: 'none',
-            transition: 'color 0.15s',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-dim)')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+          href={homeHref}
+          className="app-home-link"
         >
-          ← Games
+          <span aria-hidden="true">←</span>
+          <span>{strings.gamesHomeLink}</span>
         </a>
-        {screen === 'setup' && <LangToggle />}
+        <LangToggle />
       </header>
 
-      <main className="flex-1 flex justify-center px-4 sm:px-5 py-6 sm:py-8">
+      <main className={screen === 'setup' ? 'app-main app-main--setup' : 'app-main'}>
         {screen === 'setup' ? (
           <SetupScreen />
         ) : (

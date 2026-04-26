@@ -2,6 +2,10 @@ import type { Language } from '../game/types'
 
 interface StringTable {
   appTitle: string
+  gamesHomeLink: string
+  languageToggleLabel: string
+  languageEstonian: string
+  languageEnglish: string
   playerCountLabel: string
   playerCountQuestion: string
   durationQuestion: string
@@ -75,6 +79,7 @@ interface StringTable {
   providerLabel: string
   providerClaude: string
   providerGemini: string
+  providerMock: string
   generateStoryBtn: string
   storyChoiceTitle: string
   regenerateBtn: string
@@ -164,6 +169,10 @@ interface StringTable {
 export const translations: Record<Language, StringTable> = {
   et: {
     appTitle: 'AI Seiklusmootor',
+    gamesHomeLink: 'Mängud',
+    languageToggleLabel: 'Keel',
+    languageEstonian: 'Eesti',
+    languageEnglish: 'English',
     playerCountLabel: 'Mängijate arv:',
     playerCountQuestion: 'Mängijate arv',
     durationQuestion: 'Mängu kestus',
@@ -248,6 +257,7 @@ export const translations: Record<Language, StringTable> = {
     providerLabel: 'AI mudel',
     providerClaude: 'Claude',
     providerGemini: 'Gemini',
+    providerMock: 'Mock',
     generateStoryBtn: 'Koosta seiklus →',
     storyChoiceTitle: 'Teie seiklus',
     regenerateBtn: 'Genereeri uus',
@@ -355,6 +365,10 @@ export const translations: Record<Language, StringTable> = {
   },
   en: {
     appTitle: 'AI Adventure Engine',
+    gamesHomeLink: 'Games',
+    languageToggleLabel: 'Language',
+    languageEstonian: 'Eesti',
+    languageEnglish: 'English',
     playerCountLabel: 'Number of players',
     playerCountQuestion: 'Number of players',
     durationQuestion: 'Game length',
@@ -439,6 +453,7 @@ export const translations: Record<Language, StringTable> = {
     providerLabel: 'AI model',
     providerClaude: 'Claude',
     providerGemini: 'Gemini',
+    providerMock: 'Mock',
     generateStoryBtn: 'Start game →',
     storyChoiceTitle: 'Your adventure',
     regenerateBtn: 'Regenerate',

@@ -115,7 +115,7 @@ export function StoryChoiceScreen() {
               className="input-page resize-none"
               autoFocus
             />
-            <div className="flex gap-3 items-center">
+            <div className="custom-premise-actions">
               <button
                 onClick={() => generateCustomStory(customText)}
                 disabled={isLoading || !customText.trim()}

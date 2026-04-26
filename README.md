@@ -98,6 +98,11 @@ The dev build proxies `/adventure/api/` to the production endpoint by default.
 For local or live-proxy smoke tests, the frontend and proxy HMAC secrets must
 match.
 
+For UI testing without spending model credits, open the setup screen's `AI`
+panel and choose `Mock`. The mock provider runs entirely in the browser API
+layer, returns the same story/turn/sequel response shapes as the live providers,
+and supports a long six-player flow for layout and pass-the-phone testing.
+
 One-off signed smoke test against the live proxy:
 
 ```bash

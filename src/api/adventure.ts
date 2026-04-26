@@ -1,4 +1,5 @@
 import type { Language, Provider } from '../game/types'
+import { callMockAI } from './mockAdventure'
 
 const API_URL = '/adventure/api/generate'
 
@@ -32,6 +33,10 @@ export async function callAI<T = unknown>(
   systemPrompt?: string,
   language?: Language,
 ): Promise<T> {
+  if (provider === 'mock') {
+    return callMockAI<T>({ prompt, schema, systemPrompt, language })
+  }
+
   const body: Record<string, unknown> = { prompt, schema, provider }
   if (systemPrompt) body.systemPrompt = systemPrompt
   if (language) body.language = language

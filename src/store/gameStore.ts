@@ -13,6 +13,7 @@ import type {
 } from '../game/types'
 import { durationToMaxTurns } from '../game/engine'
 import { assignSecrets as assignSecretsImpl, evaluateAll } from '../game/secrets'
+import { loadInitialLanguage, persistLanguagePreference } from '../i18n/language'
 import {
   newTranscript,
   persistTranscript,
@@ -25,11 +26,11 @@ const PROVIDER_STORAGE_KEY = 'adventureProvider'
 function loadStoredProvider(): Settings['provider'] {
   if (typeof window === 'undefined') return 'gemini'
   const stored = window.localStorage.getItem(PROVIDER_STORAGE_KEY)
-  return stored === 'claude' || stored === 'gemini' ? stored : 'gemini'
+  return stored === 'claude' || stored === 'gemini' || stored === 'mock' ? stored : 'gemini'
 }
 
 const initialSettings: Settings = {
-  language: 'et',
+  language: loadInitialLanguage(),
   provider: loadStoredProvider(),
   players: 3,
   genre: 'Zombies',
@@ -143,6 +144,9 @@ export const useGameStore = create<GameState & GameActions>()((set) => ({
 
   setSetting: (key, value) =>
     set((state) => {
+      if (key === 'language') {
+        persistLanguagePreference(value as Settings['language'])
+      }
       if (key === 'provider' && typeof window !== 'undefined') {
         window.localStorage.setItem(PROVIDER_STORAGE_KEY, value as string)
       }

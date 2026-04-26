@@ -1,5 +1,5 @@
 export type Language = 'et' | 'en'
-export type Provider = 'claude' | 'gemini'
+export type Provider = 'claude' | 'gemini' | 'mock'
 export type Duration = 'Short' | 'Medium' | 'Long'
 export type Genre =
   | 'Zombies'

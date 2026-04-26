@@ -1,28 +1,21 @@
 import { useGameStore } from '../store/gameStore'
+import { translations } from '../i18n/translations'
 
 export function LangToggle() {
   const language = useGameStore((s) => s.settings.language)
   const setSetting = useGameStore((s) => s.setSetting)
+  const strings = translations[language]
 
   return (
-    <div className="flex gap-1">
+    <div className="lang-toggle" role="group" aria-label={strings.languageToggleLabel}>
       {(['et', 'en'] as const).map((lang) => (
         <button
           key={lang}
+          type="button"
           onClick={() => setSetting('language', lang)}
-          style={{
-            padding: '3px 10px',
-            fontSize: '0.6875rem',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            fontWeight: language === lang ? 600 : 400,
-            borderRadius: '3px',
-            border: `1px solid ${language === lang ? 'var(--accent)' : 'var(--line-strong)'}`,
-            background: language === lang ? 'var(--accent-deep)' : 'transparent',
-            color: language === lang ? '#f5f3ff' : 'var(--text-muted)',
-            transition: 'all 0.15s',
-            cursor: 'pointer',
-          }}
+          className={`lang-toggle__btn${language === lang ? ' active' : ''}`}
+          aria-pressed={language === lang}
+          title={lang === 'et' ? strings.languageEstonian : strings.languageEnglish}
         >
           {lang.toUpperCase()}
         </button>

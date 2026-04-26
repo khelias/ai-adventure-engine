@@ -378,8 +378,8 @@ export function GameScreen() {
                         }
                       }}
                     />
-                    <div className="flex gap-3 items-center">
-                      <button onClick={onCustomSubmit} disabled={!customText.trim()} className="btn-primary text-xs py-1.5 px-3">
+                    <div className="custom-choice-actions">
+                      <button onClick={onCustomSubmit} disabled={!customText.trim()} className="btn-primary custom-choice-submit">
                         {strings.customChoiceSubmit}
                       </button>
                       <button

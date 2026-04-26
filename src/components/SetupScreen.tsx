@@ -90,6 +90,7 @@ const DURATION_OPTIONS: { value: Duration; labelKey: keyof typeof translations.e
 
 const SETUP_STEPS = [1, 2, 3, 4] as const
 type SetupStep = typeof SETUP_STEPS[number]
+const PROVIDER_OPTIONS = ['claude', 'gemini', 'mock'] as const
 
 export function SetupScreen() {
   const settings = useGameStore((s) => s.settings)
@@ -493,14 +494,21 @@ export function SetupScreen() {
           <div className="model-corner__panel">
             <span className="ctx-label">{strings.providerLabel}</span>
             <div className="seg-group ctx-provider-options">
-              {(['claude', 'gemini'] as const).map((p) => (
+              {PROVIDER_OPTIONS.map((p) => (
                 <button
                   key={p}
                   type="button"
                   className={`seg-btn${settings.provider === p ? ' active' : ''}`}
-                  onClick={() => setSetting('provider', p)}
+                  onClick={() => {
+                    setSetting('provider', p)
+                    setShowAdvanced(false)
+                  }}
                 >
-                  {p === 'claude' ? strings.providerClaude : strings.providerGemini}
+                  {p === 'claude'
+                    ? strings.providerClaude
+                    : p === 'gemini'
+                      ? strings.providerGemini
+                      : strings.providerMock}
                 </button>
               ))}
             </div>
