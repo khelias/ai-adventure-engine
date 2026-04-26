@@ -21,7 +21,8 @@ adventure proxy. The frontend never calls provider APIs directly.
 - `schema`: one of the canonical schemas exported from
   `src/game/prompts/schemas.ts`.
 - `provider`: defaults to `gemini`; `claude` is an opt-in quality mode.
-- `systemPrompt`: used for turn prompts and Claude tool calls.
+- `systemPrompt`: accepted only for `turnSchema` requests. It is used for turn
+  prompts and Claude tool calls.
 - `language`: enables the Estonian editor pass when set to `et`.
 
 Requests may also carry `x-adventure-signature`, an HMAC over the raw body.
@@ -37,6 +38,32 @@ The proxy currently applies these checks before provider calls:
 2. If `API_SECRET` is set, the HMAC signature must match.
 3. `schema` must match one of the exact canonical schema hashes below.
 4. `provider` must be `gemini` or `claude`.
+5. `prompt` and `systemPrompt` must fit the schema-specific input budget.
+6. The caller must fit the in-memory per-client request/token budget.
+
+## Input and usage budgets
+
+The proxy rejects oversized game-shaped requests before provider calls. Token
+counts are approximated as 4 characters per token for preflight checks; provider
+telemetry replaces the estimate after successful calls when available.
+
+| Schema | Prompt chars | System prompt chars | Total chars | Approx tokens |
+|---|---:|---:|---:|---:|
+| `storyGenerationSchema` | 14,000 | 0 | 14,000 | 3,500 |
+| `customStorySchema` | 16,000 | 0 | 16,000 | 4,000 |
+| `sequelSchema` | 18,000 | 0 | 18,000 | 4,500 |
+| `turnSchema` | 18,000 | 24,000 | 38,000 | 9,500 |
+
+Per-client usage is keyed from `CF-Connecting-IP`, then `X-Forwarded-For`,
+then `X-Real-IP`, then the socket address. Defaults:
+
+- 80 accepted provider attempts per hour
+- 300,000 approximate/actual provider tokens per hour
+- 1,200,000 approximate/actual provider tokens per day
+
+These counters are an in-memory cost backstop. They reset when the proxy
+restarts and can be tuned with `PROXY_MAX_REQUESTS_PER_HOUR`,
+`PROXY_MAX_TOKENS_PER_HOUR`, and `PROXY_MAX_TOKENS_PER_DAY`.
 
 The legacy `/gemini` passthrough endpoint has been removed. It bypassed the
 HMAC and exact schema guard, so old cached frontends must refresh to use

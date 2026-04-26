@@ -195,13 +195,17 @@ Controls:
 2. origin/referer check in the proxy
 3. HMAC request signature when `API_SECRET` is configured
 4. exact schema hash allowlist
-5. provider API keys stored only in server-side environment
+5. schema-specific prompt/system-prompt input budgets before provider calls
+6. in-memory per-client hourly/daily request and token budgets
+7. provider API keys stored only in server-side environment
 
 Limitations:
 
 - `VITE_API_SECRET` is bundled into the browser, so HMAC is a friction layer,
   not a true secret.
 - Origin can be spoofed by a determined caller.
+- Per-client usage budgets are in-memory process counters, not durable billing
+  controls. They are meant to cap repeated valid public calls between deploys.
 - The acceptable threat model is "public game endpoint with bounded game-shaped
   calls", not "untrusted general-purpose AI gateway".
 

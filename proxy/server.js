@@ -11,6 +11,25 @@ const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
 const DEFAULT_PROVIDER = process.env.DEFAULT_PROVIDER || 'gemini';
 const PORT = Number(process.env.PORT) || 3000;
 const UPSTREAM_TIMEOUT_MS = 115_000; // slightly under nginx proxy_read_timeout (120s)
+const APPROX_CHARS_PER_TOKEN = 4;
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+
+const INPUT_BUDGETS = {
+  default: { promptChars: 14_000, systemPromptChars: 0, totalChars: 14_000, approxTokens: 3_500 },
+  storyGenerationSchema: { promptChars: 14_000, systemPromptChars: 0, totalChars: 14_000, approxTokens: 3_500 },
+  customStorySchema: { promptChars: 16_000, systemPromptChars: 0, totalChars: 16_000, approxTokens: 4_000 },
+  sequelSchema: { promptChars: 18_000, systemPromptChars: 0, totalChars: 18_000, approxTokens: 4_500 },
+  turnSchema: { promptChars: 18_000, systemPromptChars: 24_000, totalChars: 38_000, approxTokens: 9_500 },
+};
+
+const USAGE_LIMITS = {
+  requestsPerHour: parsePositiveInt(process.env.PROXY_MAX_REQUESTS_PER_HOUR, 80),
+  tokensPerHour: parsePositiveInt(process.env.PROXY_MAX_TOKENS_PER_HOUR, 300_000),
+  tokensPerDay: parsePositiveInt(process.env.PROXY_MAX_TOKENS_PER_DAY, 1_200_000),
+};
+const usageByClient = new Map();
+let lastUsagePruneAt = 0;
 
 if (!GEMINI_API_KEY && !ANTHROPIC_API_KEY) {
   console.error('FATAL: at least one of GEMINI_API_KEY or ANTHROPIC_API_KEY must be set');
@@ -39,6 +58,11 @@ app.use(express.json({
 //    Filters casual curl abuse; real attackers can spoof but then they still
 //    hit the schema allowlist + per-IP rate limit in nginx.
 // 3. Rate limit: enforced by nginx (see nginx.conf) using CF-Connecting-IP.
+// 4. Input budgets: reject oversized prompts/system prompts before a provider
+//    call. The body limit is still 1 MB, but valid game prompts are far smaller.
+// 5. Per-client usage budgets: an in-memory hourly/daily token counter limits
+//    repeated valid calls from the same visitor/IP. This is a cost backstop,
+//    not a billing-grade quota system.
 //
 // Hashes are SHA-256 over a canonicalized JSON representation of the schema
 // object sent by the frontend. This is stricter than checking top-level keys:
@@ -86,6 +110,151 @@ function schemaLabel(schema) {
   return ALLOWED_SCHEMA_HASHES.get(schemaHash(schema)) || null;
 }
 
+function parsePositiveInt(value, fallback) {
+  const parsed = Number.parseInt(value || '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function estimateTokensForText(text) {
+  return Math.ceil((text || '').length / APPROX_CHARS_PER_TOKEN);
+}
+
+function promptBudgetFor(schemaName) {
+  return INPUT_BUDGETS[schemaName] || INPUT_BUDGETS.default;
+}
+
+function inputBudgetStats({ schemaName, prompt, systemPrompt, extraPrompt = '' }) {
+  const fullPrompt = prompt + extraPrompt;
+  const systemText = systemPrompt || '';
+  return {
+    budget: promptBudgetFor(schemaName),
+    received: {
+      promptChars: fullPrompt.length,
+      systemPromptChars: systemText.length,
+      totalChars: fullPrompt.length + systemText.length,
+      approxTokens: estimateTokensForText(fullPrompt) + estimateTokensForText(systemText),
+    },
+  };
+}
+
+function validateInputBudget(args) {
+  const stats = inputBudgetStats(args);
+  const over = [];
+  if (stats.received.promptChars > stats.budget.promptChars) {
+    over.push(`promptChars ${stats.received.promptChars}/${stats.budget.promptChars}`);
+  }
+  if (stats.received.systemPromptChars > stats.budget.systemPromptChars) {
+    over.push(`systemPromptChars ${stats.received.systemPromptChars}/${stats.budget.systemPromptChars}`);
+  }
+  if (stats.received.totalChars > stats.budget.totalChars) {
+    over.push(`totalChars ${stats.received.totalChars}/${stats.budget.totalChars}`);
+  }
+  if (stats.received.approxTokens > stats.budget.approxTokens) {
+    over.push(`approxTokens ${stats.received.approxTokens}/${stats.budget.approxTokens}`);
+  }
+  return over.length > 0 ? { ok: false, ...stats, over } : { ok: true, ...stats };
+}
+
+function budgetExceededError(validation) {
+  const err = new Error(`input budget exceeded: ${validation.over.join('; ')}`);
+  err.status = 413;
+  err.publicBody = {
+    error: 'Input budget exceeded',
+    details: validation.over,
+    budget: validation.budget,
+    received: validation.received,
+  };
+  return err;
+}
+
+function clientUsageKey(req) {
+  const cfIp = req.get('cf-connecting-ip');
+  if (cfIp) return `cf:${cfIp}`;
+  const forwarded = (req.get('x-forwarded-for') || '').split(',')[0].trim();
+  if (forwarded) return `xff:${forwarded}`;
+  const realIp = req.get('x-real-ip');
+  if (realIp) return `real:${realIp}`;
+  return `socket:${req.ip || req.socket?.remoteAddress || 'unknown'}`;
+}
+
+function pruneUsageBuckets(now) {
+  if (now - lastUsagePruneAt < 60_000) return;
+  lastUsagePruneAt = now;
+  for (const [key, bucket] of usageByClient.entries()) {
+    if (bucket.dayResetAt <= now) usageByClient.delete(key);
+  }
+}
+
+function usageBucketFor(key, now) {
+  let bucket = usageByClient.get(key);
+  if (!bucket || bucket.dayResetAt <= now) {
+    bucket = {
+      hourResetAt: now + HOUR_MS,
+      dayResetAt: now + DAY_MS,
+      hourRequests: 0,
+      dayRequests: 0,
+      hourTokens: 0,
+      dayTokens: 0,
+    };
+    usageByClient.set(key, bucket);
+  } else if (bucket.hourResetAt <= now) {
+    bucket.hourResetAt = now + HOUR_MS;
+    bucket.hourRequests = 0;
+    bucket.hourTokens = 0;
+  }
+  return bucket;
+}
+
+function reserveClientBudget(req, estimatedTokens) {
+  const now = Date.now();
+  pruneUsageBuckets(now);
+  const key = clientUsageKey(req);
+  const bucket = usageBucketFor(key, now);
+  const over = [];
+  if (bucket.hourRequests + 1 > USAGE_LIMITS.requestsPerHour) {
+    over.push(`requestsPerHour ${bucket.hourRequests + 1}/${USAGE_LIMITS.requestsPerHour}`);
+  }
+  if (bucket.hourTokens + estimatedTokens > USAGE_LIMITS.tokensPerHour) {
+    over.push(`tokensPerHour ${bucket.hourTokens + estimatedTokens}/${USAGE_LIMITS.tokensPerHour}`);
+  }
+  if (bucket.dayTokens + estimatedTokens > USAGE_LIMITS.tokensPerDay) {
+    over.push(`tokensPerDay ${bucket.dayTokens + estimatedTokens}/${USAGE_LIMITS.tokensPerDay}`);
+  }
+  if (over.length > 0) {
+    const err = new Error(`usage budget exceeded: ${over.join('; ')}`);
+    err.status = 429;
+    err.publicBody = {
+      error: 'Usage budget exceeded',
+      details: over,
+      limits: USAGE_LIMITS,
+    };
+    throw err;
+  }
+  bucket.hourRequests += 1;
+  bucket.dayRequests += 1;
+  bucket.hourTokens += estimatedTokens;
+  bucket.dayTokens += estimatedTokens;
+  return { key, estimatedTokens };
+}
+
+function tokenCountFromUsage(tokens) {
+  if (!tokens || typeof tokens !== 'object') return 0;
+  if (Number.isFinite(tokens.total) && tokens.total > 0) return Math.ceil(tokens.total);
+  return ['in', 'out', 'thoughts'].reduce((sum, key) => {
+    const value = tokens[key];
+    return Number.isFinite(value) && value > 0 ? sum + Math.ceil(value) : sum;
+  }, 0);
+}
+
+function adjustClientBudget(reservation, actualTokens) {
+  if (!reservation || !Number.isFinite(actualTokens) || actualTokens <= 0) return;
+  const bucket = usageByClient.get(reservation.key);
+  if (!bucket) return;
+  const delta = actualTokens - reservation.estimatedTokens;
+  bucket.hourTokens = Math.max(0, bucket.hourTokens + delta);
+  bucket.dayTokens = Math.max(0, bucket.dayTokens + delta);
+}
+
 // Allowed origins for the game UI. Localhost entries let `npm run dev`
 // and `npm run preview` hit the proxy during development.
 const ALLOWED_ORIGIN_PREFIXES = [
@@ -121,14 +290,23 @@ app.post('/generate', async (req, res) => {
     }
   }
   const { prompt, schema, provider = DEFAULT_PROVIDER, systemPrompt, language } = req.body || {};
-  if (typeof prompt !== 'string' || !prompt || typeof schema !== 'object' || !schema) {
+  if (typeof prompt !== 'string' || !prompt.trim() || typeof schema !== 'object' || !schema) {
     return res.status(400).json({ error: 'prompt (string) and schema (object) are required' });
+  }
+  if (typeof systemPrompt !== 'undefined' && typeof systemPrompt !== 'string') {
+    return res.status(400).json({ error: 'systemPrompt must be a string when provided' });
+  }
+  if (typeof language !== 'undefined' && language !== 'et' && language !== 'en') {
+    return res.status(400).json({ error: 'language must be et or en when provided' });
   }
   const knownSchema = schemaLabel(schema);
   if (!knownSchema) {
     return res.status(400).json({
       error: `schema is not in the allowlist${schemaFingerprint(schema) ? ` (${schemaFingerprint(schema)})` : ''}`,
     });
+  }
+  if (systemPrompt && knownSchema !== 'turnSchema') {
+    return res.status(400).json({ error: 'systemPrompt is only accepted for turnSchema requests' });
   }
   if (provider !== 'claude' && provider !== 'gemini') {
     return res.status(400).json({ error: `unknown provider: ${provider}` });
@@ -141,9 +319,22 @@ app.post('/generate', async (req, res) => {
     // tokens per turn. The ET_STYLE_GUIDE is still used in EDITOR_SYSTEM.
     const effectiveSystemPrompt = systemPrompt;
 
-    const callOnce = (extraPrompt) => provider === 'claude'
-      ? callClaude({ prompt: prompt + (extraPrompt || ''), schema, systemPrompt: effectiveSystemPrompt })
-      : callGemini({ prompt: prompt + (extraPrompt || ''), schema, systemPrompt: effectiveSystemPrompt });
+    const callOnce = async (extraPrompt = '') => {
+      const budget = validateInputBudget({
+        schemaName: knownSchema,
+        prompt,
+        systemPrompt: effectiveSystemPrompt,
+        extraPrompt,
+      });
+      if (!budget.ok) throw budgetExceededError(budget);
+      const reservation = reserveClientBudget(req, budget.received.approxTokens);
+      const fullPrompt = prompt + extraPrompt;
+      const result = provider === 'claude'
+        ? await callClaude({ prompt: fullPrompt, schema, systemPrompt: effectiveSystemPrompt })
+        : await callGemini({ prompt: fullPrompt, schema, systemPrompt: effectiveSystemPrompt });
+      adjustClientBudget(reservation, tokenCountFromUsage(result.tokens));
+      return result;
+    };
 
     let result = await callOnce();
 
@@ -269,7 +460,7 @@ app.post('/generate', async (req, res) => {
     }
     const status = err.status || 500;
     console.error(`proxy (${provider}):`, status, err.message || err);
-    res.status(status).json({ error: err.message || 'Proxy error' });
+    res.status(status).json(err.publicBody || { error: err.message || 'Proxy error' });
   }
 });
 
