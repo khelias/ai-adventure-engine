@@ -25,6 +25,10 @@ export default function App() {
     document.title = strings.appTitle
   }, [language, strings.appTitle])
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [screen])
+
   return (
     <div className="app-shell">
       <header className="app-header">

@@ -14,6 +14,10 @@ dist-ssr
 # Playtest transcripts (large, mostly one-off; copy a specific one manually if worth preserving)
 playtest-transcripts
 
+# Playwright runtime artifacts
+test-results
+playwright-report
+
 # Editor
 .vscode/*
 !.vscode/extensions.json

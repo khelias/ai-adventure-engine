@@ -103,6 +103,18 @@ panel and choose `Mock`. The mock provider runs entirely in the browser API
 layer, returns the same story/turn/sequel response shapes as the live providers,
 and supports a long six-player flow for layout and pass-the-phone testing.
 
+Repeat the same mock UI flow headlessly with Playwright:
+
+```bash
+npm run ui:smoke
+```
+
+Against an already-running Vite server:
+
+```bash
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:5182 npm run ui:smoke
+```
+
 One-off signed smoke test against the live proxy:
 
 ```bash
@@ -122,6 +134,7 @@ Before shipping prompt, contract, or proxy changes:
 ```bash
 npm run lint
 npm run build
+npm run ui:smoke
 npm run schema:hashes
 node --check proxy/server.js
 ```

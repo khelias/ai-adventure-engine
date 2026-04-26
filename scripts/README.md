@@ -72,6 +72,29 @@ At end: reason (narrative / parametric / maxTurns / api-error) and final paramet
 Story setup also logs each role's one-time ability and its generated
 parameter anchor, so ability drift is visible in transcripts.
 
+## Playwright UI smoke
+
+The UI smoke test is separate from the transcript runner:
+
+```bash
+npm run ui:smoke
+```
+
+It drives the real React app through the browser with the in-app `Mock`
+provider, covers the long six-player mobile flow, and compares visual baselines
+in `tests/__screenshots__`. To test an existing dev server, set
+`PLAYWRIGHT_BASE_URL`, for example:
+
+```bash
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:5182 npm run ui:smoke
+```
+
+Refresh baselines deliberately after intended UI changes:
+
+```bash
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:5182 npm run ui:smoke -- --update-snapshots
+```
+
 ## Cost
 
 Each turn is one Gemini or Claude API call. Gemini is the product default; Claude is for opt-in quality checks. Ballpark:
