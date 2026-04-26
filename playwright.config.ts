@@ -15,7 +15,7 @@ export default defineConfig({
       threshold: 0.18,
     },
   },
-  snapshotPathTemplate: '{testDir}/__screenshots__/{arg}{ext}',
+  snapshotPathTemplate: '{testDir}/__screenshots__/{platform}/{arg}{ext}',
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL,
