@@ -9,7 +9,6 @@ import type {
   Secret,
   Settings,
   Story,
-  Vibe,
 } from '../game/types'
 import { durationToMaxTurns } from '../game/engine'
 import { assignSecrets as assignSecretsImpl, evaluateAll } from '../game/secrets'
@@ -38,7 +37,7 @@ const initialSettings: Settings = {
   context: {
     location: '',
     playersDesc: '',
-    vibe: '' as Vibe,
+    vibe: '',
     insideJoke: '',
   },
 }
