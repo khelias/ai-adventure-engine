@@ -19,6 +19,7 @@ export default function App() {
       ? 'app-content app-content--play'
       : 'app-content'
   const homeHref = hrefWithLanguage('/', language)
+  const privacyHref = hrefWithLanguage('/privacy', language)
 
   useEffect(() => {
     persistLanguagePreference(language, { syncUrl: false })
@@ -55,6 +56,17 @@ export default function App() {
           </div>
         )}
       </main>
+
+      <footer className="adventure-footer">
+        <nav aria-label={strings.footerLinksLabel}>
+          <a href="https://github.com/khelias/ai-adventure-engine">GitHub</a>
+          <span aria-hidden="true">·</span>
+          <a href="https://www.linkedin.com/in/kaido-henrik-elias/">LinkedIn</a>
+          <span aria-hidden="true">·</span>
+          <a href={privacyHref}>{strings.footerPrivacyLink}</a>
+        </nav>
+        <span>{strings.footerHosting}</span>
+      </footer>
     </div>
   )
 }

@@ -1128,7 +1128,8 @@ button {
 
 .adventure-footer {
   width: 100%;
-  margin-top: 2.6rem;
+  margin-top: auto;
+  padding: 0 max(1rem, env(safe-area-inset-right)) calc(1.2rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
   display: grid;
   gap: 0.45rem;
   text-align: center;
@@ -2877,8 +2878,8 @@ button {
     width: min(15rem, calc(100vw - 2rem));
   }
   .adventure-footer {
-    margin-top: 2rem;
-    padding-inline: 0.5rem;
+    padding-right: max(0.875rem, env(safe-area-inset-right));
+    padding-left: max(0.875rem, env(safe-area-inset-left));
   }
   .adventure-footer nav {
     flex-wrap: wrap;
