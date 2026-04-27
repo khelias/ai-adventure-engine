@@ -173,7 +173,7 @@ interface StringTable {
 export const translations: Record<Language, StringTable> = {
   et: {
     appTitle: 'AI Seiklusmootor',
-    appHeaderTitle: 'AI Adventure',
+    appHeaderTitle: 'AI Seiklus',
     kheHomeAria: 'KHE Games avaleht',
     languageToggleLabel: 'Keel',
     languageEstonian: 'Eesti',
