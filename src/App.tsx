@@ -18,7 +18,7 @@ export default function App() {
     screen === 'game' || screen === 'gameOver'
       ? 'app-content app-content--play'
       : 'app-content'
-  const homeHref = hrefWithLanguage('/', language)
+  const homeHref = `https://khe.ee/?lang=${language}`
   const privacyHref = hrefWithLanguage('/privacy', language)
 
   useEffect(() => {
@@ -40,7 +40,8 @@ export default function App() {
               className="app-brand-link"
               aria-label={strings.kheHomeAria}
             >
-              KHE
+              <span>KHE</span>
+              <span className="app-brand-link__suffix">.ee</span>
             </a>
             <div className="app-header__context" aria-current="page">
               <span>KHE Games</span>

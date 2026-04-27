@@ -174,7 +174,7 @@ export const translations: Record<Language, StringTable> = {
   et: {
     appTitle: 'AI Seiklusmootor',
     appHeaderTitle: 'AI Seiklus',
-    kheHomeAria: 'KHE Games avaleht',
+    kheHomeAria: 'KHE.ee avaleht',
     languageToggleLabel: 'Keel',
     languageEstonian: 'Eesti',
     languageEnglish: 'English',
@@ -374,7 +374,7 @@ export const translations: Record<Language, StringTable> = {
   en: {
     appTitle: 'AI Adventure Engine',
     appHeaderTitle: 'AI Adventure',
-    kheHomeAria: 'KHE Games home',
+    kheHomeAria: 'KHE.ee home',
     languageToggleLabel: 'Language',
     languageEstonian: 'Eesti',
     languageEnglish: 'English',
