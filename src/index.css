@@ -159,15 +159,25 @@ button {
   position: sticky;
   top: 0;
   z-index: 50;
+  border-bottom: 1px solid var(--line);
+  background: rgba(10, 9, 19, 0.86);
+  backdrop-filter: blur(18px);
+}
+
+.app-header__inner {
+  width: 100%;
+  max-width: 48rem;
   min-height: 3.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  margin: 0 auto;
   padding: 0.45rem max(1rem, env(safe-area-inset-right)) 0.45rem max(1rem, env(safe-area-inset-left));
-  border-bottom: 1px solid var(--line);
-  background: rgba(10, 9, 19, 0.86);
-  backdrop-filter: blur(18px);
+}
+
+.app-header__inner--play {
+  max-width: 42rem;
 }
 
 .app-header__left {
@@ -2657,7 +2667,7 @@ button {
 }
 
 @media (max-width: 760px) {
-  .app-header {
+  .app-header__inner {
     min-height: 3.75rem;
     padding-top: 0.4rem;
     padding-bottom: 0.4rem;
