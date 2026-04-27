@@ -166,7 +166,7 @@ button {
 
 .app-header__inner {
   width: 100%;
-  max-width: 48rem;
+  max-width: 1180px;
   min-height: 3.5rem;
   display: flex;
   align-items: center;
@@ -174,10 +174,6 @@ button {
   gap: 1rem;
   margin: 0 auto;
   padding: 0.45rem max(1rem, env(safe-area-inset-right)) 0.45rem max(1rem, env(safe-area-inset-left));
-}
-
-.app-header__inner--play {
-  max-width: 42rem;
 }
 
 .app-header__left {

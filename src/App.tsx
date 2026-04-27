@@ -18,12 +18,8 @@ export default function App() {
     screen === 'game' || screen === 'gameOver'
       ? 'app-content app-content--play'
       : 'app-content'
-  const headerInnerClassName =
-    screen === 'game' || screen === 'gameOver'
-      ? 'app-header__inner app-header__inner--play'
-      : 'app-header__inner'
+  const homeHref = hrefWithLanguage('/', language)
   const privacyHref = hrefWithLanguage('/privacy', language)
-  const kheHref = `https://khe.ee/?lang=${language}`
 
   useEffect(() => {
     persistLanguagePreference(language, { syncUrl: false })
@@ -37,10 +33,10 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <div className={headerInnerClassName}>
+        <div className="app-header__inner">
           <div className="app-header__left">
             <a
-              href={kheHref}
+              href={homeHref}
               className="app-brand-link"
               aria-label={strings.kheHomeAria}
             >
