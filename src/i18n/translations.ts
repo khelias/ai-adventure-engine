@@ -2,6 +2,8 @@ import type { Language } from '../game/types'
 
 interface StringTable {
   appTitle: string
+  appHeaderTitle: string
+  kheHomeAria: string
   gamesHomeLink: string
   languageToggleLabel: string
   languageEstonian: string
@@ -172,6 +174,8 @@ interface StringTable {
 export const translations: Record<Language, StringTable> = {
   et: {
     appTitle: 'AI Seiklusmootor',
+    appHeaderTitle: 'AI Adventure',
+    kheHomeAria: 'KHE avaleht',
     gamesHomeLink: 'Mängud',
     languageToggleLabel: 'Keel',
     languageEstonian: 'Eesti',
@@ -371,6 +375,8 @@ export const translations: Record<Language, StringTable> = {
   },
   en: {
     appTitle: 'AI Adventure Engine',
+    appHeaderTitle: 'AI Adventure',
+    kheHomeAria: 'KHE home',
     gamesHomeLink: 'Games',
     languageToggleLabel: 'Language',
     languageEstonian: 'Eesti',

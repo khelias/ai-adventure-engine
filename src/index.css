@@ -170,6 +170,55 @@ button {
   backdrop-filter: blur(18px);
 }
 
+.app-header__left {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.app-header__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.app-brand-link {
+  min-width: 2.75rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--line-accent);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-dim);
+  font: 800 0.72rem/1 'Inter', system-ui;
+  letter-spacing: 0;
+  text-decoration: none;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.24);
+  transition: border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.app-brand-link:hover,
+.app-brand-link:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(165, 180, 252, 0.42);
+  color: var(--text);
+  outline: none;
+}
+
+.app-header__title {
+  overflow: hidden;
+  color: var(--text);
+  font: 760 0.9rem/1 'Inter', system-ui;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .app-home-link {
   min-height: 2.75rem;
   display: inline-flex;
@@ -2626,6 +2675,17 @@ button {
   .app-home-link {
     font-size: 0.7rem;
     letter-spacing: 0.1em;
+  }
+  .app-header__left {
+    gap: 0.55rem;
+  }
+  .app-brand-link {
+    min-width: 2.6rem;
+    height: 2.6rem;
+    font-size: 0.68rem;
+  }
+  .app-header__title {
+    display: none;
   }
   .lang-toggle__btn {
     min-width: 2.65rem;

@@ -20,6 +20,7 @@ export default function App() {
       : 'app-content'
   const homeHref = hrefWithLanguage('/', language)
   const privacyHref = hrefWithLanguage('/privacy', language)
+  const kheHref = `https://khe.ee/?lang=${language}`
 
   useEffect(() => {
     persistLanguagePreference(language, { syncUrl: false })
@@ -33,14 +34,26 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <a
-          href={homeHref}
-          className="app-home-link"
-        >
-          <span aria-hidden="true">←</span>
-          <span>{strings.gamesHomeLink}</span>
-        </a>
-        <LangToggle />
+        <div className="app-header__left">
+          <a
+            href={kheHref}
+            className="app-brand-link"
+            aria-label={strings.kheHomeAria}
+          >
+            KHE
+          </a>
+          <a
+            href={homeHref}
+            className="app-home-link"
+          >
+            <span aria-hidden="true">←</span>
+            <span>{strings.gamesHomeLink}</span>
+          </a>
+          <span className="app-header__title">{strings.appHeaderTitle}</span>
+        </div>
+        <div className="app-header__actions">
+          <LangToggle />
+        </div>
       </header>
 
       <main className={screen === 'setup' ? 'app-main app-main--setup' : 'app-main'}>
