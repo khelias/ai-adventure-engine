@@ -42,7 +42,10 @@ export default function App() {
             >
               KHE
             </a>
-            <span className="app-header__title">{strings.appHeaderTitle}</span>
+            <div className="app-header__context" aria-current="page">
+              <span>KHE Games</span>
+              <strong>{strings.appHeaderTitle}</strong>
+            </div>
           </div>
           <div className="app-header__actions">
             <LangToggle />

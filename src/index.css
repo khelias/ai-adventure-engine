@@ -216,7 +216,23 @@ button {
   outline: none;
 }
 
-.app-header__title {
+.app-header__context {
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.app-header__context span {
+  overflow: hidden;
+  color: var(--text-muted);
+  font: 800 0.62rem/1 'Inter', system-ui;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.app-header__context strong {
   overflow: hidden;
   color: var(--text);
   font: 760 0.9rem/1 'Inter', system-ui;
@@ -2665,9 +2681,6 @@ button {
     min-width: 2.6rem;
     height: 2.6rem;
     font-size: 0.68rem;
-  }
-  .app-header__title {
-    display: none;
   }
   .lang-toggle__btn {
     min-width: 2.65rem;
