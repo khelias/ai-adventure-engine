@@ -1126,6 +1126,41 @@ button {
   letter-spacing: 0.06em;
 }
 
+.adventure-footer {
+  width: 100%;
+  margin-top: 2.6rem;
+  display: grid;
+  gap: 0.45rem;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 0.7rem;
+  font-weight: 300;
+  letter-spacing: 0;
+}
+
+.adventure-footer nav {
+  display: inline-flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.adventure-footer a {
+  color: var(--text-faint);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.adventure-footer a:hover,
+.adventure-footer a:focus-visible {
+  color: var(--text-muted);
+}
+
+.adventure-footer a:focus-visible {
+  outline: 2px solid var(--line-accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
 /* Shared ghost-link button: tertiary actions, italic Fraunces, muted.
    Replaces ~5 inline-styled buttons that all had sub-tap-target size. */
 .btn-ghost {
@@ -2840,6 +2875,13 @@ button {
   }
   .model-corner__panel {
     width: min(15rem, calc(100vw - 2rem));
+  }
+  .adventure-footer {
+    margin-top: 2rem;
+    padding-inline: 0.5rem;
+  }
+  .adventure-footer nav {
+    flex-wrap: wrap;
   }
 }
 

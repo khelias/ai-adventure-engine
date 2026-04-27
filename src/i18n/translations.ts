@@ -6,6 +6,9 @@ interface StringTable {
   languageToggleLabel: string
   languageEstonian: string
   languageEnglish: string
+  footerLinksLabel: string
+  footerPrivacyLink: string
+  footerHosting: string
   playerCountLabel: string
   playerCountQuestion: string
   durationQuestion: string
@@ -173,6 +176,9 @@ export const translations: Record<Language, StringTable> = {
     languageToggleLabel: 'Keel',
     languageEstonian: 'Eesti',
     languageEnglish: 'English',
+    footerLinksLabel: 'Lehe lingid',
+    footerPrivacyLink: 'Privaatsus',
+    footerHosting: 'Self-hosted in Tallinn',
     playerCountLabel: 'Mängijate arv:',
     playerCountQuestion: 'Mängijate arv',
     durationQuestion: 'Mängu kestus',
@@ -369,6 +375,9 @@ export const translations: Record<Language, StringTable> = {
     languageToggleLabel: 'Language',
     languageEstonian: 'Eesti',
     languageEnglish: 'English',
+    footerLinksLabel: 'Page links',
+    footerPrivacyLink: 'Privacy',
+    footerHosting: 'Self-hosted in Tallinn',
     playerCountLabel: 'Number of players',
     playerCountQuestion: 'Number of players',
     durationQuestion: 'Game length',

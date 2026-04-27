@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { translations } from '../i18n/translations'
+import { hrefWithLanguage } from '../i18n/language'
 import { generateStories } from '../game/actions'
 import type { Duration, Genre, Vibe } from '../game/types'
 import { LoadingWithHint } from './LoadingDots'
@@ -100,6 +101,7 @@ export function SetupScreen() {
   const isLoading = useGameStore((s) => s.isLoading)
   const error = useGameStore((s) => s.error)
   const strings = translations[settings.language]
+  const privacyHref = hrefWithLanguage('/privacy', settings.language)
 
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showGenreList, setShowGenreList] = useState(false)
@@ -530,6 +532,17 @@ export function SetupScreen() {
           AI
         </button>
       </div>
+
+      <footer className="adventure-footer">
+        <nav aria-label={strings.footerLinksLabel}>
+          <a href="https://github.com/khelias/ai-adventure-engine">GitHub</a>
+          <span aria-hidden="true">·</span>
+          <a href="https://www.linkedin.com/in/kaido-henrik-elias/">LinkedIn</a>
+          <span aria-hidden="true">·</span>
+          <a href={privacyHref}>{strings.footerPrivacyLink}</a>
+        </nav>
+        <span>{strings.footerHosting}</span>
+      </footer>
     </section>
   )
 }
