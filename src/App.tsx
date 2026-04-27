@@ -22,7 +22,6 @@ export default function App() {
     screen === 'game' || screen === 'gameOver'
       ? 'app-header__inner app-header__inner--play'
       : 'app-header__inner'
-  const homeHref = hrefWithLanguage('/', language)
   const privacyHref = hrefWithLanguage('/privacy', language)
   const kheHref = `https://khe.ee/?lang=${language}`
 
@@ -46,13 +45,6 @@ export default function App() {
               aria-label={strings.kheHomeAria}
             >
               KHE
-            </a>
-            <a
-              href={homeHref}
-              className="app-home-link"
-            >
-              <span aria-hidden="true">←</span>
-              <span>{strings.gamesHomeLink}</span>
             </a>
             <span className="app-header__title">{strings.appHeaderTitle}</span>
           </div>

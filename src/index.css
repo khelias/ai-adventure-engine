@@ -229,25 +229,6 @@ button {
   white-space: nowrap;
 }
 
-.app-home-link {
-  min-height: 2.75rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: var(--text-muted);
-  text-decoration: none;
-  font: 650 0.75rem/1 'Inter', system-ui;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  transition: color 0.15s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-.app-home-link:hover,
-.app-home-link:focus-visible {
-  color: var(--text-dim);
-  outline: none;
-}
-
 .app-main {
   flex: 1;
   width: 100%;
@@ -2675,16 +2656,11 @@ button {
   .app-main {
     padding: 0.85rem max(0.875rem, env(safe-area-inset-right)) calc(1.75rem + env(safe-area-inset-bottom)) max(0.875rem, env(safe-area-inset-left));
   }
-  .app-home-link,
   .btn-primary,
   .btn-secondary,
   .btn-begin,
   .btn-ghost {
     min-height: 3rem;
-  }
-  .app-home-link {
-    font-size: 0.7rem;
-    letter-spacing: 0.1em;
   }
   .app-header__left {
     gap: 0.55rem;

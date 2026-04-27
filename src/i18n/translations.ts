@@ -4,7 +4,6 @@ interface StringTable {
   appTitle: string
   appHeaderTitle: string
   kheHomeAria: string
-  gamesHomeLink: string
   languageToggleLabel: string
   languageEstonian: string
   languageEnglish: string
@@ -176,7 +175,6 @@ export const translations: Record<Language, StringTable> = {
     appTitle: 'AI Seiklusmootor',
     appHeaderTitle: 'AI Adventure',
     kheHomeAria: 'KHE avaleht',
-    gamesHomeLink: 'Mängud',
     languageToggleLabel: 'Keel',
     languageEstonian: 'Eesti',
     languageEnglish: 'English',
@@ -377,7 +375,6 @@ export const translations: Record<Language, StringTable> = {
     appTitle: 'AI Adventure Engine',
     appHeaderTitle: 'AI Adventure',
     kheHomeAria: 'KHE home',
-    gamesHomeLink: 'Games',
     languageToggleLabel: 'Language',
     languageEstonian: 'Eesti',
     languageEnglish: 'English',
