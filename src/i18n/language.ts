@@ -1,6 +1,6 @@
 import type { Language } from '../game/types'
 
-export const DEFAULT_LANGUAGE: Language = 'et'
+export const DEFAULT_LANGUAGE: Language = 'en'
 export const LANGUAGE_STORAGE_KEY = 'app_locale'
 export const LANGUAGE_QUERY_PARAM = 'lang'
 
@@ -22,11 +22,6 @@ function readStoredLanguage(): Language | null {
   if (typeof window === 'undefined') return null
   const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY)
   return isLanguage(stored) ? stored : null
-}
-
-function readBrowserLanguage(): Language | null {
-  if (typeof navigator === 'undefined') return null
-  return navigator.language.toLowerCase().startsWith('et') ? 'et' : null
 }
 
 function syncDocumentLanguage(language: Language): void {
@@ -54,7 +49,7 @@ export function persistLanguagePreference(
 }
 
 export function loadInitialLanguage(): Language {
-  const language = readUrlLanguage() ?? readStoredLanguage() ?? readBrowserLanguage() ?? DEFAULT_LANGUAGE
+  const language = readUrlLanguage() ?? readStoredLanguage() ?? DEFAULT_LANGUAGE
   persistLanguagePreference(language, { syncUrl: false })
   return language
 }
