@@ -70,7 +70,7 @@ export default function App() {
 
       <footer className="adventure-footer">
         <nav aria-label={strings.footerLinksLabel}>
-          <a href="https://github.com/khelias/ai-adventure-engine">GitHub</a>
+          <a href="https://github.com/khelias/khe-ai-adventure">GitHub</a>
           <span aria-hidden="true">·</span>
           <a href="https://www.linkedin.com/in/kaido-henrik-elias/">LinkedIn</a>
           <span aria-hidden="true">·</span>

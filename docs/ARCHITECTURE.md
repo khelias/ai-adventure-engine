@@ -216,7 +216,7 @@ Both frontend and proxy ship from this repo.
 ```mermaid
 flowchart LR
     Dev["Developer"]
-    Repo["ai-adventure-engine"]
+    Repo["khe-ai-adventure"]
     Runner["GitHub Actions<br/>self-hosted runner"]
     VM["Homelab VM"]
     Nginx["games nginx container"]
