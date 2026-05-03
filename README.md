@@ -1,5 +1,9 @@
 # AI Adventure Engine
 
+[![CI](https://github.com/khelias/khe-ai-adventure/actions/workflows/ci.yml/badge.svg)](https://github.com/khelias/khe-ai-adventure/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/khelias/khe-ai-adventure/actions/workflows/codeql.yml/badge.svg)](https://github.com/khelias/khe-ai-adventure/actions/workflows/codeql.yml)
+[![Deploy](https://github.com/khelias/khe-ai-adventure/actions/workflows/deploy.yml/badge.svg)](https://github.com/khelias/khe-ai-adventure/actions/workflows/deploy.yml)
+
 AI Adventure Engine is a web-based party adventure game for 3-6 players, live
 at [games.khe.ee/adventure](https://games.khe.ee/adventure/).
 
