@@ -23,9 +23,9 @@
       "automerge": true
     },
     {
-      "description": "Automerge npm dev dependency minor updates for stable packages",
+      "description": "Automerge npm minor updates for stable packages",
       "matchManagers": ["npm"],
-      "matchDepTypes": ["devDependencies"],
+      "matchDepTypes": ["devDependencies", "dependencies"],
       "matchUpdateTypes": ["minor"],
       "matchCurrentVersion": ">= 1.0.0",
       "automerge": true
