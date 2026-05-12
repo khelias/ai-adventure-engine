@@ -114,6 +114,29 @@ transcripts show the rule is ineffective or redundant.
 - Store a small set of canonical transcripts for regression comparison.
 - Add model matrix scripts so candidate comparisons are repeatable.
 
+#### Eval pipeline (incremental)
+
+Started with `scripts/eval/check.ts` (deterministic rule-based checks over
+`playtest-transcripts/`). Baseline finding: `choice_has_cost` passes only
+75% of turns, indicating real leakage of pure-upside choices to players
+despite proxy retry logic.
+
+Next steps, ordered by pedagogical value and effort:
+
+1. **LLM-as-judge layer** — add one model-graded rubric (e.g. Estonian
+   prose quality, 1-5 + reasoning) over the same transcript dataset.
+   Surfaces judge-prompt design, structured output via tool_use, and
+   judge consistency (run twice, compare).
+2. **Pass/fail gating** — `--threshold` flag and non-zero exit when a
+   check drops below its bound. Turns measurement into a decision.
+3. **CI integration** — GitHub Actions workflow runs `npm run eval` on
+   every PR that touches prompts, proxy, or schema; comments results.
+4. **Production sampling** — pull a window of real scenes from proxy
+   logs, run the same checks. Catches model drift that offline regression
+   against fixed transcripts cannot.
+5. **Reference-based eval** (last) — human-annotated golden set for the
+   rubrics where ground truth is meaningful. Highest cost, highest signal.
+
 ### Infrastructure
 
 - Decide whether explicit Gemini context caching is worth the lifecycle
