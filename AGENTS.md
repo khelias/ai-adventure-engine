@@ -68,7 +68,10 @@ tests/         ui-smoke.spec.ts, unit/game.test.ts
 - One shared device (pass-the-phone, no live multiplayer)
 - Fast setup (~1 min)
 - Nobody sits out (no mechanics that remove players from the table)
-- Choices must cost something (no pure-upside continuing options)
+- Choices must cost something (no pure-upside continuing options). Sign
+  convention: `expectedChanges[].change = -1` moves a parameter toward its
+  worst state and is the cost direction; `+1` improves. Authoritative
+  source: `src/game/engine.ts:8`.
 - Parameters are group state, not personal meters
 - Secrets stay private until reveal
 - Cost matters (cheaper model first; expensive opt-in only when measured)
