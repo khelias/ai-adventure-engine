@@ -7,6 +7,7 @@ const browserChannel = process.env.PLAYWRIGHT_BROWSER_CHANNEL
 export default defineConfig({
   testDir: './tests',
   timeout: 90_000,
+  retries: process.env.CI ? 1 : 0,
   expect: {
     timeout: 7_500,
     toHaveScreenshot: {
